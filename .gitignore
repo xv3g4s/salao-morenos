@@ -1,0 +1,29 @@
+# Dependencias
+node_modules/
+package-lock.json
+yarn.lock
+
+# Sistema
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editores
+.vscode/
+.idea/
+*.swp
+
+# Logs e temporarios
+*.log
+npm-debug.log*
+.cache/
+tmp/
+*.tmp
+
+# Chaves e segredos - NUNCA versionar
+*.pem
+*.key
+id_rsa*
+id_ed25519*
+.env
+.env.*

@@ -1,0 +1,11 @@
+---
+deployment:
+  tasks:
+    # Publica APENAS o conteudo de public/ em public_html.
+    # Tudo que nao deve ir para o ar simplesmente nao vive dentro de public/.
+    - export DEPLOYPATH=$HOME/public_html/
+    - /bin/mkdir -p $DEPLOYPATH
+    # "public/." inclui os arquivos ocultos, como o .htaccess
+    - /bin/cp -R public/. $DEPLOYPATH
+    # Garante que arquivos internos nunca fiquem servidos, mesmo se sobrarem de um deploy antigo
+    - /bin/rm -f $DEPLOYPATH/.cpanel.yml $DEPLOYPATH/.gitignore $DEPLOYPATH/README.md

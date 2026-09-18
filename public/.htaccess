@@ -1,0 +1,70 @@
+# Salao Moreno's - configuracao de producao (Apache / HostGator)
+
+# ---------- Pagina inicial ----------
+DirectoryIndex index.html
+
+# ---------- HTTPS + dominio canonico (sem www) ----------
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+
+  # Forca HTTPS
+  RewriteCond %{HTTPS} !=on
+  RewriteCond %{HTTP:X-Forwarded-Proto} !https
+  RewriteRule ^(.*)$ https://%{HTTP_HOST}/$1 [R=301,L]
+
+  # Remove o www (o canonical do site aponta para salaomorenos.com.br)
+  RewriteCond %{HTTP_HOST} ^www\.(.+)$ [NC]
+  RewriteRule ^(.*)$ https://%1/$1 [R=301,L]
+</IfModule>
+
+# ---------- Compressao ----------
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/plain text/css text/xml
+  AddOutputFilterByType DEFLATE application/javascript application/x-javascript
+  AddOutputFilterByType DEFLATE application/json application/xml image/svg+xml
+</IfModule>
+
+# ---------- Cache ----------
+<IfModule mod_expires.c>
+  ExpiresActive On
+  # HTML sempre revalidado: uma publicacao nova aparece na hora
+  ExpiresByType text/html                 "access plus 0 seconds"
+  # Assets versionados pelo deploy: cache longo
+  ExpiresByType image/webp                "access plus 1 year"
+  ExpiresByType image/png                 "access plus 1 year"
+  ExpiresByType image/jpeg                "access plus 1 year"
+  ExpiresByType image/svg+xml             "access plus 1 year"
+  ExpiresByType font/woff2                "access plus 1 year"
+  ExpiresByType text/css                  "access plus 1 month"
+  ExpiresByType application/javascript    "access plus 1 month"
+</IfModule>
+
+<IfModule mod_headers.c>
+  <FilesMatch "\.(webp|png|jpe?g|svg|woff2)$">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </FilesMatch>
+  <FilesMatch "\.html$">
+    Header set Cache-Control "no-cache, must-revalidate"
+  </FilesMatch>
+  # Seguranca basica
+  Header set X-Content-Type-Options "nosniff"
+  Header set Referrer-Policy "strict-origin-when-cross-origin"
+  Header always unset X-Powered-By
+</IfModule>
+
+# ---------- MIME types ----------
+<IfModule mod_mime.c>
+  AddType image/webp .webp
+  AddType font/woff2 .woff2
+</IfModule>
+
+# ---------- Protecao ----------
+# Bloqueia acesso a arquivos internos caso algum dia subam por engano
+<FilesMatch "^(\.htaccess|\.gitignore|\.cpanel\.yml|.*\.dc\.html)$">
+  Require all denied
+</FilesMatch>
+
+# Sem listagem de diretorio
+Options -Indexes
+
+ErrorDocument 404 /index.html
