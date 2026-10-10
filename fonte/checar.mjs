@@ -239,6 +239,36 @@ for (const [nome, perfil, rotas] of [
   }
 }
 
+// ----------------------------------------- tela de abertura -------------
+// Ela tem que aparecer em toda carga (marca), sair so com a pagina pronta e
+// com a troca de camadas ja feita — senao o visitante ve a troca acontecer.
+{
+  const ctx = await browser.newContext(MESA);   // mesma sessao nas tres cargas
+  const page = await ctx.newPage();
+  const medidas = [];
+  for (const rota of ['/', '/unidades/', '/o-clube/']) {
+    const t0 = Date.now();
+    await page.goto(base + rota, { waitUntil: 'commit' });
+    const apareceu = await page.waitForSelector('.site-loader', { timeout: 6000 })
+      .then(() => true).catch(() => false);
+    let trocou = null, pronta = null;
+    await page.waitForFunction(() => !document.querySelector('.site-loader'), { timeout: 20000 })
+      .then(async () => {
+        trocou = await page.evaluate(() => document.documentElement.classList.contains('mo-vivo'));
+        pronta = await page.evaluate(() => document.readyState);
+      }).catch(() => {});
+    medidas.push({ rota, apareceu, trocou, pronta, ms: Date.now() - t0 });
+  }
+  checa(medidas.every((m) => m.apareceu), 'abertura: a tela aparece em toda carga de pagina');
+  checa(medidas.every((m) => m.trocou === true),
+    'abertura: so sai depois da troca das camadas (nada de troca visivel)');
+  checa(medidas.every((m) => m.pronta === 'complete'),
+    'abertura: so sai com a pagina carregada (readyState complete)');
+  checa(medidas[1].ms < medidas[0].ms,
+    `abertura: navegacao interna usa o modo curto (${medidas[0].ms}ms -> ${medidas[1].ms}ms)`);
+  await ctx.close();
+}
+
 // menu (mega menu no desktop, acordeao no celular)
 {
   const ctx = await browser.newContext(MESA);

@@ -158,7 +158,7 @@
   C.loader = {
     showOncePerSession: true, // true = só na primeira página da sessão
     minimumVisibleTime: 1200,
-    maximumVisibleTime: 4500,
+    maximumVisibleTime: 9000,
     exitDuration: 560,
     sessionKey: 'morenos_intro_seen',
     logo: '/assets/morenos-loader-outline-white.webp', logoW: 720, logoH: 669,

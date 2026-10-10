@@ -8,7 +8,7 @@ Site da barbearia Salão Morenos: três unidades em Serra, Espírito Santo.
 
 ```bash
 python3 fonte/build.py             # gera as 17 rotas em public/
-node fonte/checar.mjs public       # 67 verificações sobre o site gerado
+node fonte/checar.mjs public       # 71 verificações sobre o site gerado
 node fonte/testes/avaliacoes.mjs   # 53 verificações da integração com o Google (build --avaliacoes-google)
 ```
 
@@ -71,8 +71,11 @@ se o design mudar, o build para e avisa em vez de publicar errado:
 - caminho relativo de imagem e script vira absoluto (as páginas moram em subpastas);
 - componentes vão para `/_dc/` e o runtime aprende a buscá-los lá;
 - Poppins local no lugar do Google Fonts; React local no lugar do unpkg;
-- a tela de abertura passa a aparecer **uma vez por sessão** (no protótipo ela
-  reaparecia a cada página e a cada volta para a aba);
+- a tela de abertura ganha **dois tempos**: intro completa na primeira carga da
+  sessão e modo curto (~0,7s) nas páginas seguintes, em vez de aparecer inteira
+  toda vez ou sumir de vez na navegação interna. Ela **só sai com a página
+  carregada** (`window.load`) e com a troca das duas camadas feita — senão o
+  visitante veria a troca acontecer;
 - na cópia estática, o que a animação de rolagem esconderia nasce visível e o
   FAQ aparece aberto — sem JavaScript ninguém abriria o acordeão.
 

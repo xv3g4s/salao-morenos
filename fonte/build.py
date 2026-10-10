@@ -176,6 +176,9 @@ def patch_config(js: str, homologacao: bool) -> str:
     # site de 17 rotas isso significa ver a intro em toda navegacao interna e a
     # cada volta para a aba. Uma vez por sessao e o comportamento certo em
     # producao (o proprio prototipo ja preve a chave).
+    # Com a espera real pela pagina pronta, o teto vira rede de seguranca.
+    js = js.replace("maximumVisibleTime: 4500", "maximumVisibleTime: 9000", 1)
+
     antes = "showOncePerSession: false"
     if antes not in js:
         raise SystemExit("erro: nao achei C.loader.showOncePerSession no site-config.js")
@@ -188,6 +191,132 @@ def patch_config(js: str, homologacao: bool) -> str:
         js, n = re.subn(r"stage: [^,]+,", f"stage: '{estagio}',  // fixado no build", js, count=1)
     if not n:
         raise SystemExit("erro: nao achei C.env.stage no site-config.js")
+    return js
+
+
+# --------------------------------------------------- tela de abertura ------
+# O prototipo mostra a intro so na primeira pagina da sessao; da segunda em
+# diante faz um fade de 0,22s, sem marca. Num site de 17 rotas isso significa
+# marca na entrada e nada em toda navegacao interna.
+#
+# Aqui a MESMA tela passa a aparecer em toda carga, mas em dois tempos:
+#   - 1a carga da sessao: intro completa (logo entrando, crescendo, 1,2s minimo);
+#   - demais cargas: modo curto — a logo entra na hora e a tela sai assim que a
+#     pagina esta pronta, sem espera minima. Na pratica ~0,5s, o suficiente para
+#     cobrir o branco entre paginas sem cobrar tempo de quem clicou.
+#
+# Voltar para a aba nao dispara nada: o navegador restaura a pagina do cache,
+# sem reexecutar o script.
+
+LOADER_ESPERA_DE = """  // window.load não entra: esperaria imagens fora da primeira dobra
+  var tudo = Promise.allSettled ? Promise.allSettled([domPronto, logoPronta, fontes, hero])
+    : Promise.all([domPronto, logoPronta, fontes, hero].map(function (p) { return Promise.resolve(p).catch(function () {}); }));"""
+
+LOADER_ESPERA_PARA = """  // A tela só sai com a PÁGINA PRONTA (ajuste do build). Três sinais além do
+  // que o protótipo já esperava:
+  //
+  //   carregou  window.load — folhas de estilo, scripts e as imagens que a
+  //             página realmente busca. Imagem lazy, fora da dobra, não entra
+  //             (o navegador só a busca na rolagem), então isto não vira espera
+  //             eterna.
+  //   montado   a troca das duas camadas. A página publicada nasce como cópia
+  //             estática e o runtime do Claude Design monta a versão viva por
+  //             cima; `html.mo-vivo` é o sinal de que a troca aconteceu. Sem
+  //             esperar por ele, o visitante via a troca depois da tela sumir.
+  //
+  // Os dois têm rede de segurança própria, e o teto de tempo (maximumVisibleTime)
+  // continua valendo: a tela nunca prende o site.
+  var montado = new Promise(function (r) {
+    var raiz = document.documentElement;
+    if (raiz.classList.contains('mo-vivo')) return r();
+    var obs = new MutationObserver(function () {
+      if (raiz.classList.contains('mo-vivo')) { obs.disconnect(); r(); }
+    });
+    obs.observe(raiz, { attributes: true, attributeFilter: ['class'] });
+    // sem runtime (JS bloqueado, erro de rede) a cópia estática é a página:
+    // não faz sentido segurar a tela esperando uma troca que não vem
+    setTimeout(function () { obs.disconnect(); r(); }, 6000);
+  });
+  var sinais = [domPronto, logoPronta, fontes, hero, carregou, montado];
+  var tudo = Promise.allSettled ? Promise.allSettled(sinais)
+    : Promise.all(sinais.map(function (p) { return Promise.resolve(p).catch(function () {}); }));"""
+
+# `carregou` e declarado depois na ordem original; sobe para antes do uso
+LOADER_ORDEM_DE = """  var carregou = document.readyState === 'complete' ? Promise.resolve() : new Promise(function (r) { window.addEventListener('load', r, { once: true }); });
+
+"""
+LOADER_ORDEM_PARA = ""
+
+LOADER_CARREGOU_DE = """  var hero = new Promise(function (resolve) {"""
+LOADER_CARREGOU_PARA = """  var carregou = document.readyState === 'complete' ? Promise.resolve() : new Promise(function (r) { window.addEventListener('load', r, { once: true }); });
+  var hero = new Promise(function (resolve) {"""
+
+# Teto maior: agora a espera e real, e o teto e so rede de seguranca.
+LOADER_TETO_DE = """      minimumVisibleTime: 0,      // sai no instante em que a página fica pronta
+      maximumVisibleTime: 1800,   // teto baixo: navegação interna é rápida"""
+LOADER_TETO_PARA = """      minimumVisibleTime: 0,      // sem espera artificial: sai quando ficar pronta
+      maximumVisibleTime: 6000,   // rede de segurança, não alvo"""
+
+LOADER_CURTO_DE = """  // Navegação interna: só um fade curto de entrada, sem logo.
+  if (C.showOncePerSession && lerVisto()) {
+    var f = document.createElement('style');
+    f.textContent = reduz ? '' : '@keyframes slPageIn{from{opacity:0}to{opacity:1}}body{animation:slPageIn .22s ease both}';
+    document.head.appendChild(f);
+    return;
+  }"""
+
+LOADER_CURTO_PARA = """  // MODO CURTO (aplicado no build, ver fonte/build.py).
+  // Primeira carga da sessão: intro completa. Da segunda em diante — navegação
+  // interna, voltar, abrir outra página do site — a MESMA tela aparece, só que
+  // a logo entra na hora e a tela sai assim que a página fica pronta, sem
+  // espera mínima. Mantém a marca em toda navegação sem cobrar 1,2s por clique.
+  var curto = !!lerVisto();
+  if (curto) {
+    C = {
+      showOncePerSession: C.showOncePerSession, sessionKey: C.sessionKey,
+      logo: C.logo, logoW: C.logoW, logoH: C.logoH,
+      minimumVisibleTime: 0,      // sai no instante em que a página fica pronta
+      maximumVisibleTime: 1800,   // teto baixo: navegação interna é rápida
+      exitDuration: 260,
+    };
+  }"""
+
+LOADER_ANIM_DE = ("animation:slLogoIn .95s cubic-bezier(.22,.61,.36,1) both,"
+                  "slGrow 3.2s cubic-bezier(.33,0,.2,1) .95s forwards}',")
+LOADER_ANIM_PARA = ("animation:' + (curto ? 'slLogoIn .42s cubic-bezier(.22,.61,.36,1) both' : "
+                    "'slLogoIn .95s cubic-bezier(.22,.61,.36,1) both,"
+                    "slGrow 3.2s cubic-bezier(.33,0,.2,1) .95s forwards') + '}',")
+
+LOADER_BRILHO_DE = "animation:slShine 2.2s linear .35s infinite}',"
+LOADER_BRILHO_PARA = "animation:slShine 2.2s linear ' + (curto ? '0s' : '.35s') + ' infinite}',"
+
+# a pausa de 380ms antes da saida e a parte mais visivel da espera
+LOADER_PAUSA_DE = """    var dur = reduz ? 250 : C.exitDuration;"""
+LOADER_PAUSA_PARA = """    var dur = reduz ? 250 : C.exitDuration;
+    var pausa = reduz ? 0 : (curto ? 120 : 380);   // modo curto quase nao pausa"""
+
+PATCHES_LOADER = [
+    (LOADER_CURTO_DE, LOADER_CURTO_PARA, "modo curto na navegacao interna"),
+    (LOADER_ORDEM_DE, LOADER_ORDEM_PARA, "remocao do carregou fora de ordem"),
+    (LOADER_CARREGOU_DE, LOADER_CARREGOU_PARA, "carregou declarado antes do uso"),
+    (LOADER_ESPERA_DE, LOADER_ESPERA_PARA, "espera pela pagina carregada e pela troca de camadas"),
+    (LOADER_TETO_DE, LOADER_TETO_PARA, "teto de tempo como rede de seguranca"),
+    (LOADER_ANIM_DE, LOADER_ANIM_PARA, "entrada da logo mais rapida no modo curto"),
+    (LOADER_BRILHO_DE, LOADER_BRILHO_PARA, "brilho da logo sem atraso no modo curto"),
+    (LOADER_PAUSA_DE, LOADER_PAUSA_PARA, "pausa de saida encurtada no modo curto"),
+    ("    }, reduz ? 0 : 380);", "    }, pausa);", "saida usa a pausa do modo"),
+    ("    }, dur + 140 + (reduz ? 0 : 380));", "    }, dur + 140 + pausa);", "remocao usa a pausa do modo"),
+]
+
+
+def patch_loader(js: str) -> str:
+    """Liga o modo curto da tela de abertura."""
+    for agulha, troca, nome in PATCHES_LOADER:
+        if js.count(agulha) != 1:
+            raise SystemExit(
+                f"erro: nao achei '{nome}' no site-loader.js ({js.count(agulha)} ocorrencias).\n"
+                f"       O design mudou? Ajuste PATCHES_LOADER em fonte/build.py.")
+        js = js.replace(agulha, troca, 1)
     return js
 
 
@@ -207,7 +336,9 @@ def monta_palco(palco: pathlib.Path, homologacao: bool, avaliacoes: bool) -> Non
     (palco / "site-config.js").write_text(
         patch_config((PROTO / "site-config.js").read_text(encoding="utf-8"), homologacao),
         encoding="utf-8")
-    for js in ("site-loader.js", "smooth-scroll.js", "support.js"):
+    (palco / "site-loader.js").write_text(
+        patch_loader((PROTO / "site-loader.js").read_text(encoding="utf-8")), encoding="utf-8")
+    for js in ("smooth-scroll.js", "support.js"):
         shutil.copy2(PROTO / js, palco / js)
 
     # Durante a pre-renderizacao, /api/google-reviews nao existe: o script real
