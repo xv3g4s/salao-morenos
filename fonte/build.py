@@ -85,13 +85,19 @@ def troca_links(texto: str) -> str:
 # pastas copiadas do prototipo para a raiz publicada
 ASSETS_PROTO = ("img", "assets")
 # arquivos soltos do prototipo que vao para a raiz publicada
-JS_SITE = ("site-config.js", "site-loader.js", "smooth-scroll.js", "support.js")
+# Os quatro viram caminho absoluto nas paginas (elas moram em subpastas)...
+JS_PAGINA = ("site-config.js", "site-loader.js", "smooth-scroll.js", "support.js")
+# ...mas so estes dois sao publicados como arquivo: site-config.js e
+# site-loader.js vao embutidos no <head> de cada pagina.
+JS_SITE = ("smooth-scroll.js", "support.js")
 
 FONTES_GOOGLE_RE = re.compile(
     r'<link rel="preconnect" href="https://fonts\.googleapis\.com">\s*'
     r'<link rel="preconnect" href="https://fonts\.gstatic\.com" crossorigin="">\s*'
     r'<link href="https://fonts\.googleapis\.com/css2\?family=Poppins[^"]*" rel="stylesheet">')
-FONTES_LOCAIS = '<link rel="stylesheet" href="/fonts/poppins.css">'
+# A folha da Poppins bloqueava a renderizacao por uma requisicao inteira. Sao
+# 3 KB: embutidos, somem da rede e o texto pinta no primeiro quadro.
+FONTES_LOCAIS = "<style>/* Poppins local, embutida no build */\n__POPPINS__</style>"
 
 # `src="img/x"`, `'img/x'`, `href="assets/y"` -> caminho absoluto.
 # A aspa na frente e obrigatoria: evita estragar https://dominio/img/x.
@@ -128,7 +134,20 @@ AVALIACOES_DIR = FONTE / "avaliacoes"
 VIEWPORT = '<meta name="viewport" content="width=device-width, initial-scale=1">'
 
 
-def patch_pagina(html: str, avaliacoes: bool = False) -> str:
+# site-config.js e site-loader.js precisam rodar ANTES do primeiro quadro (a
+# tela de abertura tem que cobrir a pagina desde o inicio), entao eram dois
+# scripts bloqueantes. Embutidos, continuam rodando na mesma hora sem custar
+# duas idas a rede. Juntos sao ~23 KB, ~6 KB comprimidos.
+def embutir(tag: str, conteudo: str, html: str, nome: str) -> str:
+    if html.count(tag) != 1:
+        raise SystemExit(f"erro: esperava 1 ocorrencia de {nome} na pagina, achei {html.count(tag)}")
+    if "</script" in conteudo:
+        raise SystemExit(f"erro: {nome} contem '</script' e nao pode ser embutido")
+    return html.replace(tag, "<script>/* " + nome + " embutido no build */\n" + conteudo + "</script>", 1)
+
+
+def patch_pagina(html: str, avaliacoes: bool = False, config_js: str = "",
+                 loader_js: str = "", poppins_css: str = "") -> str:
     """Prepara uma pagina do prototipo para virar pagina publicada."""
     falhas = []
 
@@ -138,12 +157,22 @@ def patch_pagina(html: str, avaliacoes: bool = False) -> str:
     html = html.replace(VIEWPORT, VIEWPORT + "\n" + cabeca, 1)
 
     html = troca_links(RELATIVO_RE.sub(r'\1/\2', html))
-    for js in JS_SITE:
+    for js in JS_PAGINA:
         html = html.replace(f'src="{js}"', f'src="/{js}"').replace(f'src="./{js}"', f'src="/{js}"')
 
     if not FONTES_GOOGLE_RE.search(html):
         falhas.append("links da Poppins do Google")
-    html = FONTES_GOOGLE_RE.sub(FONTES_LOCAIS, html, count=1)
+    html = FONTES_GOOGLE_RE.sub(lambda _: FONTES_LOCAIS.replace("__POPPINS__", poppins_css), html, count=1)
+
+    # o smooth-scroll nao precisa rodar antes da pintura
+    if html.count('<script src="/smooth-scroll.js"></script>') == 1:
+        html = html.replace('<script src="/smooth-scroll.js"></script>',
+                            '<script src="/smooth-scroll.js" defer></script>', 1)
+    else:
+        falhas.append("a tag do smooth-scroll.js")
+
+    html = embutir('<script src="/site-config.js"></script>', config_js, html, "site-config.js")
+    html = embutir('<script src="/site-loader.js"></script>', loader_js, html, "site-loader.js")
 
     mapa = ",\n".join(
         f'  "./{c}.dc.html": "/_dc/{c}.dc.html"' for c in COMPONENTES)
@@ -320,26 +349,97 @@ def patch_loader(js: str) -> str:
     return js
 
 
+# ------------------------------------------- maquete do celular -----------
+# A Home tem a secao da maquete do agendamento; a pagina /o-clube/ nao tinha,
+# porque ela e montada pelo PaginaMorenos, que nao conhecia esse tipo de secao.
+# Os recortes em fonte/maquete/ (markup, logica e keyframes, tirados da Home)
+# sao injetados aqui. Ver fonte/maquete/LEIA-ME.md.
+MAQUETE_DIR = FONTE / "maquete"
+
+# onde encaixar o markup: logo antes do bloco das avaliacoes
+MAQUETE_ANCORA_MARKUP = '  <sc-if value="{{ s.isAvaliacoes }}">'
+# onde encaixar os metodos: antes do componentDidMount da classe
+MAQUETE_ANCORA_LOGICA = "  componentDidMount() {"
+# onde declarar os valores que a secao usa (o PaginaMorenos so devolve secoes)
+MAQUETE_ANCORA_VALORES = "    return { secoes };"
+# a maquete entra logo depois do hero da pagina do Clube, antes do "como funciona"
+MAQUETE_ANCORA_PAGINA = "        { tipo: 'passos', id: 'como-funciona',"
+
+
+def patch_maquete(js: str) -> str:
+    """Leva a maquete do celular da Home para a pagina do Clube."""
+    markup = (MAQUETE_DIR / "secao.html").read_text(encoding="utf-8").rstrip()
+    logica = (MAQUETE_DIR / "logica.js").read_text(encoding="utf-8").rstrip()
+    keyframes = (MAQUETE_DIR / "keyframes.css").read_text(encoding="utf-8").strip()
+
+    for agulha, nome in ((MAQUETE_ANCORA_MARKUP, "o bloco das avaliacoes"),
+                         (MAQUETE_ANCORA_LOGICA, "o componentDidMount"),
+                         (MAQUETE_ANCORA_VALORES, "o mapa de secoes do renderVals"),
+                         (MAQUETE_ANCORA_PAGINA, "a pagina do Clube")):
+        if js.count(agulha) != 1:
+            raise SystemExit(
+                f"erro: a maquete nao encontrou {nome} no PaginaMorenos.dc.html "
+                f"({js.count(agulha)} ocorrencias). O design mudou? Ver fonte/maquete/LEIA-ME.md.")
+
+    # 1) markup: as animacoes cine* so existem no <style> da Home, entao vao
+    #    junto, dentro da propria secao.
+    secao = ('  <sc-if value="{{ s.isMaquete }}">\n'
+             '    <style>\n      /* animacoes da maquete (vieram do <helmet> da Home) */\n      '
+             + keyframes.replace("\n", "\n      ") + "\n    </style>\n"
+             + markup + "\n  </sc-if>\n\n")
+    js = js.replace(MAQUETE_ANCORA_MARKUP, secao + MAQUETE_ANCORA_MARKUP, 1)
+
+    # 2) logica: os quatro refs da Home
+    js = js.replace(MAQUETE_ANCORA_LOGICA,
+                    "  // --- maquete do celular (recorte da Home, injetado no build) ---\n"
+                    + logica + "\n\n" + MAQUETE_ANCORA_LOGICA, 1)
+
+    # 3) valores que o markup usa e o PaginaMorenos ainda nao tinha
+    valores = """    return {
+      secoes,
+      // --- valores da maquete do celular (injetados no build) ---
+      cineRef: this.cineRef,
+      cardRef: this.cardRef,
+      sheenRef: this.sheenRef,
+      phoneRef: this.phoneRef,
+      heroAlign: this.state.w < 760 ? 'center' : 'flex-start',
+      heroTexto: this.state.w < 760 ? 'center' : 'left',
+      clubeHref: M.links.membership,
+      waVisitante: M.waLink(),
+      trackClube: () => M.track('membership_click', { origem: 'o-clube-maquete' }),
+      trackWa: () => M.track('whatsapp_click', { origem: 'o-clube-maquete' }),
+    };"""
+    js = js.replace(MAQUETE_ANCORA_VALORES, valores, 1)
+
+    # 4) a secao entra na lista da pagina do Clube
+    js = js.replace(MAQUETE_ANCORA_PAGINA,
+                    "        { isMaquete: true, id: 'maquete' },\n" + MAQUETE_ANCORA_PAGINA, 1)
+    return js
+
+
 def monta_palco(palco: pathlib.Path, homologacao: bool, avaliacoes: bool) -> None:
     """Monta a arvore que o Chromium vai enxergar — igual a publicada."""
     (palco / "_dc").mkdir(parents=True)
     for c in COMPONENTES:
         texto = (PROTO / f"{c}.dc.html").read_text(encoding="utf-8")
+        if c == "PaginaMorenos":
+            texto = patch_maquete(texto)
         (palco / "_dc" / f"{c}.dc.html").write_text(
             troca_links(RELATIVO_RE.sub(r'\1/\2', texto)), encoding="utf-8")
 
+    config_js = patch_config((PROTO / "site-config.js").read_text(encoding="utf-8"), homologacao)
+    loader_js = patch_loader((PROTO / "site-loader.js").read_text(encoding="utf-8"))
+    poppins_css = (PUB / "fonts" / "poppins.css").read_text(encoding="utf-8")
+
     for arquivo, *_ in ROTAS:
         alvo = palco / arquivo
-        alvo.write_text(patch_pagina((PROTO / arquivo).read_text(encoding="utf-8"), avaliacoes),
-                        encoding="utf-8")
+        alvo.write_text(
+            patch_pagina((PROTO / arquivo).read_text(encoding="utf-8"), avaliacoes,
+                         config_js, loader_js, poppins_css),
+            encoding="utf-8")
 
-    (palco / "site-config.js").write_text(
-        patch_config((PROTO / "site-config.js").read_text(encoding="utf-8"), homologacao),
-        encoding="utf-8")
-    (palco / "site-loader.js").write_text(
-        patch_loader((PROTO / "site-loader.js").read_text(encoding="utf-8")), encoding="utf-8")
-    for js in ("smooth-scroll.js", "support.js"):
-        shutil.copy2(PROTO / js, palco / js)
+    shutil.copy2(PROTO / "smooth-scroll.js", palco / "smooth-scroll.js")
+    shutil.copy2(PROTO / "support.js", palco / "support.js")
 
     # Durante a pre-renderizacao, /api/google-reviews nao existe: o script real
     # pintaria o estado de erro e ele ficaria congelado no HTML. O palco recebe
@@ -351,6 +451,16 @@ def monta_palco(palco: pathlib.Path, homologacao: bool, avaliacoes: bool) -> Non
 
     for pasta in ASSETS_PROTO:
         shutil.copytree(PROTO / pasta, palco / pasta)
+
+    # A logo da tela de abertura vem com 720px e nunca passa de 200px na tela —
+    # e esta no caminho critico, porque a tela espera por ela. Reduzida para
+    # 400px e com o RGB achatado (so o alfa importa: e mascara CSS), cai 78%.
+    logo = palco / "assets" / "morenos-loader-outline-white.webp"
+    if logo.exists():
+        r = subprocess.run(["node", str(FONTE / "scripts" / "reduzir-imagem.mjs"),
+                            str(logo), str(logo), "400", "0.8", "--mascara"],
+                           cwd=RAIZ, capture_output=True, text=True)
+        print("  " + (r.stdout.strip() or "aviso: nao consegui reduzir a logo da abertura"))
     shutil.copytree(PUB / "fonts", palco / "fonts")
     shutil.copytree(PUB / "vendor", palco / "vendor")
 

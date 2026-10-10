@@ -209,7 +209,15 @@ for (const { arquivo, saida, minTexto = 1200 } of ROTAS) {
     //    se sobrar alguma coisa dela, nao vai para o HTML publicado.
     document.querySelectorAll('[data-morenos-loader], #morenos-intro').forEach((el) => el.remove());
 
-    const cabeca = [...document.head.children]
+    // O <meta charset> tem que caber no primeiro KB do HTML. Depois da montagem
+    // ele fica atras de um <style> grande, e o Lighthouse reprova ("charset
+    // declaration is missing or occurs too late"). Aqui ele volta para a frente.
+    const ordenado = [...document.head.children].sort((a, b) => {
+      const peso = (el) => (el.tagName === 'META' && el.hasAttribute('charset')) ? 0
+        : (el.tagName === 'META' && el.getAttribute('name') === 'viewport') ? 1 : 2;
+      return peso(a) - peso(b);
+    });
+    const cabeca = ordenado
       .filter((el) => {
         if (el.tagName !== 'SCRIPT') return true;
         const src = el.getAttribute('src') || '';

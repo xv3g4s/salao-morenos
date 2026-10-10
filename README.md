@@ -77,7 +77,14 @@ se o design mudar, o build para e avisa em vez de publicar errado:
   carregada** (`window.load`) e com a troca das duas camadas feita — senão o
   visitante veria a troca acontecer;
 - na cópia estática, o que a animação de rolagem esconderia nasce visível e o
-  FAQ aparece aberto — sem JavaScript ninguém abriria o acordeão.
+  FAQ aparece aberto — sem JavaScript ninguém abriria o acordeão;
+- **performance**: `site-config.js`, `site-loader.js` e a folha da Poppins vão
+  embutidos no `<head>` (eram três requisições bloqueando a renderização),
+  `smooth-scroll.js` ganha `defer`, o `<meta charset>` volta para a primeira
+  linha do `<head>` e a logo da tela de abertura é reduzida de 720px para 400px
+  com o RGB achatado — ela é máscara CSS, só o alfa aparece: 121 KB → 27 KB;
+- a maquete do celular que existe na Home entra também em `/o-clube/`
+  (recortes em `fonte/maquete/`, ver o LEIA-ME de lá).
 
 `python3 fonte/build.py --homologacao` fixa `noindex` e usa o robots de
 homologação.
