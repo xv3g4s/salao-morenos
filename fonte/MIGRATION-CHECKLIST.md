@@ -68,3 +68,59 @@ Adicionado depois do handoff — ver `GOOGLE-REVIEWS-INTEGRATION.md` na raiz.
       carregado por requisição feita pelo servidor do site
 - [ ] **Termos de Uso**: revisar junto, na mesma passagem jurídica que já estava
       pendente (razão social, CNPJ, encarregado)
+
+---
+
+## Revisão de arquitetura de conteúdo (out/2026)
+
+O que mudou está em `fonte/ARQUITETURA.md`. O que **depende do cliente** para
+sair do jeito que está hoje:
+
+### Bloqueia texto que já está no ar
+
+- [ ] **Links de agendamento por unidade.** Os três `bookingUrl` são `null` e
+      caem na agenda geral do Cashbarber. Por isso o site não diz mais "cada
+      unidade tem a própria agenda". Com os três links, a frase volta e o
+      botão "Agendar nesta unidade" passa a levar à agenda daquele endereço.
+- [ ] **Fotos das unidades.** Só a fachada de Cidade Continental está
+      identificada (`fotoConfirmada: true`). As outras duas páginas e os
+      cartões usam foto de atendimento, sem afirmar o lugar. Com a foto real
+      de cada endereço: trocar `foto`/`fotoAlt` e marcar `fotoConfirmada: true`
+      em `C.locations` (`site-config.js`) — nada mais precisa mudar.
+- [ ] **Telefone por unidade.** A pergunta "os telefones estão publicados?",
+      que respondia "ainda não, entram quando o cliente confirmar", saiu do
+      FAQ: era recado interno na cara do visitante. O site mostra só o
+      WhatsApp geral. Com os telefones, eles entram em `C.locations`.
+- [ ] **Avaliações.** A Home mostra três avaliações reais, copiadas do perfil
+      do Google na montagem do design. Confirmar que podem continuar
+      publicadas e de qual unidade é cada uma — ou ligar a integração da
+      Places API (`GOOGLE-REVIEWS-INTEGRATION.md`), que busca as avaliações na
+      fonte e identifica a unidade sozinha.
+
+### Conteúdo que falta para a página ficar completa
+
+- [ ] **Serviços por unidade.** Hoje o site diz "confira a disponibilidade na
+      agenda". Com a lista por unidade, cada página de unidade mostra o que
+      tem ali.
+- [ ] **Preços dos serviços avulsos.** Só os planos do Clube têm valor
+      publicado. O FAQ de `/servicos/` diz que o preço aparece na agenda.
+- [ ] **Regras do Clube**: periodicidade e agendamentos simultâneos continuam
+      sem valor confirmado e, por isso, fora da página.
+- [ ] **Equipe, estrutura, estacionamento e acessibilidade**: nada publicado,
+      porque nada foi informado. São o tipo de informação que decide a visita —
+      vale perguntar.
+- [ ] **Trabalhe Conosco**: a página agora diz, no FAQ, que não anuncia vaga e
+      que o envio vai pelo WhatsApp. Se existir vaga aberta, o texto muda.
+- [ ] **Dia do Noivo**: a unidade do atendimento é combinada no WhatsApp. Se
+      houver unidade fixa ou pacote com itens definidos, entra na página.
+
+### Decisões tomadas sem o cliente (reverter é barato)
+
+- O FAQ saiu da Home e as perguntas foram para `/unidades/`, `/servicos/` e
+  `/o-clube/`, onde cada uma é respondida.
+- O bloco `#sobre` da Home saiu; o link para `/cultura/` ficou no bloco da
+  Experiência Morenos.
+- A galeria saiu das páginas de unidade, de `/visagismo/` e de
+  `/dia-do-noivo/`: eram as mesmas quatro fotos, sem relação com a página.
+- O banner do Clube ficou só em `/servicos/`, `/servicos/corte-masculino/` e
+  `/servicos/barboterapia/`.

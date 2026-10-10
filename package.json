@@ -9,7 +9,9 @@
     "build:homologacao": "python3 fonte/build.py --homologacao",
     "check": "node fonte/checar.mjs public",
     "test:avaliacoes": "node fonte/testes/avaliacoes.mjs",
-    "find:google-places": "node fonte/scripts/find-google-place-ids.mjs"
+    "find:google-places": "node fonte/scripts/find-google-place-ids.mjs",
+    "test:arquitetura": "node fonte/testes/arquitetura.mjs public",
+    "mapa": "node fonte/testes/arquitetura.mjs public --mapa"
   },
   "devDependencies": {
     "playwright": "^1.49.0"

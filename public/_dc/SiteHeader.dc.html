@@ -34,6 +34,7 @@
         </sc-for>
         <a href="/o-clube/" onMouseEnter="{{ closeNav }}" style="color:{{ corClube }};font-size:clamp(11px,.92vw,13px);font-weight:600;letter-spacing:.12em;text-transform:uppercase;padding:14px clamp(8px,1vw,16px);white-space:nowrap;text-decoration:none;transition:color .3s ease" style-hover="color:#B79A6A">O Clube</a>
         <a href="/cultura/" onMouseEnter="{{ closeNav }}" style="color:{{ corSobre }};font-size:clamp(11px,.92vw,13px);font-weight:600;letter-spacing:.12em;text-transform:uppercase;padding:14px clamp(8px,1vw,16px);white-space:nowrap;text-decoration:none;transition:color .3s ease" style-hover="color:#B79A6A">Sobre a Morenos</a>
+        <a href="/corporativo/" onMouseEnter="{{ closeNav }}" style="color:{{ corCorporativo }};font-size:clamp(11px,.92vw,13px);font-weight:600;letter-spacing:.12em;text-transform:uppercase;padding:14px clamp(8px,1vw,16px);white-space:nowrap;text-decoration:none;transition:color .3s ease" style-hover="color:#B79A6A">Corporativo</a>
       </nav>
       <div style="display:flex;align-items:center;gap:10px;flex-shrink:0">
         <a href="/o-clube/#planos" style="display:inline-flex;padding:1.5px;border-radius:100px;background:linear-gradient(100deg,#0B0B0B 0%,#3A3A3A 18%,#9C968C 32%,#F3EFE8 42%,#9C968C 52%,#3A3A3A 68%,#0B0B0B 100%);background-size:200% 100%;animation:metal 7s linear infinite;box-shadow:0 12px 26px -10px rgba(0,0,0,.85);text-decoration:none;white-space:nowrap;transition:filter .45s ease" style-hover="filter:brightness(1.2)"><span style="display:flex;align-items:center;justify-content:center;border-radius:100px;background:linear-gradient(180deg,#202020 0%,#000000 100%);color:#C5C2BB;font-weight:600;letter-spacing:.14em;text-transform:uppercase;padding:13px clamp(14px,1.4vw,20px);min-height:44px;font-size:clamp(11px,.9vw,12px)">Ver planos</span></a>
@@ -89,7 +90,9 @@
           </div>
         </sc-for>
         <a href="/o-clube/" style="display:block;font-size:18px;font-weight:600;padding:18px 0;border-bottom:1px solid rgba(246,244,239,.1);color:#F6F4EF;text-decoration:none">O Clube</a>
-        <a href="/cultura/" style="display:block;font-size:18px;font-weight:600;padding:18px 0;color:#F6F4EF;text-decoration:none">Sobre a Morenos</a>
+        <a href="/cultura/" style="display:block;font-size:18px;font-weight:600;padding:18px 0;border-bottom:1px solid rgba(246,244,239,.1);color:#F6F4EF;text-decoration:none">Sobre a Morenos</a>
+        <a href="/corporativo/" style="display:block;font-size:18px;font-weight:600;padding:18px 0;border-bottom:1px solid rgba(246,244,239,.1);color:#F6F4EF;text-decoration:none">Corporativo</a>
+        <a href="/trabalhe-conosco/" style="display:block;font-size:18px;font-weight:600;padding:18px 0;color:#F6F4EF;text-decoration:none">Trabalhe Conosco</a>
       </nav>
       <div style="display:flex;flex-direction:column;gap:10px;margin-top:20px">
         <a href="/o-clube/#planos" style="display:flex;align-items:center;justify-content:center;border:1px solid rgba(246,244,239,.38);border-radius:100px;font-size:13px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;padding:16px;min-height:50px;color:#F6F4EF;text-decoration:none">Ver planos</a>
@@ -139,7 +142,7 @@ class Component extends DCLogic {
   state = { isDesktop: true, nav: null, navSaindo: null, menuOpen: false, menuSaindo: false, acc: null, bookingOpen: false, bookingSaindo: false, picked: null };
 
   menuData = [
-    { key: 'unidades', titulo: 'Unidades', resumo: 'Três endereços em Serra. Cada unidade tem a própria agenda.',
+    { key: 'unidades', titulo: 'Unidades', resumo: 'Três endereços em Serra. Escolha o que fica no seu caminho.',
       verTudo: 'Todas as unidades', verTudoHref: '/unidades/',
       itens: [
         { titulo: 'Cidade Continental', desc: 'Avenida Terceiro Mundo — Setor Ásia', href: '/unidades/cidade-continental/' },
@@ -216,6 +219,7 @@ class Component extends DCLogic {
       isMobile: !st.isDesktop,
       corClube: ativo === 'clube' ? '#B79A6A' : '#F6F4EF',
       corSobre: ativo === 'sobre' ? '#B79A6A' : '#F6F4EF',
+      corCorporativo: ativo === 'corporativo' ? '#B79A6A' : '#F6F4EF',
       navMenus: this.menuData.map(m => ({
         ...m,
         isOpen: st.nav === m.key,
@@ -252,7 +256,6 @@ class Component extends DCLogic {
         pick: () => { M.setUnit(x.id); this.setState({ picked: x.id }); },
       })),
       picked: u,
-      // TODO: substituir por bookingUrl específico de cada unidade após confirmação (site-config.js).
       trackBooking: () => M && M.track('booking_click', { unit: st.picked, destino: 'cashbarber' }),
       waVisitante: M ? M.waLink() : '/',
       trackWa: () => M && M.track('whatsapp_click', { origem: 'modal-agendar' }),

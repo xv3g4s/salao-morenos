@@ -7,10 +7,14 @@ Site da barbearia Salão Morenos: três unidades em Serra, Espírito Santo.
 - Origem do design: projeto Claude Design (handoff em `fonte/HANDOFF.md`)
 
 ```bash
-python3 fonte/build.py             # gera as 17 rotas em public/
-node fonte/checar.mjs public       # 71 verificações sobre o site gerado
-node fonte/testes/avaliacoes.mjs   # 53 verificações da integração com o Google (build --avaliacoes-google)
+python3 fonte/build.py                  # gera as 17 rotas em public/
+node fonte/checar.mjs public            # 71 verificações sobre o site gerado
+node fonte/testes/arquitetura.mjs public  # 222 verificações de arquitetura de conteúdo
+node fonte/testes/avaliacoes.mjs        # 53 verificações da integração com o Google (build --avaliacoes-google)
 ```
+
+`node fonte/testes/arquitetura.mjs public --mapa` imprime o mapa de seções de
+cada rota — é por onde começar para revisar conteúdo.
 
 ---
 
@@ -33,9 +37,9 @@ fonte/             nunca publicado
   prerender.mjs      captura estática
   checar.mjs         confere o site gerado
   avaliacoes/        integração opcional do Google (script + rota PHP)
-  testes/            testes da integração de avaliações
   scripts/           utilitários (descobrir Place IDs)
-  HANDOFF.md  MIGRATION-CHECKLIST.md  PENDENCIAS.md
+  testes/            testes de arquitetura de conteúdo e de avaliações
+  HANDOFF.md  MIGRATION-CHECKLIST.md  ARQUITETURA.md
 ```
 
 Nada fora de `public/` chega ao servidor.
@@ -84,10 +88,22 @@ se o design mudar, o build para e avisa em vez de publicar errado:
   linha do `<head>` e a logo da tela de abertura é reduzida de 720px para 400px
   com o RGB achatado — ela é máscara CSS, só o alfa aparece: 121 KB → 27 KB;
 - a maquete do celular que existe na Home entra também em `/o-clube/`
-  (recortes em `fonte/maquete/`, ver o LEIA-ME de lá).
+  (recortes em `fonte/maquete/`, ver o LEIA-ME de lá);
+- **a altura volta a ser livre**: o `support.js` prende `html,body` em
+  `height:100%` nas páginas sem `$preview` — publicado, isso deixava as 16
+  rotas montadas por componente sem rolagem nenhuma. O build desfaz;
+- quem pede `prefers-reduced-motion` recebe a página sem animação em laço;
+- recado interno (`<!-- TODO: confirmar com cliente ... -->`) não chega ao HTML
+  publicado: fica no fonte e em `fonte/MIGRATION-CHECKLIST.md`.
 
 `python3 fonte/build.py --homologacao` fixa `noindex` e usa o robots de
 homologação.
+
+## Arquitetura de conteúdo
+
+Cada rota tem uma função e não repete o que a outra já diz. O que foi tirado,
+o que mudou de lugar e as regras que o teste cobra estão em
+**`fonte/ARQUITETURA.md`**.
 
 ## Avaliações do Google — opcional, desligada
 

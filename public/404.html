@@ -52,12 +52,13 @@
 <link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="icon" href="/favicon-192.png" sizes="192x192" type="image/png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<style>html,body{height:auto !important}#dc-root,#dc-root>.sc-host{height:auto !important}</style>
+<style>@media (prefers-reduced-motion: reduce){
+*,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;
+transition-duration:.01ms !important;scroll-behavior:auto !important}}</style>
 <style>html,body{background:#080908}</style>
 <link rel="preload" as="image" href="/assets/morenos-loader-outline-white.webp">
 <script>/* site-config.js embutido no build */
-/* Salão Morenos — configuração central do site.
-   Tudo que é telefone, link, endereço, horário, serviço, plano e SEO mora aqui.
-   source: "legacy-site" = migrado do site antigo. needsConfirmation: true = validar com o cliente. */
 (function () {
   var C = {};
 
@@ -88,7 +89,6 @@
   C.hours = {
     source: 'legacy-site', needsConfirmation: true,
     rows: [ { dias: 'Segunda a sexta', horario: '08:00 – 20:00' }, { dias: 'Sábado', horario: '09:00 – 18:00' } ],
-    // Domingo não informado no site antigo: não exibir.
   };
 
   C.routes = {
@@ -121,12 +121,12 @@
 
   C.locations = [
     { id: 'cidade-continental', nome: 'Salão Morenos — Cidade Continental', curto: 'Cidade Continental',
-      bairroLabel: 'Cidade Continental', logradouro: 'Avenida Terceiro Mundo', numero: null /* needsConfirmation */,
+      bairroLabel: 'Cidade Continental', logradouro: 'Avenida Terceiro Mundo', numero: null,
       bairro: 'Cidade Continental — Setor Ásia', cidade: 'Serra', estado: 'ES', cep: '29163-603',
       foto: '/img/unidade-cidade-continental.webp', fotoAlt: 'Fachada do Salão Morenos com a placa Cidade Continental', fotoConfirmada: true,
-      bookingUrl: null /* TODO: substituir por bookingUrl específico após confirmação */, googleProfile: null },
+      bookingUrl: null, googleProfile: null },
     { id: 'novo-horizonte-av-brasil', nome: 'Salão Morenos — Novo Horizonte — Avenida Brasil', curto: 'Novo Horizonte — Av. Brasil',
-      bairroLabel: 'Novo Horizonte', logradouro: 'Avenida Brasil', numero: null /* needsConfirmation: não usar números de fontes externas */,
+      bairroLabel: 'Novo Horizonte', logradouro: 'Avenida Brasil', numero: null,
       bairro: 'Novo Horizonte', cidade: 'Serra', estado: 'ES', cep: '29163-331',
       foto: '/img/unidade-av-brasil.webp', fotoAlt: 'Vitrine de uma unidade do Salão Morenos', fotoConfirmada: false,
       bookingUrl: null, googleProfile: null },
@@ -136,6 +136,23 @@
       foto: '/img/unidade-av-industrial.webp', fotoAlt: 'Fachada iluminada de uma unidade do Salão Morenos à noite', fotoConfirmada: false,
       bookingUrl: null, googleProfile: null },
   ];
+  // Campo de midia por unidade. A foto fica aqui, num lugar so, para ser
+  // trocada quando chegar a imagem real daquele endereco: nada de procurar
+  // caminho de imagem espalhado pelas paginas.
+  //
+  // Enquanto fotoConfirmada for false, a pagina NAO usa a imagem de fachada:
+  // um cartao com o nome da avenida e uma fachada embaixo afirma que aquele
+  // predio e aquele endereco, e isso ninguem confirmou. Entra uma foto do
+  // atendimento, com alt que nao diz onde foi. Sem aviso na tela: o visitante
+  // nao precisa saber do nosso inventario de fotos.
+  C.fotoNeutra = ['/img/foto-salao.webp', '/img/foto-atendimento-2.webp', '/img/foto-atendimento.webp'];
+  C.locations.forEach(function (l, i) {
+    if (!l.fotoConfirmada) {
+      l.fotoPendente = l.foto;
+      l.foto = C.fotoNeutra[i % C.fotoNeutra.length];
+      l.fotoAlt = 'Ambiente do Salão Morenos durante o atendimento';
+    }
+  });
   C.locations.forEach(function (l) {
     l.enderecoLinha = l.logradouro + ', ' + l.bairro + ', ' + l.cidade + ' — ' + l.estado + ', CEP ' + l.cep;
     l.rota = l.googleProfile || ('https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(l.logradouro + ', ' + l.bairro + ', ' + l.cidade + ' - ' + l.estado + ', ' + l.cep));
@@ -145,7 +162,6 @@
   });
   C.location = function (id) { for (var i = 0; i < C.locations.length; i++) if (C.locations[i].id === id) return C.locations[i]; return null; };
 
-  // Durações: source legacy-site, needsConfirmation. Sem preços individuais.
   C.services = [
     { id: 'corte-masculino', nome: 'Corte Masculino', cat: 'cabelo', duracao: '30 min', pagina: 'corte-masculino',
       desc: 'Corte masculino personalizado de acordo com referências, estilo e preferência do cliente, com atenção ao acabamento.' },
@@ -186,7 +202,6 @@
     { id: 'familia-6', nome: 'Família Corte e Barba Clássico', tipo: ['familia'], preco: 'R$ 169,90', desc: '6 procedimentos mensais.',
       itens: ['Cabelo ou barba', 'Descontos em serviços', 'Descontos em produtos'] },
   ];
-  // "Periodicidade" e "Agendamentos simultâneos" aparecem sem valor no site antigo: não exibir.
   C.clubPlans.forEach(function (p) { p.source = 'legacy-site'; p.needsConfirmation = true; p.periodo = '/mês'; });
   C.clubFilters = [ { id: 'todos', nome: 'Todos' }, { id: 'ilimitados', nome: 'Ilimitados' }, { id: 'custo', nome: 'Custo-benefício' }, { id: 'familia', nome: 'Família' } ];
 
@@ -555,9 +570,9 @@ html,body{background:#080908}
     
 
     
-      <div data-dc-tpl="20" style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
-        <button data-dc-tpl="21" type="button" style="display: inline-flex; padding: 1.5px; border-radius: 100px; background: linear-gradient(100deg, rgb(138, 131, 120) 0%, rgb(58, 58, 58) 16%, rgb(207, 201, 190) 30%, rgb(255, 255, 255) 42%, rgb(207, 201, 190) 54%, rgb(58, 58, 58) 70%, rgb(138, 131, 120) 100%) 0% 0% / 200% 100%; animation: 7s linear 0s infinite normal none running metal; border: 0px; cursor: pointer; font-family: inherit;"><span data-dc-tpl="22" style="display: flex; align-items: center; justify-content: center; border-radius: 100px; background: linear-gradient(rgb(255, 255, 255) 0%, rgb(232, 229, 223) 100%); color: rgb(11, 11, 11); font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; padding: 11px clamp(13px, 4vw, 17px); min-height: 44px; font-size: clamp(11px, 3.2vw, 12px); white-space: nowrap;">Agendar</span></button>
-        <button data-dc-tpl="23" type="button" aria-label="Abrir menu" aria-expanded="false" style="font-family: inherit; cursor: pointer; width: 44px; height: 44px; border: 1px solid rgba(246, 244, 239, 0.28); background: transparent; color: rgb(246, 244, 239); font-size: 17px;"><span class="sc-interp">☰</span></button>
+      <div data-dc-tpl="21" style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
+        <button data-dc-tpl="22" type="button" style="display: inline-flex; padding: 1.5px; border-radius: 100px; background: linear-gradient(100deg, rgb(138, 131, 120) 0%, rgb(58, 58, 58) 16%, rgb(207, 201, 190) 30%, rgb(255, 255, 255) 42%, rgb(207, 201, 190) 54%, rgb(58, 58, 58) 70%, rgb(138, 131, 120) 100%) 0% 0% / 200% 100%; animation: 7s linear 0s infinite normal none running metal; border: 0px; cursor: pointer; font-family: inherit;"><span data-dc-tpl="23" style="display: flex; align-items: center; justify-content: center; border-radius: 100px; background: linear-gradient(rgb(255, 255, 255) 0%, rgb(232, 229, 223) 100%); color: rgb(11, 11, 11); font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; padding: 11px clamp(13px, 4vw, 17px); min-height: 44px; font-size: clamp(11px, 3.2vw, 12px); white-space: nowrap;">Agendar</span></button>
+        <button data-dc-tpl="24" type="button" aria-label="Abrir menu" aria-expanded="false" style="font-family: inherit; cursor: pointer; width: 44px; height: 44px; border: 1px solid rgba(246, 244, 239, 0.28); background: transparent; color: rgb(246, 244, 239); font-size: 17px;"><span class="sc-interp">☰</span></button>
       </div>
     
   </div>
@@ -646,7 +661,6 @@ html,body{background:#080908}
         <a data-dc-tpl="19" href="/termos-de-uso/" class="scp3" style="font-size: 12px; color: rgb(197, 194, 187); text-decoration: none;">Termos de Uso</a>
       </span>
       <a data-dc-tpl="20" href="https://wa.me/5527998713993?text=Ol%C3%A1!%20Vim%20pelo%20seu%20site%20e%20quero%20agendar%20um%20corte%20como%20visitante" target="_blank" rel="noopener noreferrer" class="scp3" style="font-size: 12px; color: rgb(197, 194, 187); text-decoration: none;">WhatsApp <span class="sc-interp">+55 27 99871-3993</span></a>
-      
     </div>
   </footer></div></div></div></div>
 </div>

@@ -73,6 +73,23 @@
       foto: 'img/unidade-av-industrial.webp', fotoAlt: 'Fachada iluminada de uma unidade do Salão Morenos à noite', fotoConfirmada: false,
       bookingUrl: null, googleProfile: null },
   ];
+  // Campo de midia por unidade. A foto fica aqui, num lugar so, para ser
+  // trocada quando chegar a imagem real daquele endereco: nada de procurar
+  // caminho de imagem espalhado pelas paginas.
+  //
+  // Enquanto fotoConfirmada for false, a pagina NAO usa a imagem de fachada:
+  // um cartao com o nome da avenida e uma fachada embaixo afirma que aquele
+  // predio e aquele endereco, e isso ninguem confirmou. Entra uma foto do
+  // atendimento, com alt que nao diz onde foi. Sem aviso na tela: o visitante
+  // nao precisa saber do nosso inventario de fotos.
+  C.fotoNeutra = ['img/foto-salao.webp', 'img/foto-atendimento-2.webp', 'img/foto-atendimento.webp'];
+  C.locations.forEach(function (l, i) {
+    if (!l.fotoConfirmada) {
+      l.fotoPendente = l.foto;
+      l.foto = C.fotoNeutra[i % C.fotoNeutra.length];
+      l.fotoAlt = 'Ambiente do Salão Morenos durante o atendimento';
+    }
+  });
   C.locations.forEach(function (l) {
     l.enderecoLinha = l.logradouro + ', ' + l.bairro + ', ' + l.cidade + ' — ' + l.estado + ', CEP ' + l.cep;
     l.rota = l.googleProfile || ('https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(l.logradouro + ', ' + l.bairro + ', ' + l.cidade + ' - ' + l.estado + ', ' + l.cep));

@@ -52,12 +52,13 @@
 <link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="icon" href="/favicon-192.png" sizes="192x192" type="image/png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<style>html,body{height:auto !important}#dc-root,#dc-root>.sc-host{height:auto !important}</style>
+<style>@media (prefers-reduced-motion: reduce){
+*,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;
+transition-duration:.01ms !important;scroll-behavior:auto !important}}</style>
 <style>html,body{background:#080908}</style>
 <link rel="preload" as="image" href="/assets/morenos-loader-outline-white.webp">
 <script>/* site-config.js embutido no build */
-/* Salão Morenos — configuração central do site.
-   Tudo que é telefone, link, endereço, horário, serviço, plano e SEO mora aqui.
-   source: "legacy-site" = migrado do site antigo. needsConfirmation: true = validar com o cliente. */
 (function () {
   var C = {};
 
@@ -88,7 +89,6 @@
   C.hours = {
     source: 'legacy-site', needsConfirmation: true,
     rows: [ { dias: 'Segunda a sexta', horario: '08:00 – 20:00' }, { dias: 'Sábado', horario: '09:00 – 18:00' } ],
-    // Domingo não informado no site antigo: não exibir.
   };
 
   C.routes = {
@@ -121,12 +121,12 @@
 
   C.locations = [
     { id: 'cidade-continental', nome: 'Salão Morenos — Cidade Continental', curto: 'Cidade Continental',
-      bairroLabel: 'Cidade Continental', logradouro: 'Avenida Terceiro Mundo', numero: null /* needsConfirmation */,
+      bairroLabel: 'Cidade Continental', logradouro: 'Avenida Terceiro Mundo', numero: null,
       bairro: 'Cidade Continental — Setor Ásia', cidade: 'Serra', estado: 'ES', cep: '29163-603',
       foto: '/img/unidade-cidade-continental.webp', fotoAlt: 'Fachada do Salão Morenos com a placa Cidade Continental', fotoConfirmada: true,
-      bookingUrl: null /* TODO: substituir por bookingUrl específico após confirmação */, googleProfile: null },
+      bookingUrl: null, googleProfile: null },
     { id: 'novo-horizonte-av-brasil', nome: 'Salão Morenos — Novo Horizonte — Avenida Brasil', curto: 'Novo Horizonte — Av. Brasil',
-      bairroLabel: 'Novo Horizonte', logradouro: 'Avenida Brasil', numero: null /* needsConfirmation: não usar números de fontes externas */,
+      bairroLabel: 'Novo Horizonte', logradouro: 'Avenida Brasil', numero: null,
       bairro: 'Novo Horizonte', cidade: 'Serra', estado: 'ES', cep: '29163-331',
       foto: '/img/unidade-av-brasil.webp', fotoAlt: 'Vitrine de uma unidade do Salão Morenos', fotoConfirmada: false,
       bookingUrl: null, googleProfile: null },
@@ -136,6 +136,23 @@
       foto: '/img/unidade-av-industrial.webp', fotoAlt: 'Fachada iluminada de uma unidade do Salão Morenos à noite', fotoConfirmada: false,
       bookingUrl: null, googleProfile: null },
   ];
+  // Campo de midia por unidade. A foto fica aqui, num lugar so, para ser
+  // trocada quando chegar a imagem real daquele endereco: nada de procurar
+  // caminho de imagem espalhado pelas paginas.
+  //
+  // Enquanto fotoConfirmada for false, a pagina NAO usa a imagem de fachada:
+  // um cartao com o nome da avenida e uma fachada embaixo afirma que aquele
+  // predio e aquele endereco, e isso ninguem confirmou. Entra uma foto do
+  // atendimento, com alt que nao diz onde foi. Sem aviso na tela: o visitante
+  // nao precisa saber do nosso inventario de fotos.
+  C.fotoNeutra = ['/img/foto-salao.webp', '/img/foto-atendimento-2.webp', '/img/foto-atendimento.webp'];
+  C.locations.forEach(function (l, i) {
+    if (!l.fotoConfirmada) {
+      l.fotoPendente = l.foto;
+      l.foto = C.fotoNeutra[i % C.fotoNeutra.length];
+      l.fotoAlt = 'Ambiente do Salão Morenos durante o atendimento';
+    }
+  });
   C.locations.forEach(function (l) {
     l.enderecoLinha = l.logradouro + ', ' + l.bairro + ', ' + l.cidade + ' — ' + l.estado + ', CEP ' + l.cep;
     l.rota = l.googleProfile || ('https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(l.logradouro + ', ' + l.bairro + ', ' + l.cidade + ' - ' + l.estado + ', ' + l.cep));
@@ -145,7 +162,6 @@
   });
   C.location = function (id) { for (var i = 0; i < C.locations.length; i++) if (C.locations[i].id === id) return C.locations[i]; return null; };
 
-  // Durações: source legacy-site, needsConfirmation. Sem preços individuais.
   C.services = [
     { id: 'corte-masculino', nome: 'Corte Masculino', cat: 'cabelo', duracao: '30 min', pagina: 'corte-masculino',
       desc: 'Corte masculino personalizado de acordo com referências, estilo e preferência do cliente, com atenção ao acabamento.' },
@@ -186,7 +202,6 @@
     { id: 'familia-6', nome: 'Família Corte e Barba Clássico', tipo: ['familia'], preco: 'R$ 169,90', desc: '6 procedimentos mensais.',
       itens: ['Cabelo ou barba', 'Descontos em serviços', 'Descontos em produtos'] },
   ];
-  // "Periodicidade" e "Agendamentos simultâneos" aparecem sem valor no site antigo: não exibir.
   C.clubPlans.forEach(function (p) { p.source = 'legacy-site'; p.needsConfirmation = true; p.periodo = '/mês'; });
   C.clubFilters = [ { id: 'todos', nome: 'Todos' }, { id: 'ilimitados', nome: 'Ilimitados' }, { id: 'custo', nome: 'Custo-benefício' }, { id: 'familia', nome: 'Família' } ];
 
@@ -566,8 +581,7 @@ html,body{background:#080908}
 .scpf:hover { transform: translateY(-4px) !important; box-shadow: rgba(11, 11, 11, 0.5) 0px 28px 50px -30px !important; }
 .scpg:hover { border-color: rgb(183, 154, 106) !important; transform: translateY(-4px) !important; }
 .scph:hover { transform: translateY(-4px) !important; box-shadow: rgba(11, 11, 11, 0.55) 0px 28px 50px -28px !important; }
-.scpi:hover { transform: scale(1.05) !important; }
-.scpj:hover { border-color: rgb(183, 154, 106) !important; transform: translateY(-3px) !important; color: rgb(246, 244, 239) !important; }</style>
+.scpi:hover { transform: scale(1.05) !important; }</style>
 <style id="mo-troca">
   x-dc { display: none !important; }
   #dc-root { display: none; }
@@ -587,9 +601,9 @@ html,body{background:#080908}
     
 
     
-      <div data-dc-tpl="20" style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
-        <button data-dc-tpl="21" type="button" style="display: inline-flex; padding: 1.5px; border-radius: 100px; background: linear-gradient(100deg, rgb(138, 131, 120) 0%, rgb(58, 58, 58) 16%, rgb(207, 201, 190) 30%, rgb(255, 255, 255) 42%, rgb(207, 201, 190) 54%, rgb(58, 58, 58) 70%, rgb(138, 131, 120) 100%) 0% 0% / 200% 100%; animation: 7s linear 0s infinite normal none running metal; border: 0px; cursor: pointer; font-family: inherit;"><span data-dc-tpl="22" style="display: flex; align-items: center; justify-content: center; border-radius: 100px; background: linear-gradient(rgb(255, 255, 255) 0%, rgb(232, 229, 223) 100%); color: rgb(11, 11, 11); font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; padding: 11px clamp(13px, 4vw, 17px); min-height: 44px; font-size: clamp(11px, 3.2vw, 12px); white-space: nowrap;">Agendar</span></button>
-        <button data-dc-tpl="23" type="button" aria-label="Abrir menu" aria-expanded="false" style="font-family: inherit; cursor: pointer; width: 44px; height: 44px; border: 1px solid rgba(246, 244, 239, 0.28); background: transparent; color: rgb(246, 244, 239); font-size: 17px;"><span class="sc-interp">☰</span></button>
+      <div data-dc-tpl="21" style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
+        <button data-dc-tpl="22" type="button" style="display: inline-flex; padding: 1.5px; border-radius: 100px; background: linear-gradient(100deg, rgb(138, 131, 120) 0%, rgb(58, 58, 58) 16%, rgb(207, 201, 190) 30%, rgb(255, 255, 255) 42%, rgb(207, 201, 190) 54%, rgb(58, 58, 58) 70%, rgb(138, 131, 120) 100%) 0% 0% / 200% 100%; animation: 7s linear 0s infinite normal none running metal; border: 0px; cursor: pointer; font-family: inherit;"><span data-dc-tpl="23" style="display: flex; align-items: center; justify-content: center; border-radius: 100px; background: linear-gradient(rgb(255, 255, 255) 0%, rgb(232, 229, 223) 100%); color: rgb(11, 11, 11); font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; padding: 11px clamp(13px, 4vw, 17px); min-height: 44px; font-size: clamp(11px, 3.2vw, 12px); white-space: nowrap;">Agendar</span></button>
+        <button data-dc-tpl="24" type="button" aria-label="Abrir menu" aria-expanded="false" style="font-family: inherit; cursor: pointer; width: 44px; height: 44px; border: 1px solid rgba(246, 244, 239, 0.28); background: transparent; color: rgb(246, 244, 239); font-size: 17px;"><span class="sc-interp">☰</span></button>
       </div>
     
   </div>
@@ -683,100 +697,6 @@ html,body{background:#080908}
   
 
   
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-    <div data-dc-tpl="275" aria-hidden="true" style="background: rgb(11, 11, 11); border-top: 1px solid rgba(246, 244, 239, 0.1); border-bottom: 1px solid rgba(246, 244, 239, 0.1); overflow: hidden; padding: 22px 0px;">
-      <div data-dc-tpl="276" style="display: flex; width: max-content; animation: 42s linear 0s infinite normal none running pmMarq;">
-        
-          <span data-dc-tpl="278" style="display: flex; align-items: center; gap: 28px; padding-right: 28px; font-size: clamp(22px, 2.6vw, 36px); font-weight: 700; letter-spacing: -0.01em; text-transform: uppercase; color: rgb(246, 244, 239); white-space: nowrap;"><span class="sc-interp">Corte</span><span data-dc-tpl="279" style="width: 8px; height: 8px; border-radius: 50%; background: rgb(183, 154, 106);"></span></span>
-        
-          <span data-dc-tpl="278" style="display: flex; align-items: center; gap: 28px; padding-right: 28px; font-size: clamp(22px, 2.6vw, 36px); font-weight: 700; letter-spacing: -0.01em; text-transform: uppercase; color: rgb(58, 58, 58); white-space: nowrap;"><span class="sc-interp">Barba</span><span data-dc-tpl="279" style="width: 8px; height: 8px; border-radius: 50%; background: rgb(183, 154, 106);"></span></span>
-        
-          <span data-dc-tpl="278" style="display: flex; align-items: center; gap: 28px; padding-right: 28px; font-size: clamp(22px, 2.6vw, 36px); font-weight: 700; letter-spacing: -0.01em; text-transform: uppercase; color: rgb(246, 244, 239); white-space: nowrap;"><span class="sc-interp">Estilo</span><span data-dc-tpl="279" style="width: 8px; height: 8px; border-radius: 50%; background: rgb(183, 154, 106);"></span></span>
-        
-          <span data-dc-tpl="278" style="display: flex; align-items: center; gap: 28px; padding-right: 28px; font-size: clamp(22px, 2.6vw, 36px); font-weight: 700; letter-spacing: -0.01em; text-transform: uppercase; color: rgb(58, 58, 58); white-space: nowrap;"><span class="sc-interp">Rotina</span><span data-dc-tpl="279" style="width: 8px; height: 8px; border-radius: 50%; background: rgb(183, 154, 106);"></span></span>
-        
-          <span data-dc-tpl="278" style="display: flex; align-items: center; gap: 28px; padding-right: 28px; font-size: clamp(22px, 2.6vw, 36px); font-weight: 700; letter-spacing: -0.01em; text-transform: uppercase; color: rgb(246, 244, 239); white-space: nowrap;"><span class="sc-interp">Morenos</span><span data-dc-tpl="279" style="width: 8px; height: 8px; border-radius: 50%; background: rgb(183, 154, 106);"></span></span>
-        
-          <span data-dc-tpl="278" style="display: flex; align-items: center; gap: 28px; padding-right: 28px; font-size: clamp(22px, 2.6vw, 36px); font-weight: 700; letter-spacing: -0.01em; text-transform: uppercase; color: rgb(58, 58, 58); white-space: nowrap;"><span class="sc-interp">Serra</span><span data-dc-tpl="279" style="width: 8px; height: 8px; border-radius: 50%; background: rgb(183, 154, 106);"></span></span>
-        
-          <span data-dc-tpl="278" style="display: flex; align-items: center; gap: 28px; padding-right: 28px; font-size: clamp(22px, 2.6vw, 36px); font-weight: 700; letter-spacing: -0.01em; text-transform: uppercase; color: rgb(246, 244, 239); white-space: nowrap;"><span class="sc-interp">Corte</span><span data-dc-tpl="279" style="width: 8px; height: 8px; border-radius: 50%; background: rgb(183, 154, 106);"></span></span>
-        
-          <span data-dc-tpl="278" style="display: flex; align-items: center; gap: 28px; padding-right: 28px; font-size: clamp(22px, 2.6vw, 36px); font-weight: 700; letter-spacing: -0.01em; text-transform: uppercase; color: rgb(58, 58, 58); white-space: nowrap;"><span class="sc-interp">Barba</span><span data-dc-tpl="279" style="width: 8px; height: 8px; border-radius: 50%; background: rgb(183, 154, 106);"></span></span>
-        
-          <span data-dc-tpl="278" style="display: flex; align-items: center; gap: 28px; padding-right: 28px; font-size: clamp(22px, 2.6vw, 36px); font-weight: 700; letter-spacing: -0.01em; text-transform: uppercase; color: rgb(246, 244, 239); white-space: nowrap;"><span class="sc-interp">Estilo</span><span data-dc-tpl="279" style="width: 8px; height: 8px; border-radius: 50%; background: rgb(183, 154, 106);"></span></span>
-        
-          <span data-dc-tpl="278" style="display: flex; align-items: center; gap: 28px; padding-right: 28px; font-size: clamp(22px, 2.6vw, 36px); font-weight: 700; letter-spacing: -0.01em; text-transform: uppercase; color: rgb(58, 58, 58); white-space: nowrap;"><span class="sc-interp">Rotina</span><span data-dc-tpl="279" style="width: 8px; height: 8px; border-radius: 50%; background: rgb(183, 154, 106);"></span></span>
-        
-          <span data-dc-tpl="278" style="display: flex; align-items: center; gap: 28px; padding-right: 28px; font-size: clamp(22px, 2.6vw, 36px); font-weight: 700; letter-spacing: -0.01em; text-transform: uppercase; color: rgb(246, 244, 239); white-space: nowrap;"><span class="sc-interp">Morenos</span><span data-dc-tpl="279" style="width: 8px; height: 8px; border-radius: 50%; background: rgb(183, 154, 106);"></span></span>
-        
-          <span data-dc-tpl="278" style="display: flex; align-items: center; gap: 28px; padding-right: 28px; font-size: clamp(22px, 2.6vw, 36px); font-weight: 700; letter-spacing: -0.01em; text-transform: uppercase; color: rgb(58, 58, 58); white-space: nowrap;"><span class="sc-interp">Serra</span><span data-dc-tpl="279" style="width: 8px; height: 8px; border-radius: 50%; background: rgb(183, 154, 106);"></span></span>
-        
-          <span data-dc-tpl="278" style="display: flex; align-items: center; gap: 28px; padding-right: 28px; font-size: clamp(22px, 2.6vw, 36px); font-weight: 700; letter-spacing: -0.01em; text-transform: uppercase; color: rgb(246, 244, 239); white-space: nowrap;"><span class="sc-interp">Corte</span><span data-dc-tpl="279" style="width: 8px; height: 8px; border-radius: 50%; background: rgb(183, 154, 106);"></span></span>
-        
-          <span data-dc-tpl="278" style="display: flex; align-items: center; gap: 28px; padding-right: 28px; font-size: clamp(22px, 2.6vw, 36px); font-weight: 700; letter-spacing: -0.01em; text-transform: uppercase; color: rgb(58, 58, 58); white-space: nowrap;"><span class="sc-interp">Barba</span><span data-dc-tpl="279" style="width: 8px; height: 8px; border-radius: 50%; background: rgb(183, 154, 106);"></span></span>
-        
-          <span data-dc-tpl="278" style="display: flex; align-items: center; gap: 28px; padding-right: 28px; font-size: clamp(22px, 2.6vw, 36px); font-weight: 700; letter-spacing: -0.01em; text-transform: uppercase; color: rgb(246, 244, 239); white-space: nowrap;"><span class="sc-interp">Estilo</span><span data-dc-tpl="279" style="width: 8px; height: 8px; border-radius: 50%; background: rgb(183, 154, 106);"></span></span>
-        
-          <span data-dc-tpl="278" style="display: flex; align-items: center; gap: 28px; padding-right: 28px; font-size: clamp(22px, 2.6vw, 36px); font-weight: 700; letter-spacing: -0.01em; text-transform: uppercase; color: rgb(58, 58, 58); white-space: nowrap;"><span class="sc-interp">Rotina</span><span data-dc-tpl="279" style="width: 8px; height: 8px; border-radius: 50%; background: rgb(183, 154, 106);"></span></span>
-        
-          <span data-dc-tpl="278" style="display: flex; align-items: center; gap: 28px; padding-right: 28px; font-size: clamp(22px, 2.6vw, 36px); font-weight: 700; letter-spacing: -0.01em; text-transform: uppercase; color: rgb(246, 244, 239); white-space: nowrap;"><span class="sc-interp">Morenos</span><span data-dc-tpl="279" style="width: 8px; height: 8px; border-radius: 50%; background: rgb(183, 154, 106);"></span></span>
-        
-          <span data-dc-tpl="278" style="display: flex; align-items: center; gap: 28px; padding-right: 28px; font-size: clamp(22px, 2.6vw, 36px); font-weight: 700; letter-spacing: -0.01em; text-transform: uppercase; color: rgb(58, 58, 58); white-space: nowrap;"><span class="sc-interp">Serra</span><span data-dc-tpl="279" style="width: 8px; height: 8px; border-radius: 50%; background: rgb(183, 154, 106);"></span></span>
-        
-          <span data-dc-tpl="278" style="display: flex; align-items: center; gap: 28px; padding-right: 28px; font-size: clamp(22px, 2.6vw, 36px); font-weight: 700; letter-spacing: -0.01em; text-transform: uppercase; color: rgb(246, 244, 239); white-space: nowrap;"><span class="sc-interp">Corte</span><span data-dc-tpl="279" style="width: 8px; height: 8px; border-radius: 50%; background: rgb(183, 154, 106);"></span></span>
-        
-          <span data-dc-tpl="278" style="display: flex; align-items: center; gap: 28px; padding-right: 28px; font-size: clamp(22px, 2.6vw, 36px); font-weight: 700; letter-spacing: -0.01em; text-transform: uppercase; color: rgb(58, 58, 58); white-space: nowrap;"><span class="sc-interp">Barba</span><span data-dc-tpl="279" style="width: 8px; height: 8px; border-radius: 50%; background: rgb(183, 154, 106);"></span></span>
-        
-          <span data-dc-tpl="278" style="display: flex; align-items: center; gap: 28px; padding-right: 28px; font-size: clamp(22px, 2.6vw, 36px); font-weight: 700; letter-spacing: -0.01em; text-transform: uppercase; color: rgb(246, 244, 239); white-space: nowrap;"><span class="sc-interp">Estilo</span><span data-dc-tpl="279" style="width: 8px; height: 8px; border-radius: 50%; background: rgb(183, 154, 106);"></span></span>
-        
-          <span data-dc-tpl="278" style="display: flex; align-items: center; gap: 28px; padding-right: 28px; font-size: clamp(22px, 2.6vw, 36px); font-weight: 700; letter-spacing: -0.01em; text-transform: uppercase; color: rgb(58, 58, 58); white-space: nowrap;"><span class="sc-interp">Rotina</span><span data-dc-tpl="279" style="width: 8px; height: 8px; border-radius: 50%; background: rgb(183, 154, 106);"></span></span>
-        
-          <span data-dc-tpl="278" style="display: flex; align-items: center; gap: 28px; padding-right: 28px; font-size: clamp(22px, 2.6vw, 36px); font-weight: 700; letter-spacing: -0.01em; text-transform: uppercase; color: rgb(246, 244, 239); white-space: nowrap;"><span class="sc-interp">Morenos</span><span data-dc-tpl="279" style="width: 8px; height: 8px; border-radius: 50%; background: rgb(183, 154, 106);"></span></span>
-        
-          <span data-dc-tpl="278" style="display: flex; align-items: center; gap: 28px; padding-right: 28px; font-size: clamp(22px, 2.6vw, 36px); font-weight: 700; letter-spacing: -0.01em; text-transform: uppercase; color: rgb(58, 58, 58); white-space: nowrap;"><span class="sc-interp">Serra</span><span data-dc-tpl="279" style="width: 8px; height: 8px; border-radius: 50%; background: rgb(183, 154, 106);"></span></span>
-        
-      </div>
-    </div>
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
     <section data-dc-tpl="92" id="secao-1" aria-label="Atendimento próximo, do primeiro papo ao acabamento." style="background: rgb(11, 11, 11); color: rgb(246, 244, 239); padding: clamp(56px, 7vw, 110px) clamp(16px, 3vw, 36px);">
       <div data-dc-tpl="93" style="max-width: 1480px; margin: 0px auto; display: flex; flex-wrap: wrap; gap: clamp(30px, 5vw, 80px); align-items: center;">
         <div data-dc-tpl="94" style="flex: 1 1 420px; display: flex; flex-direction: column; gap: 20px; order: 1;">
@@ -833,8 +753,6 @@ html,body{background:#080908}
   
 
   
-
-  
     <section data-dc-tpl="92" id="secao-2" aria-label="Quem pode se candidatar." style="background: rgb(246, 244, 239); color: rgb(11, 11, 11); padding: clamp(56px, 7vw, 110px) clamp(16px, 3vw, 36px);">
       <div data-dc-tpl="93" style="max-width: 1480px; margin: 0px auto; display: flex; flex-wrap: wrap; gap: clamp(30px, 5vw, 80px); align-items: center;">
         <div data-dc-tpl="94" style="flex: 1 1 420px; display: flex; flex-direction: column; gap: 20px; order: 1;">
@@ -850,8 +768,6 @@ html,body{background:#080908}
         
       </div>
     </section>
-  
-
   
 
   
@@ -1003,8 +919,6 @@ html,body{background:#080908}
   
 
   
-
-  
     <section data-dc-tpl="247" id="duvidas" aria-label="Dúvidas sobre candidaturas." style="background: rgb(255, 255, 255); color: rgb(11, 11, 11); padding: clamp(56px, 7vw, 104px) clamp(16px, 3vw, 36px);">
       <div data-dc-tpl="248" style="max-width: 900px; margin: 0px auto; display: flex; flex-direction: column; gap: 10px;">
         <span data-dc-tpl="249" style="font-size: 12px; font-weight: 700; letter-spacing: 0.3em; text-transform: uppercase; color: rgb(138, 111, 62); text-align: center;">Dúvidas</span>
@@ -1038,12 +952,95 @@ html,body{background:#080908}
             </div>
           </div>
         
+          <div data-dc-tpl="252" style="background: rgb(246, 244, 239); color: rgb(11, 11, 11); border-radius: 20px; overflow: hidden; transition: background 0.5s cubic-bezier(0.22, 1, 0.36, 1), color 0.4s;">
+            <h3 data-dc-tpl="253" style="margin: 0px;">
+              <button data-dc-tpl="254" type="button" aria-expanded="false" style="font-family: inherit; cursor: pointer; width: 100%; text-align: left; background: transparent; border: 0px; color: inherit; padding: 22px 24px; display: flex; gap: 18px; align-items: center; justify-content: space-between; font-size: 17px; font-weight: 600; min-height: 64px;">
+                <span data-dc-tpl="255"><span class="sc-interp">Existe vaga aberta agora?</span></span>
+                <span data-dc-tpl="256" aria-hidden="true" style="flex-shrink: 0; width: 32px; height: 32px; border-radius: 50%; border: 1px solid rgba(11, 11, 11, 0.25); display: flex; align-items: center; justify-content: center; font-size: 18px; transform: rotate(0deg); transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);">+</span>
+              </button>
+            </h3>
+            <div data-dc-tpl="257" style="display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.58s cubic-bezier(0.22, 1, 0.36, 1);">
+              <div data-dc-tpl="258" style="overflow: hidden; min-height: 0px;">
+                <p data-dc-tpl="259" style="margin: 0px; padding: 0px 24px 24px; font-size: 16px; line-height: 1.7; color: rgb(95, 92, 87); max-width: 66ch; transition: opacity 0.5s 0.05s;"><span class="sc-interp">Esta página não anuncia vaga. O que você envia fica registrado como interesse profissional, e a equipe entra em contato caso apareça uma oportunidade.</span></p>
+              </div>
+            </div>
+          </div>
+        
+          <div data-dc-tpl="252" style="background: rgb(246, 244, 239); color: rgb(11, 11, 11); border-radius: 20px; overflow: hidden; transition: background 0.5s cubic-bezier(0.22, 1, 0.36, 1), color 0.4s;">
+            <h3 data-dc-tpl="253" style="margin: 0px;">
+              <button data-dc-tpl="254" type="button" aria-expanded="false" style="font-family: inherit; cursor: pointer; width: 100%; text-align: left; background: transparent; border: 0px; color: inherit; padding: 22px 24px; display: flex; gap: 18px; align-items: center; justify-content: space-between; font-size: 17px; font-weight: 600; min-height: 64px;">
+                <span data-dc-tpl="255"><span class="sc-interp">Como sei que meu envio chegou?</span></span>
+                <span data-dc-tpl="256" aria-hidden="true" style="flex-shrink: 0; width: 32px; height: 32px; border-radius: 50%; border: 1px solid rgba(11, 11, 11, 0.25); display: flex; align-items: center; justify-content: center; font-size: 18px; transform: rotate(0deg); transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);">+</span>
+              </button>
+            </h3>
+            <div data-dc-tpl="257" style="display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.58s cubic-bezier(0.22, 1, 0.36, 1);">
+              <div data-dc-tpl="258" style="overflow: hidden; min-height: 0px;">
+                <p data-dc-tpl="259" style="margin: 0px; padding: 0px 24px 24px; font-size: 16px; line-height: 1.7; color: rgb(95, 92, 87); max-width: 66ch; transition: opacity 0.5s 0.05s;"><span class="sc-interp">O formulário abre o WhatsApp da Morenos com os seus dados preenchidos. O envio só acontece quando você manda a mensagem por lá.</span></p>
+              </div>
+            </div>
+          </div>
+        
       </div>
     </section>
   
 
   
 
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    <section data-dc-tpl="261" aria-label="Quer fazer parte do time?" style="position: relative; overflow: hidden; background: rgb(11, 11, 11);">
+      <img data-dc-tpl="262" src="/img/foto-corte.webp" alt="" aria-hidden="true" width="1600" height="1000" loading="lazy" decoding="async" style="position: absolute; inset: 0px; width: 100%; height: 100%; object-fit: cover; opacity: 0.32;">
+      <div data-dc-tpl="263" aria-hidden="true" style="position: absolute; inset: 0px; background: linear-gradient(rgb(11, 11, 11) 4%, rgba(11, 11, 11, 0.72) 50%, rgb(11, 11, 11) 100%);"></div>
+      <div data-dc-tpl="264" style="position: relative; max-width: 1480px; margin: 0px auto; padding: clamp(52px, 6.5vw, 92px) clamp(16px, 3vw, 36px); display: flex; flex-direction: column; align-items: center; text-align: center; gap: 20px;">
+        <h2 data-dc-tpl="265" style="margin: 0px; font-size: clamp(34px, 5vw, 68px); line-height: 1; font-weight: 700; letter-spacing: -0.035em; max-width: 18ch; text-wrap: balance;"><span class="sc-interp">Quer fazer parte do time?</span></h2>
+        <p data-dc-tpl="266" style="margin: 0px; max-width: 52ch; font-size: clamp(16px, 1.4vw, 19px); line-height: 1.6; color: rgb(197, 194, 187);"><span class="sc-interp">Envie seu interesse profissional. A conversa segue pelo WhatsApp.</span></p>
+        <div data-dc-tpl="267" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin-top: 10px;">
+          
+            <a data-dc-tpl="270" href="#interesse" target="_self" rel="" class="scp8" style="display: inline-flex; padding: 1.5px; border-radius: 100px; background: linear-gradient(100deg, rgb(138, 131, 120) 0%, rgb(58, 58, 58) 16%, rgb(207, 201, 190) 30%, rgb(255, 255, 255) 42%, rgb(207, 201, 190) 54%, rgb(58, 58, 58) 70%, rgb(138, 131, 120) 100%) 0% 0% / 200% 100%; animation: 7s linear 0s infinite normal none running metal; box-shadow: rgba(0, 0, 0, 0.6) 0px 12px 26px -10px; text-decoration: none; transition: filter 0.45s, transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);"><span data-dc-tpl="271" style="display: flex; align-items: center; justify-content: center; border-radius: 100px; background: linear-gradient(rgb(255, 255, 255) 0%, rgb(232, 229, 223) 100%); color: rgb(11, 11, 11); font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; padding: 16px 26px; min-height: 50px; font-size: 13px;"><span class="sc-interp">Enviar meu interesse</span></span></a>
+            
+          
+            
+            <a data-dc-tpl="273" href="/cultura/" target="_self" rel="" class="scp9" style="display: inline-flex; padding: 1.5px; border-radius: 100px; background: linear-gradient(100deg, rgb(11, 11, 11) 0%, rgb(58, 58, 58) 18%, rgb(156, 150, 140) 32%, rgb(243, 239, 232) 42%, rgb(156, 150, 140) 52%, rgb(58, 58, 58) 68%, rgb(11, 11, 11) 100%) 0% 0% / 200% 100%; animation: 7s linear 0s infinite normal none running metal; box-shadow: rgba(0, 0, 0, 0.85) 0px 12px 26px -10px; text-decoration: none; transition: filter 0.45s, transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);"><span data-dc-tpl="274" style="display: flex; align-items: center; justify-content: center; border-radius: 100px; background: linear-gradient(rgb(32, 32, 32) 0%, rgb(0, 0, 0) 100%); color: rgb(232, 229, 223); font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; padding: 16px 26px; min-height: 50px; font-size: 13px;"><span class="sc-interp">Sobre a Morenos</span></span></a>
+          
+        </div>
+        
+          <a data-dc-tpl="276" href="https://wa.me/5527998713993?text=Ol%C3%A1!%20Vim%20pela%20p%C3%A1gina%20Trabalhe%20Conosco%20do%20site%20da%20Morenos%20e%20gostaria%20de%20enviar%20meu%20interesse%20profissional." target="_blank" rel="noopener noreferrer" class="scp1" style="margin-top: 8px; font-size: 14px; font-weight: 600; color: rgb(197, 194, 187); min-height: 44px; display: inline-flex; align-items: center; text-decoration: none;">Prefere conversar antes? Fale pelo WhatsApp →</a>
+        
+      </div>
+    </section>
   
 
   
@@ -1119,7 +1116,6 @@ html,body{background:#080908}
         <a data-dc-tpl="19" href="/termos-de-uso/" class="scp1" style="font-size: 12px; color: rgb(197, 194, 187); text-decoration: none;">Termos de Uso</a>
       </span>
       <a data-dc-tpl="20" href="https://wa.me/5527998713993?text=Ol%C3%A1!%20Vim%20pelo%20seu%20site%20e%20quero%20agendar%20um%20corte%20como%20visitante" target="_blank" rel="noopener noreferrer" class="scp1" style="font-size: 12px; color: rgb(197, 194, 187); text-decoration: none;">WhatsApp <span class="sc-interp">+55 27 99871-3993</span></a>
-      
     </div>
   </footer></div></div></div></div>
 </div>

@@ -133,6 +133,24 @@ AVALIACOES_DIR = FONTE / "avaliacoes"
 
 VIEWPORT = '<meta name="viewport" content="width=device-width, initial-scale=1">'
 
+# O design usa animacao continua em varios lugares (o brilho metalico dos
+# botoes, a faixa em marquise, a troca automatica das etapas). Quem pede menos
+# movimento no sistema operacional tem que receber a pagina parada: a logica da
+# Home ja respeita prefers-reduced-motion, as animacoes em CSS nao respeitavam.
+# O support.js injeta, em toda pagina que nao tem $preview no data-props,
+# FULL_PAGE_CSS: "html,body{height:100%}#dc-root,#dc-root>.sc-host{height:100%}".
+# Isso serve para o canvas do Claude Design, onde a pagina ocupa a moldura.
+# Publicado, prende a altura do documento no tamanho da janela: as 16 rotas
+# montadas por componente (todas menos a Home, que tem $preview) ficavam sem
+# rolagem nenhuma — o visitante via o hero e mais nada. O !important ganha da
+# regra do runtime mesmo ela entrando depois no <head>.
+ALTURA_LIVRE = ("<style>html,body{height:auto !important}"
+                "#dc-root,#dc-root>.sc-host{height:auto !important}</style>")
+
+MENOS_MOVIMENTO = """<style>@media (prefers-reduced-motion: reduce){
+*,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;
+transition-duration:.01ms !important;scroll-behavior:auto !important}}</style>"""
+
 
 # site-config.js e site-loader.js precisam rodar ANTES do primeiro quadro (a
 # tela de abertura tem que cobrir a pagina desde o inicio), entao eram dois
@@ -153,7 +171,8 @@ def patch_pagina(html: str, avaliacoes: bool = False, config_js: str = "",
 
     if html.count(VIEWPORT) != 1:
         falhas.append("a meta viewport")
-    cabeca = FAVICONS + ("\n" + SCRIPT_AVALIACOES if avaliacoes else "")
+    cabeca = (FAVICONS + "\n" + ALTURA_LIVRE + "\n" + MENOS_MOVIMENTO
+              + ("\n" + SCRIPT_AVALIACOES if avaliacoes else ""))
     html = html.replace(VIEWPORT, VIEWPORT + "\n" + cabeca, 1)
 
     html = troca_links(RELATIVO_RE.sub(r'\1/\2', html))
@@ -186,9 +205,27 @@ def patch_pagina(html: str, avaliacoes: bool = False, config_js: str = "",
     return html
 
 
+# O site-config.js vai embutido no <head> de todas as rotas. As anotacoes de
+# procedencia ("validar com o cliente", "TODO: substituir...") ajudam quem
+# mantem o arquivo e nao precisam viajar em 17 paginas publicas.
+NOTA_JS_BLOCO = re.compile(
+    r"[ \t]*/\*(?:(?!\*/).)*?(?:TODO|FIXME|needsConfirmation|com o cliente|nao usar|não usar)"
+    r"(?:(?!\*/).)*?\*/[ \t]*\n?",
+    re.IGNORECASE | re.DOTALL)
+NOTA_JS_LINHA = re.compile(
+    r"^[ \t]*//[^\n]*(?:TODO|FIXME|needsConfirmation|com o cliente|nao exibir|não exibir)[^\n]*\n",
+    re.IGNORECASE | re.MULTILINE)
+
+
+RECADOS_TIRADOS: list = []
+
+
 def patch_config(js: str, homologacao: bool) -> str:
     """site-config.js: links internos para as URLs finais e caminhos absolutos."""
     js = troca_links(RELATIVO_RE.sub(r'\1/\2', js))
+    antes = len(js)
+    js = NOTA_JS_LINHA.sub("", NOTA_JS_BLOCO.sub("", js))
+    RECADOS_TIRADOS.append(("site-config.js", 1 if len(js) < antes else 0))
 
     agulha = "  C.locations = ["
     if js.count(agulha) != 1:
@@ -356,8 +393,8 @@ def patch_loader(js: str) -> str:
 # sao injetados aqui. Ver fonte/maquete/LEIA-ME.md.
 MAQUETE_DIR = FONTE / "maquete"
 
-# onde encaixar o markup: logo antes do bloco das avaliacoes
-MAQUETE_ANCORA_MARKUP = '  <sc-if value="{{ s.isAvaliacoes }}">'
+# onde encaixar o markup: logo antes do bloco do Clube
+MAQUETE_ANCORA_MARKUP = '  <sc-if value="{{ s.isClube }}">'
 # onde encaixar os metodos: antes do componentDidMount da classe
 MAQUETE_ANCORA_LOGICA = "  componentDidMount() {"
 # onde declarar os valores que a secao usa (o PaginaMorenos so devolve secoes)
@@ -372,7 +409,7 @@ def patch_maquete(js: str) -> str:
     logica = (MAQUETE_DIR / "logica.js").read_text(encoding="utf-8").rstrip()
     keyframes = (MAQUETE_DIR / "keyframes.css").read_text(encoding="utf-8").strip()
 
-    for agulha, nome in ((MAQUETE_ANCORA_MARKUP, "o bloco das avaliacoes"),
+    for agulha, nome in ((MAQUETE_ANCORA_MARKUP, "o bloco do Clube"),
                          (MAQUETE_ANCORA_LOGICA, "o componentDidMount"),
                          (MAQUETE_ANCORA_VALORES, "o mapa de secoes do renderVals"),
                          (MAQUETE_ANCORA_PAGINA, "a pagina do Clube")):
@@ -417,6 +454,25 @@ def patch_maquete(js: str) -> str:
     return js
 
 
+# Recados internos ("TODO: confirmar com cliente ...") sao uteis no fonte e
+# nao tem lugar no HTML publicado: quem abre o codigo-fonte da pagina le a
+# lista de pendencias da agencia. Ficam em fonte/PENDENCIAS.md.
+RECADO_RE = re.compile(
+    r"[ \t]*<!--(?:(?!-->).)*?(?:TODO|FIXME|needsConfirmation|confirmar com cliente|pendente de)"
+    r"(?:(?!-->).)*?-->[ \t]*\n?",
+    re.IGNORECASE | re.DOTALL)
+
+
+def tira_recados(html: str, onde: str) -> str:
+    html = NOTA_JS_LINHA.sub("", NOTA_JS_BLOCO.sub("", html))
+    achados = RECADO_RE.findall(html)
+    for a in achados:
+        if "<script" in a.lower():
+            raise SystemExit(f"erro: comentario suspeito em {onde} envolve um <script>: {a[:80]!r}")
+    RECADOS_TIRADOS.append((onde, len(achados)))
+    return RECADO_RE.sub("", html)
+
+
 def monta_palco(palco: pathlib.Path, homologacao: bool, avaliacoes: bool) -> None:
     """Monta a arvore que o Chromium vai enxergar — igual a publicada."""
     (palco / "_dc").mkdir(parents=True)
@@ -425,7 +481,8 @@ def monta_palco(palco: pathlib.Path, homologacao: bool, avaliacoes: bool) -> Non
         if c == "PaginaMorenos":
             texto = patch_maquete(texto)
         (palco / "_dc" / f"{c}.dc.html").write_text(
-            troca_links(RELATIVO_RE.sub(r'\1/\2', texto)), encoding="utf-8")
+            tira_recados(troca_links(RELATIVO_RE.sub(r'\1/\2', texto)), f"{c}.dc.html"),
+            encoding="utf-8")
 
     config_js = patch_config((PROTO / "site-config.js").read_text(encoding="utf-8"), homologacao)
     loader_js = patch_loader((PROTO / "site-loader.js").read_text(encoding="utf-8"))
@@ -434,8 +491,8 @@ def monta_palco(palco: pathlib.Path, homologacao: bool, avaliacoes: bool) -> Non
     for arquivo, *_ in ROTAS:
         alvo = palco / arquivo
         alvo.write_text(
-            patch_pagina((PROTO / arquivo).read_text(encoding="utf-8"), avaliacoes,
-                         config_js, loader_js, poppins_css),
+            tira_recados(patch_pagina((PROTO / arquivo).read_text(encoding="utf-8"), avaliacoes,
+                                      config_js, loader_js, poppins_css), arquivo),
             encoding="utf-8")
 
     shutil.copy2(PROTO / "smooth-scroll.js", palco / "smooth-scroll.js")
@@ -545,6 +602,10 @@ def confere_htaccess() -> None:
             "\n       Ajuste a regra em public/.htaccess antes de publicar.")
 
     print(f"  .htaccess: {len(padroes)} regra(s) de bloqueio, nenhum arquivo publicado atingido")
+    total = sum(n for _, n in RECADOS_TIRADOS)
+    if total:
+        onde = ", ".join(f"{o} ({n})" for o, n in RECADOS_TIRADOS if n)
+        print(f"  recados internos retirados do HTML publicado: {total} — {onde}")
 
 
 def main() -> int:

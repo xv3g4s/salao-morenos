@@ -111,7 +111,7 @@
           <span style="font-size:12px;font-weight:700;letter-spacing:.3em;text-transform:uppercase;color:#B79A6A">Unidades</span>
           <h2 style="margin:14px auto 0;font-size:clamp(34px,4.6vw,58px);line-height:1;font-weight:700;letter-spacing:-.03em;max-width:14ch;margin-left:{{ tituloMargem }};margin-right:{{ tituloMargem }}">Encontre a sua Morenos.</h2>
         </div>
-        <p style="flex:0 1 380px;margin:0;font-size:16px;line-height:1.65;color:#A9A69F;text-align:{{ heroTexto }}">Três endereços em Serra. Escolha pelo caminho que você já faz — cada unidade tem a própria agenda.</p>
+        <p style="flex:0 1 380px;margin:0;font-size:16px;line-height:1.65;color:#A9A69F;text-align:{{ heroTexto }}">Três endereços em Serra. Escolha pelo caminho que você já faz e agende na unidade mais prática para você.</p>
       </div>
       <div style="display:flex;flex-wrap:wrap;gap:2px;background:#0B0B0B">
         <sc-for list="{{ units }}" as="u" hint-placeholder-count="3">
@@ -168,6 +168,8 @@
           <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:clamp(26px,3.4vw,48px);align-items:{{ heroAlign }};text-align:{{ heroTexto }}">
             <h2 style="margin:0;font-size:clamp(30px,3.9vw,50px);line-height:1.04;font-weight:700;letter-spacing:-.03em;color:#0B0B0B;max-width:16ch">Não é só o corte. É como você sai da cadeira.</h2>
             <span style="font-size:10px;font-weight:600;letter-spacing:.3em;text-transform:uppercase;color:#8A6F3E">(Experiência Morenos)</span>
+            <p style="margin:10px 0 0;font-size:16px;line-height:1.65;color:#5F5C57;max-width:44ch">Três endereços em Serra, o mesmo jeito de atender: ouvir a referência, cortar com cuidado e explicar como manter.</p>
+            <a href="cultura.dc.html" style="margin-top:6px;align-self:{{ heroAlign }};font-size:13px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:#8A6F3E;border-bottom:1px solid #B79A6A;padding-bottom:6px;text-decoration:none;min-height:44px;display:inline-flex;align-items:center" style-hover="color:#0B0B0B">Conhecer a Morenos →</a>
           </div>
           <div style="display:flex;flex-direction:column">
             <sc-for list="{{ etapas }}" as="e" hint-placeholder-count="3">
@@ -325,125 +327,40 @@
       </div>
     </section>
 
-    <section id="sobre" data-reveal="1" style="background:#0B0B0B;padding:0">
-      <div style="max-width:1480px;margin:0 auto;display:flex;flex-wrap:wrap">
-        <div style="flex:1 1 440px;padding:clamp(44px,6vw,92px) clamp(20px,3.4vw,64px);display:flex;flex-direction:column;gap:22px;justify-content:center;align-items:{{ heroAlign }};text-align:{{ heroTexto }}">
-          <span style="font-size:12px;font-weight:700;letter-spacing:.3em;text-transform:uppercase;color:#B79A6A">Sobre a Morenos</span>
-          <h2 style="margin:0;font-size:clamp(32px,4.4vw,54px);line-height:1;font-weight:700;letter-spacing:-.03em;max-width:15ch">Uma marca que faz parte de Serra.</h2>
-          <p style="margin:0;font-size:17px;line-height:1.7;color:#C5C2BB;max-width:46ch">Com três endereços em Serra, a Morenos aproxima cuidado, estilo e rotina de quem já conhece a marca e de quem está chegando pela primeira vez.</p>
-          <a href="cultura.dc.html" style="align-self:{{ heroAlign }};display:inline-flex;padding:1.5px;border-radius:100px;background:linear-gradient(100deg,#0B0B0B 0%,#3A3A3A 18%,#9C968C 32%,#F3EFE8 42%,#9C968C 52%,#3A3A3A 68%,#0B0B0B 100%);background-size:200% 100%;animation:metal 7s linear infinite;box-shadow:0 12px 26px -10px rgba(0,0,0,.85);border:0;cursor:pointer;font-family:inherit;transition:background-color .45s cubic-bezier(.22,1,.36,1),background .45s cubic-bezier(.22,1,.36,1),color .35s ease,border-color .35s ease,transform .5s cubic-bezier(.22,1,.36,1),box-shadow .5s ease,opacity .4s ease,filter .45s ease" style-hover="filter:brightness(1.2)"><span style="display:flex;align-items:center;justify-content:center;border-radius:100px;background:linear-gradient(180deg,#202020 0%,#000000 100%);color:#C5C2BB;font-size:13px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;padding:17px 28px;min-height:48px;letter-spacing:.16em;transition:color .3s ease" style-hover="color:#F6F4EF">Conhecer a Morenos</span></a>
+    <section data-reveal="1" aria-label="Avaliações de clientes" style="background:#F6F4EF;color:#0B0B0B;padding:clamp(56px,7vw,104px) clamp(16px,3vw,36px)">
+      <div style="max-width:1240px;margin:0 auto">
+        <div style="display:flex;flex-wrap:wrap;gap:16px;align-items:flex-end;justify-content:space-between;margin-bottom:clamp(24px,3vw,38px);text-align:{{ heroTexto }}">
+          <h2 style="margin:0;font-size:clamp(30px,3.9vw,50px);line-height:1.02;font-weight:700;letter-spacing:-.03em;max-width:16ch">Quem senta na cadeira, conta.</h2>
+          <span style="font-size:13px;line-height:1.5;color:#5F5C57;max-width:34ch">Avaliações publicadas por clientes no Google, reproduzidas como recebidas.</span>
         </div>
-        <div style="flex:1 1 360px;display:flex;gap:2px">
-          <div style="flex:1 1 50%;position:relative;min-height:clamp(320px,42vw,600px)">
-            <img decoding="async" src="img/foto-crianca.webp" width="720" height="900" alt="Barbeiro da Morenos com uma criança no colo dentro do salão" loading="lazy" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover">
-          </div>
-          <div style="flex:1 1 50%;position:relative;min-height:clamp(320px,42vw,600px)">
-            <img decoding="async" src="img/unidade-cidade-continental.webp" width="1000" height="667" alt="Fachada de uma unidade do Salão Morenos vista da rua" loading="lazy" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover">
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section data-reveal="1" style="background:#FFFFFF;color:#0B0B0B;padding:clamp(56px,7vw,104px) clamp(16px,3vw,36px)">
-      <div style="max-width:900px;margin:0 auto;display:flex;flex-direction:column;align-items:center;gap:10px">
-        <span style="font-size:12px;font-weight:700;letter-spacing:.3em;text-transform:uppercase;color:#8A6F3E">Dúvidas rápidas</span>
-        <h2 style="margin:0 0 clamp(22px,3vw,36px);font-size:clamp(32px,4.4vw,54px);line-height:1;font-weight:700;letter-spacing:-.03em;text-align:center">Perguntas frequentes</h2>
-        <div role="tablist" aria-label="Categorias de perguntas" style="display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin-bottom:clamp(26px,3.4vw,44px)">
-          <sc-for list="{{ faqCats }}" as="c" hint-placeholder-count="4">
-            <button type="button" role="tab" aria-selected="{{ c.ativa }}" onClick="{{ c.select }}" style="font-family:inherit;cursor:pointer;white-space:nowrap;border:1px solid {{ c.borda }};background:{{ c.fundo }};color:{{ c.cor }};font-size:12px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;padding:13px 22px;min-height:46px;border-radius:100px;transform:translateY({{ c.eleva }});box-shadow:{{ c.sombra }};transition:background .6s cubic-bezier(.22,1,.36,1),color .55s ease,border-color .55s ease,transform .55s cubic-bezier(.34,1.3,.5,1),box-shadow .55s ease" style-hover="transform:translateY(-2px)">{{ c.label }}</button>
-          </sc-for>
-        </div>
-      </div>
-      <div style="max-width:860px;margin:0 auto;display:flex;flex-direction:column;gap:12px">
-        <sc-for list="{{ faqs }}" as="f" hint-placeholder-count="5">
-          <div style="border:1px solid {{ f.borda }};background:{{ f.fundo }};border-radius:18px;overflow:hidden;box-shadow:0 16px 36px -30px rgba(11,11,11,.4);transition:background .6s cubic-bezier(.22,1,.36,1),border-color .6s cubic-bezier(.22,1,.36,1),box-shadow .6s ease">
-            <button type="button" onClick="{{ f.toggle }}" aria-expanded="{{ f.open }}" style="font-family:inherit;cursor:pointer;width:100%;background:transparent;border:0;color:{{ f.cor }};text-align:left;padding:22px 24px;display:flex;gap:20px;align-items:center;justify-content:space-between;font-size:clamp(16px,1.6vw,19px);font-weight:600;min-height:64px;transition:color .55s cubic-bezier(.22,1,.36,1)">
-              <span>{{ f.q }}</span>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" style="flex-shrink:0;transform:rotate({{ f.giro }});transition:transform .55s cubic-bezier(.34,1.4,.5,1)"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-            </button>
-            <div style="display:grid;grid-template-rows:{{ f.rows }};transition:grid-template-rows .58s cubic-bezier(.22,1,.36,1)">
-              <div style="overflow:hidden;min-height:0">
-                <p style="margin:0;padding:0 24px 24px;font-size:16px;line-height:1.7;color:{{ f.corResposta }};max-width:66ch;opacity:{{ f.op }};transform:translateY({{ f.desl }});transition:opacity .5s ease .05s,transform .55s cubic-bezier(.22,1,.36,1) .05s">{{ f.a }}</p>
-              </div>
-            </div>
-          </div>
-        </sc-for>
-      </div>
-    </section>
-
-    <section data-reveal="1" style="background:#F6F4EF;color:#0B0B0B;padding:clamp(60px,8vw,110px) clamp(16px,3vw,36px)">
-      <div style="max-width:1480px;margin:0 auto">
-        <div style="display:flex;flex-wrap:wrap;gap:20px;align-items:flex-end;justify-content:space-between;margin-bottom:clamp(26px,3.5vw,44px);text-align:{{ heroTexto }}">
-          <h2 style="margin:0;font-size:clamp(32px,4.4vw,54px);line-height:1;font-weight:700;letter-spacing:-.03em;max-width:16ch">Quem senta na cadeira, conta.</h2>
-          <span style="font-size:13px;color:#5F5C57;max-width:36ch">Avaliações publicadas por clientes no Google, reproduzidas como recebidas. A unidade de cada avaliação será identificada na publicação.</span>
-        </div>
-        <div style="display:flex;justify-content:center;gap:18px;max-height:640px;overflow:hidden;-webkit-mask-image:linear-gradient(to bottom,transparent,#000 16%,#000 84%,transparent);mask-image:linear-gradient(to bottom,transparent,#000 16%,#000 84%,transparent)">
-          <sc-for list="{{ reviewColumns }}" as="col" hint-placeholder-count="3">
-            <div style="flex:0 1 330px;display:{{ col.display }}">
-              <div style="display:flex;flex-direction:column;gap:18px;padding-bottom:18px;animation:marqY {{ col.duration }} linear infinite">
-                <sc-for list="{{ col.cards }}" as="c" hint-placeholder-count="6">
-                  <blockquote style="margin:0;background:#FFFFFF;border:1px solid {{ c.borda }};border-radius:20px;box-shadow:0 18px 40px -28px rgba(11,11,11,.35);padding:32px;display:flex;flex-direction:column;gap:20px">
-                    <p style="margin:0;font-size:16px;line-height:1.6;color:{{ c.cor }}">{{ c.texto }}</p>
-                    <footer style="display:flex;align-items:center;gap:12px">
-                      <span aria-hidden="true" style="flex-shrink:0;width:40px;height:40px;border-radius:50%;background:{{ c.avatarBg }};color:{{ c.avatarCor }};display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700">{{ c.inicial }}</span>
-                      <span style="display:flex;flex-direction:column;gap:2px">
-                        <span style="font-size:14px;font-weight:600;line-height:1.2">{{ c.nome }}</span>
-                        <span style="font-size:12px;color:#5F5C57;line-height:1.2">{{ c.origem }}</span>
-                      </span>
-                    </footer>
-                  </blockquote>
-                </sc-for>
-              </div>
-            </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));gap:18px;align-items:start">
+          <sc-for list="{{ reviews }}" as="c" hint-placeholder-count="3">
+            <blockquote style="margin:0;background:#FFFFFF;border:1px solid rgba(11,11,11,.14);border-radius:20px;box-shadow:0 18px 40px -28px rgba(11,11,11,.35);padding:30px;display:flex;flex-direction:column;gap:20px;height:100%">
+              <p style="margin:0;font-size:16px;line-height:1.6;color:#0B0B0B">{{ c.texto }}</p>
+              <footer style="margin-top:auto;display:flex;align-items:center;gap:12px">
+                <span aria-hidden="true" style="flex-shrink:0;width:40px;height:40px;border-radius:50%;background:#0B0B0B;color:#F6F4EF;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700">{{ c.inicial }}</span>
+                <span style="display:flex;flex-direction:column;gap:2px">
+                  <span style="font-size:14px;font-weight:600;line-height:1.2">{{ c.nome }}</span>
+                  <span style="font-size:12px;color:#5F5C57;line-height:1.2">{{ c.origem }}</span>
+                </span>
+              </footer>
+            </blockquote>
           </sc-for>
         </div>
       </div>
     </section>
 
-    <section style="position:relative;overflow:hidden;background:#0B0B0B">
+    <section aria-label="Agendar na Morenos" style="position:relative;overflow:hidden;background:#0B0B0B">
       <img decoding="async" src="img/foto-atendimento-2.webp" width="720" height="900" alt="" aria-hidden="true" loading="lazy" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.28">
       <div aria-hidden="true" style="position:absolute;inset:0;background:linear-gradient(180deg,#0B0B0B 4%,rgba(11,11,11,.76) 50%,#0B0B0B 100%)"></div>
-      <div style="position:relative;max-width:1480px;margin:0 auto;padding:clamp(60px,8vw,120px) clamp(16px,3vw,36px)">
-        <h2 style="margin:0 auto;font-size:clamp(34px,5.2vw,68px);line-height:.98;font-weight:700;letter-spacing:-.035em;max-width:18ch;text-align:center">Qual Morenos faz parte da sua rotina?</h2>
-        <p style="margin:20px auto clamp(30px,4vw,48px);font-size:17px;line-height:1.65;color:#C5C2BB;max-width:50ch;text-align:center">Escolha o endereço mais conveniente e continue para o agendamento daquela unidade.</p>
-        <div style="display:flex;flex-wrap:wrap;gap:2px;border-top:1px solid rgba(246,244,239,.2)">
-          <sc-for list="{{ units }}" as="u" hint-placeholder-count="3">
-            <div style="flex:1 1 300px;padding:28px 24px 28px 0;border-bottom:1px solid rgba(246,244,239,.2);display:flex;flex-direction:column;gap:14px">
-              <button type="button" onClick="{{ u.book }}" onMouseEnter="{{ u.hoverMap }}" onMouseLeave="{{ u.leaveMap }}" onFocus="{{ u.hoverMap }}" onBlur="{{ u.leaveMap }}" aria-label="Agendar na unidade {{ u.via }}" style="font-family:inherit;cursor:pointer;text-align:left;position:relative;overflow:hidden;width:100%;max-width:400px;border:1px solid rgba(246,244,239,.18);border-radius:18px;background:#080808;color:#F6F4EF;padding:0;height:{{ u.mapAltura }};transition:height .7s cubic-bezier(.22,1,.36,1),border-color .5s ease" style-hover="border-color:rgba(183,154,106,.6)">
-                <sc-if value="{{ u.mapOpen }}">
-                  <span aria-hidden="true" style="position:absolute;inset:0;display:block;background-image:linear-gradient(rgba(246,244,239,.16) 3px,transparent 3px),linear-gradient(90deg,rgba(246,244,239,.13) 3px,transparent 3px),linear-gradient(rgba(246,244,239,.07) 1px,transparent 1px),linear-gradient(90deg,rgba(246,244,239,.07) 1px,transparent 1px);background-size:100% 92px,124px 100%,100% 31px,41px 100%;background-position:0 30%,30% 0,0 0,0 0"></span>
-                  <span aria-hidden="true" style="position:absolute;top:38%;left:9%;width:16%;height:19%;border-radius:3px;background:rgba(246,244,239,.14)"></span>
-                  <span aria-hidden="true" style="position:absolute;top:14%;left:36%;width:12%;height:15%;border-radius:3px;background:rgba(246,244,239,.11)"></span>
-                  <span aria-hidden="true" style="position:absolute;top:64%;left:74%;width:18%;height:18%;border-radius:3px;background:rgba(246,244,239,.12)"></span>
-                  <span aria-hidden="true" style="position:absolute;top:20%;right:9%;width:10%;height:24%;border-radius:3px;background:rgba(246,244,239,.1)"></span>
-                  <span aria-hidden="true" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-60%);width:30px;height:30px;border-radius:50% 50% 50% 0;rotate:-45deg;background:#B79A6A;box-shadow:0 0 22px rgba(183,154,106,.55)"></span>
-                  <span aria-hidden="true" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-72%);width:11px;height:11px;border-radius:50%;background:#080808"></span>
-                  <span aria-hidden="true" style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(8,8,8,.5) 0%,rgba(8,8,8,.2) 40%,rgba(8,8,8,.95) 100%)"></span>
-                </sc-if>
-                <span style="position:relative;display:flex;flex-direction:column;justify-content:space-between;height:100%;padding:18px">
-                  <span style="display:flex;align-items:center;justify-content:space-between;gap:12px">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#B79A6A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"></polygon><line x1="9" y1="3" x2="9" y2="18"></line><line x1="15" y1="6" x2="15" y2="21"></line></svg>
-                    <span style="display:flex;align-items:center;gap:7px;background:rgba(246,244,239,.07);border-radius:999px;padding:5px 10px">
-                      <span aria-hidden="true" style="width:6px;height:6px;border-radius:50%;background:#B79A6A"></span>
-                      <span style="font-size:10px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:#A9A69F">Serra — ES</span>
-                    </span>
-                  </span>
-                  <span style="display:flex;flex-direction:column;gap:7px">
-                    <span style="font-size:11px;font-weight:700;letter-spacing:.26em;text-transform:uppercase;color:#B79A6A">{{ u.bairro }}</span>
-                    <span style="font-size:clamp(19px,1.9vw,23px);font-weight:700;line-height:1.1;letter-spacing:-.02em">{{ u.via }}</span>
-                    <span style="font-size:13px;line-height:1.55;color:#C5C2BB">{{ u.endereco }}</span>
-                    <sc-if value="{{ u.mapOpen }}">
-                      <span style="font-size:12px;line-height:1.5;color:#A9A69F">Esquema ilustrativo — mapa real entra com a localização confirmada.</span>
-                    </sc-if>
-                    <span aria-hidden="true" style="display:block;height:1px;background:linear-gradient(90deg,rgba(183,154,106,.85),rgba(183,154,106,.25),transparent);transform:scaleX({{ u.mapLinha }});transform-origin:left;transition:transform .4s ease"></span>
-                    <span style="font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#B79A6A">Agendar nesta unidade →</span>
-                  </span>
-                </span>
-              </button>
-
-            </div>
-          </sc-for>
+      <div style="position:relative;max-width:1480px;margin:0 auto;padding:clamp(52px,6.5vw,92px) clamp(16px,3vw,36px);display:flex;flex-direction:column;align-items:center;text-align:center;gap:18px">
+        <h2 style="margin:0;font-size:clamp(34px,5.2vw,68px);line-height:.98;font-weight:700;letter-spacing:-.035em;max-width:18ch">Qual Morenos faz parte da sua rotina?</h2>
+        <p style="margin:0;font-size:17px;line-height:1.65;color:#C5C2BB;max-width:50ch">Escolha o endereço e continue para a agenda online da Morenos.</p>
+        <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:12px;margin-top:6px">
+          <button type="button" onClick="{{ openBooking }}" style="display:inline-flex;padding:1.5px;border-radius:100px;background:linear-gradient(100deg,#8A8378 0%,#3A3A3A 16%,#CFC9BE 30%,#FFFFFF 42%,#CFC9BE 54%,#3A3A3A 70%,#8A8378 100%);background-size:200% 100%;animation:metal 7s linear infinite;box-shadow:0 12px 26px -10px rgba(0,0,0,.6);border:0;cursor:pointer;font-family:inherit;transition:filter .45s ease,transform .5s cubic-bezier(.22,1,.36,1)" style-hover="filter:brightness(1.08);transform:translateY(-2px)"><span style="display:flex;align-items:center;justify-content:center;border-radius:100px;background:linear-gradient(180deg,#FFFFFF 0%,#E8E5DF 100%);color:#0B0B0B;font-weight:700;letter-spacing:.14em;text-transform:uppercase;padding:16px 26px;min-height:50px;font-size:13px">Escolher unidade e agendar</span></button>
+          <a href="unidades.dc.html" style="display:inline-flex;padding:1.5px;border-radius:100px;background:linear-gradient(100deg,#0B0B0B 0%,#3A3A3A 18%,#9C968C 32%,#F3EFE8 42%,#9C968C 52%,#3A3A3A 68%,#0B0B0B 100%);background-size:200% 100%;animation:metal 7s linear infinite;box-shadow:0 12px 26px -10px rgba(0,0,0,.85);text-decoration:none;transition:filter .45s ease,transform .5s cubic-bezier(.22,1,.36,1)" style-hover="filter:brightness(1.2);transform:translateY(-2px)"><span style="display:flex;align-items:center;justify-content:center;border-radius:100px;background:linear-gradient(180deg,#202020 0%,#000000 100%);color:#E8E5DF;font-weight:600;letter-spacing:.14em;text-transform:uppercase;padding:16px 26px;min-height:50px;font-size:13px">Comparar as três unidades</span></a>
         </div>
+        <a href="{{ waVisitante }}" target="_blank" rel="noopener noreferrer" onClick="{{ trackWa }}" style="margin-top:4px;font-size:14px;font-weight:600;color:#C5C2BB;min-height:44px;display:inline-flex;align-items:center;text-decoration:none" style-hover="color:#B79A6A">Prefere conversar antes? Fale pelo WhatsApp →</a>
       </div>
     </section>
 
@@ -468,46 +385,8 @@
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1440,&quot;height&quot;:1000}}">
 class Component extends DCLogic {
-  state = { menuOpen: false, bookingOpen: false, picked: null, isDesktop: true, w: 1440, faqOpen: 0, faqCat: 'agendamento', nav: null, navSaindo: null, menuSaindo: false, acc: null, mapa: null, fixo: null, light: null, svc: null, etapa: 0, etapaPausa: false };
+  state = { picked: null, isDesktop: true, w: 1440, mapa: null, fixo: null, light: null, svc: null, etapa: 0, etapaPausa: false };
 
-  menuData = [
-    { key: 'unidades', titulo: 'Unidades', resumo: 'Três endereços em Serra. Cada unidade tem a própria agenda.',
-      verTudo: 'Ver todas as unidades', verTudoHref: '#unidades',
-      itens: [
-        { titulo: 'Cidade Continental', desc: 'Avenida Terceiro Mundo — Setor Ásia', href: '#cidade-continental' },
-        { titulo: 'Novo Horizonte — Av. Brasil', desc: 'Avenida Brasil, Novo Horizonte', href: '#novo-horizonte-av-brasil' },
-        { titulo: 'Novo Horizonte — Av. Industrial', desc: 'Avenida Industrial, 830 — Loja 3', href: '#novo-horizonte-av-industrial' },
-      ] },
-    { key: 'servicos', titulo: 'Serviços', resumo: 'Cabelo, barba, estética e tratamentos. A disponibilidade varia por unidade.',
-      verTudo: 'Ver todos os serviços', verTudoHref: '#servicos',
-      itens: [
-        { titulo: 'Corte masculino', desc: 'Corte definido com você, acabamento na navalha', href: '#servicos' },
-        { titulo: 'Barboterapia', desc: 'Barba com toalha quente, hidratação e finalização', href: '#servicos' },
-        { titulo: 'Visagismo', desc: 'Corte e barba a partir das suas características', href: '#servicos' },
-        { titulo: 'Dia do Noivo', desc: 'Preparação para o casamento com hora marcada', href: '#servicos' },
-      ] },
-  ];
-
-  abrirNav(key) {
-    clearTimeout(this.navTimer);
-    this.setState({ nav: key, navSaindo: null });
-  }
-
-  fecharNav() {
-    if (!this.state.nav) return;
-    const atual = this.state.nav;
-    clearTimeout(this.navTimer);
-    this.setState({ nav: null, navSaindo: atual });
-    this.navTimer = setTimeout(() => this.setState({ navSaindo: null }), 340);
-  }
-
-  mexerMenu(v) {
-    clearTimeout(this.menuTimer);
-    if (v) { this.setState({ menuOpen: true, menuSaindo: false, acc: null }); return; }
-    if (!this.state.menuOpen) return;
-    this.setState({ menuOpen: false, menuSaindo: true });
-    this.menuTimer = setTimeout(() => this.setState({ menuSaindo: false }), 340);
-  }
 
   componentDidMount() {
     if (!window.MORENOS) this.esperaCfg = setInterval(() => { if (window.MORENOS) { clearInterval(this.esperaCfg); this.forceUpdate(); } }, 60);
@@ -522,8 +401,6 @@ class Component extends DCLogic {
     this.onKey = (e) => {
       if (e.key !== 'Escape') return;
       this.fecharLight();
-      this.fecharNav();
-      this.mexerMenu(false);
     };
     window.addEventListener('keydown', this.onKey);
   }
@@ -644,58 +521,23 @@ class Component extends DCLogic {
   };
   bookingKey = { 'cidade-continental': 'cidadeContinental', 'novo-horizonte-av-brasil': 'novoHorizonteBrasil', 'novo-horizonte-av-industrial': 'novoHorizonteIndustrial' };
 
-  unitData = [
-    { id: 'cidade-continental', anchor: '#cidade-continental', bairro: 'Cidade Continental',
-      via: 'Avenida Terceiro Mundo',
-      endereco: 'Cidade Continental — Setor Ásia, Serra — ES · CEP 29163-603',
-      cep: 'CEP 29163-603',
-      foto: 'img/unidade-cidade-continental.webp',
-      fotoAlt: 'Fachada do Salão Morenos com a placa Cidade Continental' },
-    { id: 'novo-horizonte-av-brasil', anchor: '#novo-horizonte-av-brasil', bairro: 'Novo Horizonte',
-      via: 'Avenida Brasil',
-      endereco: 'Novo Horizonte, Serra — ES · CEP 29163-331',
-      cep: 'CEP 29163-331',
-      foto: 'img/unidade-av-brasil.webp',
-      fotoAlt: 'Vitrine de uma unidade do Salão Morenos' },
-    { id: 'novo-horizonte-av-industrial', anchor: '#novo-horizonte-av-industrial', bairro: 'Novo Horizonte',
-      via: 'Avenida Industrial, 830 — Loja 3',
-      endereco: 'Novo Horizonte, Serra — ES · CEP 29163-357',
-      cep: 'CEP 29163-357',
-      foto: 'img/unidade-av-industrial.webp',
-      fotoAlt: 'Fachada iluminada de uma unidade do Salão Morenos à noite' },
-  ];
-
-  faqCatsData = [
-    { key: 'agendamento', label: 'Agendamento' },
-    { key: 'unidades', label: 'Unidades' },
-    { key: 'servicos', label: 'Serviços' },
-    { key: 'clube', label: 'O Clube' },
-  ];
-
-  faqPorCat = {
-    agendamento: [
-      { q: 'Como faço para agendar?', a: 'Toque em Agendar, escolha uma das três unidades e continue para a agenda daquele endereço. Não é preciso criar cadastro para ver unidades e serviços.' },
-      { q: 'Preciso ser assinante para ser atendido?', a: 'Não. O atendimento avulso está disponível para qualquer pessoa. O Clube é uma opção para quem vai com frequência.' },
-      { q: 'Como escolher uma unidade?', a: 'São três endereços em Serra: Cidade Continental, na Avenida Terceiro Mundo, e duas unidades em Novo Horizonte, uma na Avenida Brasil e outra na Avenida Industrial. Escolha a que fica no seu caminho.' },
-    ],
-    unidades: [
-      { q: 'Onde ficam as unidades?', a: 'Avenida Terceiro Mundo, em Cidade Continental — Setor Ásia; Avenida Brasil, em Novo Horizonte; e Avenida Industrial, 830 — Loja 3, também em Novo Horizonte. Todas em Serra, Espírito Santo.' },
-      { q: 'Como escolher uma unidade?', a: 'Escolha pelo endereço mais perto do caminho que você já faz. Cada unidade tem a própria agenda, e você pode trocar depois.' },
-      { q: 'Qual é a diferença entre as duas unidades de Novo Horizonte?', a: 'Uma fica na Avenida Brasil e a outra na Avenida Industrial, 830 — Loja 3. São endereços distintos, com agendas separadas.' },
-      { q: 'Os telefones estão publicados?', a: 'Ainda não. Telefone e WhatsApp de cada unidade entram no site assim que forem confirmados pelo cliente.' },
-    ],
-    servicos: [
-      { q: 'Quais serviços a Morenos oferece?', a: 'Cabelo: corte masculino, corte na máquina, corte infantil, penteado e corte terapia. Barba: barba e barboterapia. Estética e tratamentos: visagismo, sobrancelhas, remoção de pelos, limpeza de pele, hidratação, selagem, camuflagem de fios brancos e lavagem especial.' },
-      { q: 'Todos os serviços estão em todas as unidades?', a: 'Não necessariamente. Confira a página da unidade escolhida antes de agendar.' },
-      { q: 'O que é barboterapia?', a: 'É um cuidado completo com a barba: preparo da pele e dos fios, desenho, alinhamento e finalização, em cerca de 40 minutos.' },
-    ],
-    clube: [
-      { q: 'Como funciona o Clube?', a: 'Você escolhe um plano mensal e assina pela plataforma da Morenos. O que está incluído e a frequência de uso dependem do plano. Os planos e valores estão na página do Clube.' },
-      { q: 'Existe taxa de adesão ou fidelidade?', a: 'Não há taxa de adesão nem permanência mínima.' /* source: legacy-site, needsConfirmation */ },
-      { q: 'Preciso assinar para cortar o cabelo?', a: 'Não. Assinar é opcional e o atendimento avulso continua disponível.' },
-    ],
-  };
-
+  // Endereco, CEP e foto de cada unidade moram no site-config.js (C.locations)
+  // — e la que o cliente troca uma foto ou corrige um endereco. A Home tinha a
+  // mesma lista copiada, o que ja tinha feito as duas versoes divergirem.
+  get unitData() {
+    const M = window.MORENOS;
+    if (!M) return [];
+    return M.locations.map((l) => ({
+      id: l.id,
+      anchor: '#' + l.id,
+      bairro: l.bairroLabel,
+      via: l.logradouro,
+      endereco: l.bairro + ', ' + l.cidade + ' — ' + l.estado + ' · CEP ' + l.cep,
+      cep: 'CEP ' + l.cep,
+      foto: l.foto,
+      fotoAlt: l.fotoAlt,
+    }));
+  }
 
   etapasData = [
     { n: '01', titulo: 'A conversa antes do corte', foto: 'img/foto-visagismo.webp', fotoAlt: 'Barbeiro conversando com o cliente antes de começar o corte',
@@ -841,25 +683,13 @@ class Component extends DCLogic {
     { texto: 'Atendimento sensacional pelo barbeiro Herom.', nome: 'Tiago Jesus' },
   ];
 
-  buildReviewColumns(isDesktop) {
-    const reais = this.reviewData.map(r => ({
-      texto: r.texto, nome: r.nome, origem: 'Avaliação publicada no Google',
-      inicial: r.nome.charAt(0), borda: 'rgba(11,11,11,.14)', cor: '#0B0B0B',
-      avatarBg: '#0B0B0B', avatarCor: '#F6F4EF',
-    }));
-    const vaga = (n) => ({
-      texto: 'Espaço reservado para uma avaliação do Google ainda não importada. Nenhum depoimento é escrito pela agência.',
-      nome: 'Avaliação a importar', origem: 'Vaga ' + n + ' · pendente de coleta', inicial: '+',
-      borda: 'rgba(183,154,106,.55)', cor: '#5F5C57', avatarBg: '#EFEBE2', avatarCor: '#B79A6A',
-    });
-    const cols = [
-      { cards: isDesktop ? [reais[0]] : reais, duration: '34s', display: 'block' },
-      { cards: [reais[1]], duration: '42s', display: isDesktop ? 'block' : 'none' },
-      { cards: [reais[2]], duration: '38s', display: isDesktop ? 'block' : 'none' },
-    ];
-    return cols.map((c, i) => ({
-      duration: c.duration, display: c.display,
-      cards: [...c.cards, ...c.cards, ...c.cards, ...c.cards].map((card, j) => ({ ...card, key: i + '-' + j })),
+  // Tres avaliacoes, paradas. Antes eram tres cartoes clonados quatro vezes
+  // numa marquise vertical: 259 palavras na Home para dizer tres coisas, e a
+  // repeticao fazia a prova social valer menos. Texto como veio do Google.
+  reviews() {
+    return this.reviewData.map((r) => ({
+      texto: r.texto, nome: r.nome, inicial: r.nome.charAt(0),
+      origem: 'Avaliação publicada no Google',
     }));
   }
 
@@ -871,30 +701,6 @@ class Component extends DCLogic {
       heroAlign: this.state.w < 760 ? 'center' : 'flex-start',
       heroTexto: this.state.w < 760 ? 'center' : 'left',
       tituloMargem: this.state.w < 760 ? 'auto' : '0',
-      menuOpen: this.state.menuOpen,
-      menuIcon: this.state.menuOpen ? '×' : '☰',
-      bookingOpen: this.state.bookingOpen,
-      toggleMenu: () => this.mexerMenu(!this.state.menuOpen),
-      closeMenu: () => this.mexerMenu(false),
-      closeNav: () => this.fecharNav(),
-      navPanel: this.menuData.find(m => m.key === (this.state.nav || this.state.navSaindo)) || null,
-      navVisivel: !!(this.state.nav || this.state.navSaindo),
-      navAnim: this.state.nav ? 'dropIn .34s cubic-bezier(.22,1,.36,1) both' : 'dropOut .3s cubic-bezier(.4,0,.7,.2) both',
-      navPointer: this.state.nav ? 'auto' : 'none',
-      menuVisivel: !!(this.state.menuOpen || this.state.menuSaindo),
-      menuAnim: this.state.menuOpen ? 'dropIn .36s cubic-bezier(.22,1,.36,1) both' : 'dropOut .3s cubic-bezier(.4,0,.7,.2) both',
-      menuPointer: this.state.menuOpen ? 'auto' : 'none',
-      navMenus: this.menuData.map(m => ({
-        ...m,
-        isOpen: this.state.nav === m.key,
-        accOpen: this.state.acc === m.key,
-        color: this.state.nav === m.key ? '#B79A6A' : '#F6F4EF',
-        chevron: this.state.nav === m.key ? 'rotate(180deg)' : 'rotate(0deg)',
-        chevronAcc: this.state.acc === m.key ? 'rotate(180deg)' : 'rotate(0deg)',
-        open: () => this.abrirNav(m.key),
-        toggle: () => (this.state.nav === m.key ? this.fecharNav() : this.abrirNav(m.key)),
-        toggleAcc: () => this.setState(s => ({ acc: s.acc === m.key ? null : m.key })),
-      })),
       openBooking: () => window.dispatchEvent(new CustomEvent('morenos:agendar', { detail: { origem: 'home' } })),
       clubeHref: window.MORENOS ? window.MORENOS.links.membership : 'o-clube.dc.html',
       trackClube: () => window.MORENOS && window.MORENOS.track('membership_click', { origem: 'home' }),
@@ -984,46 +790,7 @@ class Component extends DCLogic {
       cardRef: this.cardRef,
       sheenRef: this.sheenRef,
       phoneRef: this.phoneRef,
-      reviewColumns: this.buildReviewColumns(isDesktop),
-      faqCats: this.faqCatsData.map(c => ({
-        label: c.label,
-        ativa: this.state.faqCat === c.key,
-        fundo: this.state.faqCat === c.key ? '#0B0B0B' : 'transparent',
-        cor: this.state.faqCat === c.key ? '#FFFFFF' : '#5F5C57',
-        borda: this.state.faqCat === c.key ? '#0B0B0B' : 'rgba(11,11,11,.2)',
-        select: () => this.setState({ faqCat: c.key, faqOpen: 0 }),
-      })),
-      faqs: (this.faqPorCat[this.state.faqCat] || []).map((f, i) => {
-        const aberta = this.state.faqOpen === i;
-        return {
-          ...f, open: aberta,
-          giro: aberta ? '45deg' : '0deg',
-          rows: aberta ? '1fr' : '0fr',
-          op: aberta ? '1' : '0',
-          desl: aberta ? '0px' : '-8px',
-          cor: aberta ? '#B79A6A' : '#F6F4EF',
-          fundo: '#0B0B0B',
-          borda: aberta ? 'rgba(183,154,106,.55)' : 'rgba(11,11,11,.85)',
-          corResposta: '#B5B2AB',
-          toggle: () => this.setState(s => ({ faqOpen: s.faqOpen === i ? -1 : i })),
-        };
-      }),
-      footerCols: [
-        { titulo: 'Morenos', links: [
-          { label: 'Sobre', href: '#sobre' }, { label: 'Cultura', href: '#sobre' },
-          { label: 'Corporativo', href: '#sobre' }, { label: 'Trabalhe Conosco', href: '#sobre' } ] },
-        { titulo: 'Serviços', links: [
-          { label: 'Corte Masculino', href: '#servicos' }, { label: 'Barboterapia', href: '#servicos' },
-          { label: 'Visagismo', href: '#servicos' }, { label: 'Dia do Noivo', href: '#servicos' },
-          { label: 'Todos os serviços', href: '#servicos' } ] },
-        { titulo: 'Unidades', links: [
-          { label: 'Cidade Continental', href: '#cidade-continental' },
-          { label: 'Novo Horizonte — Av. Brasil', href: '#novo-horizonte-av-brasil' },
-          { label: 'Novo Horizonte — Av. Industrial', href: '#novo-horizonte-av-industrial' } ] },
-        { titulo: 'Clube', links: [
-          { label: 'Conhecer o Clube', href: '#clube' }, { label: 'Planos e benefícios', href: '#clube' },
-          { label: 'Regras', href: '#clube' } ] },
-      ],
+      reviews: this.reviews(),
       ano: new Date().getFullYear(),
     };
   }
