@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<div style="background:#0B0B0B;padding:clamp(40px,5vw,72px) clamp(12px,2vw,28px) 0;font-family:Poppins, system-ui, sans-serif;color:#F6F4EF">
+  <footer style="position:relative;max-width:1480px;margin:0 auto;border:1px solid rgba(246,244,239,.14);border-bottom:0;border-radius:clamp(24px,3vw,42px) clamp(24px,3vw,42px) 0 0;background:radial-gradient(46% 180px at 50% 0%, rgba(183,154,106,.16), transparent), #0B0B0B;padding:clamp(48px,6vw,84px) clamp(20px,3vw,52px) 48px;overflow:hidden">
+    <div aria-hidden="true" style="position:absolute;top:0;left:50%;transform:translate(-50%,-50%);width:34%;height:2px;border-radius:999px;background:rgba(246,244,239,.5);filter:blur(2px)"></div>
+    <div style="display:flex;flex-wrap:wrap;gap:clamp(28px,4vw,56px)">
+      <div style="flex:1 1 280px;display:flex;flex-direction:column;gap:18px">
+        <a href="/" aria-label="Salão Morenos, página inicial" style="align-self:flex-start"><img decoding="async" src="/img/logo.webp" alt="Salão Morenos" width="624" height="624" loading="lazy" style="height:112px;width:auto"></a>
+        <p style="margin:0;font-size:14px;line-height:1.65;color:#A9A69F;max-width:30ch">Barbearia em Serra, Espírito Santo. Corte, barba e cuidado com o seu estilo em três endereços.</p>
+        <span style="font-size:13px;color:#7C7975">© {{ ano }} Salão Morenos. Todos os direitos reservados.</span>
+      </div>
+      <div style="flex:2 1 620px;display:flex;flex-wrap:wrap;gap:clamp(22px,3vw,40px)">
+        <sc-for list="{{ cols }}" as="col" hint-placeholder-count="4">
+          <nav aria-label="{{ col.titulo }}" style="flex:1 1 160px;display:flex;flex-direction:column;gap:12px">
+            <span style="font-size:11px;font-weight:700;letter-spacing:.24em;text-transform:uppercase;color:#B79A6A;margin-bottom:4px">{{ col.titulo }}</span>
+            <sc-for list="{{ col.links }}" as="l" hint-placeholder-count="4">
+              <a href="{{ l.href }}" style="font-size:14px;line-height:1.4;color:#C5C2BB;text-decoration:none;transition:color .3s ease" style-hover="color:#F6F4EF">{{ l.label }}</a>
+            </sc-for>
+          </nav>
+        </sc-for>
+      </div>
+    </div>
+    <div style="margin-top:clamp(32px,4vw,56px);padding-top:24px;border-top:1px solid rgba(246,244,239,.12);display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between">
+      <span style="font-size:12px;color:#7C7975">Serra — Espírito Santo · Cidade Continental · Novo Horizonte — Av. Brasil · Novo Horizonte — Av. Industrial</span>
+      <span style="display:flex;flex-wrap:wrap;gap:18px">
+        <a href="/politica-de-privacidade/" style="font-size:12px;color:#C5C2BB;text-decoration:none" style-hover="color:#B79A6A">Política de Privacidade</a>
+        <a href="/termos-de-uso/" style="font-size:12px;color:#C5C2BB;text-decoration:none" style-hover="color:#B79A6A">Termos de Uso</a>
+      </span>
+      <a href="{{ wa }}" target="_blank" rel="noopener noreferrer" style="font-size:12px;color:#C5C2BB;text-decoration:none" style-hover="color:#B79A6A">WhatsApp {{ waDisplay }}</a>
+      <!-- TODO: confirmar com cliente telefones por unidade, Instagram, Facebook e CNPJ -->
+    </div>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1280,&quot;height&quot;:520}}">
+class Component extends DCLogic {
+  componentDidMount() {
+    if (!window.MORENOS) this.espera = setInterval(() => { if (window.MORENOS) { clearInterval(this.espera); this.forceUpdate(); } }, 60);
+  }
+  componentWillUnmount() { clearInterval(this.espera); }
+  renderVals() {
+    return {
+      ano: new Date().getFullYear(),
+      wa: window.MORENOS ? window.MORENOS.waLink() : '/',
+      waDisplay: window.MORENOS ? window.MORENOS.whatsapp.display : '',
+      cols: [
+        { titulo: 'Morenos', links: [
+          { label: 'Sobre a Morenos', href: '/cultura/' },
+          { label: 'Corporativo', href: '/corporativo/' },
+          { label: 'Trabalhe Conosco', href: '/trabalhe-conosco/' } ] },
+        { titulo: 'Serviços', links: [
+          { label: 'Corte Masculino', href: '/servicos/corte-masculino/' },
+          { label: 'Barboterapia', href: '/servicos/barboterapia/' },
+          { label: 'Visagismo', href: '/visagismo/' },
+          { label: 'Dia do Noivo', href: '/dia-do-noivo/' },
+          { label: 'Todos os serviços', href: '/servicos/' } ] },
+        { titulo: 'Unidades', links: [
+          { label: 'Cidade Continental', href: '/unidades/cidade-continental/' },
+          { label: 'Novo Horizonte — Av. Brasil', href: '/unidades/novo-horizonte-av-brasil/' },
+          { label: 'Novo Horizonte — Av. Industrial', href: '/unidades/novo-horizonte-av-industrial/' } ] },
+        { titulo: 'Clube', links: [
+          { label: 'Conhecer o Clube', href: '/o-clube/' },
+          { label: 'Planos', href: '/o-clube/#planos' },
+          { label: 'Assinar', href: (window.MORENOS && window.MORENOS.links.membership) || '/o-clube/#planos' } ] },
+      ],
+    };
+  }
+}
+</script>
+</body>
+</html>

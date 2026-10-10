@@ -1,0 +1,9 @@
+MIDIAS PUBLICAS — SALAO MORENOS
+Extração em 09/09/2026.
+Páginas examinadas: 9. Itens no catálogo público WordPress: 159.
+Arquivos únicos baixados: 177. Endereços baixados: 184.
+Inclui mídias referenciadas no HTML, srcset, estilos e catálogo público quando acessível. Miniaturas reconhecidas no catálogo foram substituídas pelo arquivo de origem. Duplicatas idênticas por conteúdo compartilham um arquivo. Não houve recompressão.
+O inventario.csv relaciona arquivos, endereços de origem e páginas/estilos que os referenciam.
+falhas.json registra endereços indisponíveis, incluindo tentativas de recuperar versões sem sufixo de tamanho.
+Não é uma cópia integral do painel de mídia: arquivos privados, não publicados ou não enumeráveis podem não ter sido encontrados. Vídeos hospedados em plataformas externas não foram extraídos.
+O site apresenta referências textuais a outra marca em algumas páginas. Confirme com o cliente quais imagens retratam realmente a Morenos antes de reutilizá-las.

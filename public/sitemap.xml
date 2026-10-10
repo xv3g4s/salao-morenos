@@ -1,8 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url>
-    <loc>https://salaomorenos.com.br/</loc>
-    <changefreq>monthly</changefreq>
-    <priority>1.0</priority>
-  </url>
+  <url><loc>https://salaomorenos.com.br/</loc></url>
+  <url><loc>https://salaomorenos.com.br/unidades/</loc></url>
+  <url><loc>https://salaomorenos.com.br/unidades/cidade-continental/</loc></url>
+  <url><loc>https://salaomorenos.com.br/unidades/novo-horizonte-av-brasil/</loc></url>
+  <url><loc>https://salaomorenos.com.br/unidades/novo-horizonte-av-industrial/</loc></url>
+  <url><loc>https://salaomorenos.com.br/servicos/</loc></url>
+  <url><loc>https://salaomorenos.com.br/servicos/corte-masculino/</loc></url>
+  <url><loc>https://salaomorenos.com.br/servicos/barboterapia/</loc></url>
+  <url><loc>https://salaomorenos.com.br/visagismo/</loc></url>
+  <url><loc>https://salaomorenos.com.br/dia-do-noivo/</loc></url>
+  <url><loc>https://salaomorenos.com.br/o-clube/</loc></url>
+  <url><loc>https://salaomorenos.com.br/cultura/</loc></url>
+  <url><loc>https://salaomorenos.com.br/corporativo/</loc></url>
+  <url><loc>https://salaomorenos.com.br/trabalhe-conosco/</loc></url>
+  <url><loc>https://salaomorenos.com.br/politica-de-privacidade/</loc></url>
+  <url><loc>https://salaomorenos.com.br/termos-de-uso/</loc></url>
 </urlset>

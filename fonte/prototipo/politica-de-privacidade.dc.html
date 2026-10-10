@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>html,body{background:#080908}</style>
+<link rel="preload" as="image" href="assets/morenos-loader-outline-white.webp">
+<script src="site-config.js"></script>
+<script src="site-loader.js"></script>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<title>Política de Privacidade | Salão Morenos</title>
+<meta name="description" content="Como o Salão Morenos trata dados pessoais no site, conforme a LGPD: formulários, agendamento, WhatsApp e serviços de terceiros.">
+<link rel="canonical" href="https://salaomorenos.com.br/politica-de-privacidade/">
+<meta name="theme-color" content="#0B0B0B">
+<script src="smooth-scroll.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+  html { scroll-padding-top:104px; overflow-x:hidden; max-width:100%; }
+  @media (max-width:1119px) { html { scroll-padding-top:84px; } }
+  body { margin:0; font-family:Poppins, system-ui, sans-serif; background:#0B0B0B; color:#F6F4EF; -webkit-font-smoothing:antialiased; text-wrap:pretty; overflow-x:hidden; }
+  * { box-sizing:border-box; }
+  img { display:block; max-width:100%; }
+  a { color:#F6F4EF; text-decoration:none; }
+  a:hover { color:#B79A6A; }
+  :focus-visible { outline:2px solid #B79A6A; outline-offset:3px; }
+  @keyframes metal { 0% { background-position:0% 50%; } 100% { background-position:200% 50%; } }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior:auto; } * { animation:none !important; transition:none !important; } }
+</style>
+</helmet>
+<div style="background:#0B0B0B;min-height:100vh">
+  <dc-import name="SiteHeader" ativo="" hint-size="100%,98px" style="position:sticky;top:0;z-index:60;display:block"></dc-import>
+  <main id="conteudo" style="background:#F6F4EF;color:#0B0B0B;font-family:Poppins, system-ui, sans-serif">
+    <div style="background:#0B0B0B;color:#F6F4EF;padding:clamp(40px,6vw,88px) clamp(16px,3vw,36px) clamp(36px,5vw,64px)">
+      <div style="max-width:860px;margin:0 auto;display:flex;flex-direction:column;gap:18px">
+        <nav aria-label="Você está em" style="font-size:12px;color:#C5C2BB"><ol style="list-style:none;margin:0;padding:0;display:flex;gap:8px"><li><a href="Home.dc.html" style="color:#C5C2BB">Início</a></li><li aria-hidden="true" style="color:#7C7975">/</li><li aria-current="page" style="color:#F6F4EF;font-weight:600">Política de Privacidade</li></ol></nav>
+        <span style="font-size:12px;font-weight:700;letter-spacing:.3em;text-transform:uppercase;color:#B79A6A">Institucional</span>
+        <h1 style="margin:0;font-size:clamp(36px,5vw,64px);line-height:1;font-weight:700;letter-spacing:-.035em">Política de Privacidade</h1>
+        <p style="margin:0;font-size:17px;line-height:1.65;color:#C5C2BB;max-width:56ch">Como o Salão Morenos trata os dados pessoais de quem usa este site, de acordo com a Lei Geral de Proteção de Dados (Lei nº 13.709/2018).</p>
+        <span style="font-size:13px;color:#A9A69F">Última atualização: 10 de outubro de 2026</span>
+      </div>
+    </div>
+    <article style="max-width:860px;margin:0 auto;padding:clamp(40px,5vw,72px) clamp(16px,3vw,36px) clamp(56px,7vw,104px);display:flex;flex-direction:column;gap:32px">
+      <section style="display:flex;flex-direction:column;gap:14px;padding-top:32px;border-top:1px solid rgba(11,11,11,.12)">
+        <h2 style="margin:0;font-size:clamp(22px,2.2vw,28px);font-weight:700;letter-spacing:-.02em;line-height:1.2">1. Quem somos</h2>
+        <p style="margin:0;font-size:17px;line-height:1.75;color:#3E3C38">Este site pertence ao Salão Morenos, barbearia com três unidades em Serra — ES. Nesta política, “nós” é o Salão Morenos, controlador dos dados pessoais tratados por meio do site.</p>
+        <!-- TODO: confirmar com cliente razão social, CNPJ, endereço da sede e e-mail do encarregado (DPO) -->
+      </section>
+      <section style="display:flex;flex-direction:column;gap:14px;padding-top:32px;border-top:1px solid rgba(11,11,11,.12)">
+        <h2 style="margin:0;font-size:clamp(22px,2.2vw,28px);font-weight:700;letter-spacing:-.02em;line-height:1.2">2. Quais dados tratamos</h2>
+        <p style="margin:0;font-size:17px;line-height:1.75;color:#3E3C38">Tratamos apenas o necessário para você agendar, assinar o Clube ou falar com a gente:</p>
+        <ul style="margin:0;padding-left:22px;display:flex;flex-direction:column;gap:10px;font-size:17px;line-height:1.7;color:#3E3C38">
+          <li><strong>Dados que você digita nos formulários</strong> (Dia do Noivo, Corporativo e Trabalhe Conosco): nome, telefone ou WhatsApp, empresa, cidade, data do casamento, número de pessoas, tempo de experiência, Instagram profissional e mensagem.</li>
+          <li><strong>Unidade escolhida</strong>: guardada no seu próprio navegador (localStorage, chave <code>morenos_selected_unit</code>) para facilitar o próximo agendamento.</li>
+          <li><strong>Abertura do site</strong>: um registro no navegador (sessionStorage, chave <code>morenos_intro_seen</code>) para controlar a tela de abertura.</li>
+          <li><strong>Dados de navegação</strong>: quando houver ferramenta de estatística ativa, cliques em botões como Agendar, WhatsApp e Assinar, sem dados que identifiquem você diretamente.</li>
+        </ul>
+      </section>
+      <section style="display:flex;flex-direction:column;gap:14px;padding-top:32px;border-top:1px solid rgba(11,11,11,.12)">
+        <h2 style="margin:0;font-size:clamp(22px,2.2vw,28px);font-weight:700;letter-spacing:-.02em;line-height:1.2">3. Como os formulários funcionam</h2>
+        <p style="margin:0;font-size:17px;line-height:1.75;color:#3E3C38">Os formulários do site não guardam seus dados em um servidor nosso. Ao enviar, o site monta uma mensagem com o que você preencheu e abre o WhatsApp do Salão Morenos. A mensagem só é enviada se você confirmar o envio no próprio WhatsApp.</p>
+      </section>
+      <section style="display:flex;flex-direction:column;gap:14px;padding-top:32px;border-top:1px solid rgba(11,11,11,.12)">
+        <h2 style="margin:0;font-size:clamp(22px,2.2vw,28px);font-weight:700;letter-spacing:-.02em;line-height:1.2">4. Para que usamos</h2>
+        <ul style="margin:0;padding-left:22px;display:flex;flex-direction:column;gap:10px;font-size:17px;line-height:1.7;color:#3E3C38">
+          <li>Responder pedidos de Dia do Noivo, propostas corporativas e candidaturas.</li>
+          <li>Facilitar o agendamento na unidade escolhida.</li>
+          <li>Entender quais páginas e botões são mais usados, para melhorar o site.</li>
+          <li>Cumprir obrigações legais.</li>
+        </ul>
+      </section>
+      <section style="display:flex;flex-direction:column;gap:14px;padding-top:32px;border-top:1px solid rgba(11,11,11,.12)">
+        <h2 style="margin:0;font-size:clamp(22px,2.2vw,28px);font-weight:700;letter-spacing:-.02em;line-height:1.2">5. Bases legais</h2>
+        <p style="margin:0;font-size:17px;line-height:1.75;color:#3E3C38">Tratamos dados com base na execução de procedimentos preliminares a pedido do titular, no legítimo interesse (melhoria do site e atendimento) e no cumprimento de obrigação legal, conforme o art. 7º da Lei nº 13.709/2018 (LGPD). Quando a lei exigir, pediremos seu consentimento.</p>
+      </section>
+      <section style="display:flex;flex-direction:column;gap:14px;padding-top:32px;border-top:1px solid rgba(11,11,11,.12)">
+        <h2 style="margin:0;font-size:clamp(22px,2.2vw,28px);font-weight:700;letter-spacing:-.02em;line-height:1.2">6. Serviços de terceiros</h2>
+        <p style="margin:0;font-size:17px;line-height:1.75;color:#3E3C38">Algumas funções do site levam você a serviços de outras empresas, que têm políticas próprias:</p>
+        <ul style="margin:0;padding-left:22px;display:flex;flex-direction:column;gap:10px;font-size:17px;line-height:1.7;color:#3E3C38">
+          <li><strong>Cashbarber</strong>: agenda online e assinatura do Clube.</li>
+          <li><strong>WhatsApp</strong> (Meta): conversas e envio dos formulários.</li>
+          <li><strong>Google Maps</strong>: mapas e rotas das unidades.</li>
+          <li><strong>Google Fonts</strong>: fontes usadas no site.</li>
+        </ul>
+        <p style="margin:0;font-size:17px;line-height:1.75;color:#3E3C38">Ao usar esses serviços, o tratamento dos seus dados segue a política de cada empresa.</p>
+      </section>
+      <section style="display:flex;flex-direction:column;gap:14px;padding-top:32px;border-top:1px solid rgba(11,11,11,.12)">
+        <h2 style="margin:0;font-size:clamp(22px,2.2vw,28px);font-weight:700;letter-spacing:-.02em;line-height:1.2">7. Compartilhamento</h2>
+        <p style="margin:0;font-size:17px;line-height:1.75;color:#3E3C38">Não vendemos dados pessoais. Compartilhamos apenas com os serviços listados acima, quando você os usa, e com autoridades quando a lei exigir.</p>
+      </section>
+      <section style="display:flex;flex-direction:column;gap:14px;padding-top:32px;border-top:1px solid rgba(11,11,11,.12)">
+        <h2 style="margin:0;font-size:clamp(22px,2.2vw,28px);font-weight:700;letter-spacing:-.02em;line-height:1.2">8. Por quanto tempo guardamos</h2>
+        <p style="margin:0;font-size:17px;line-height:1.75;color:#3E3C38">As conversas pelo WhatsApp ficam guardadas pelo tempo necessário para atender o seu pedido e cumprir obrigações legais. Os registros no seu navegador podem ser apagados por você a qualquer momento nas configurações do navegador.</p>
+      </section>
+      <section style="display:flex;flex-direction:column;gap:14px;padding-top:32px;border-top:1px solid rgba(11,11,11,.12)">
+        <h2 style="margin:0;font-size:clamp(22px,2.2vw,28px);font-weight:700;letter-spacing:-.02em;line-height:1.2">9. Seus direitos</h2>
+        <p style="margin:0;font-size:17px;line-height:1.75;color:#3E3C38">Pela LGPD, você pode pedir a qualquer momento:</p>
+        <ul style="margin:0;padding-left:22px;display:flex;flex-direction:column;gap:10px;font-size:17px;line-height:1.7;color:#3E3C38">
+          <li>confirmação de que tratamos seus dados e acesso a eles;</li>
+          <li>correção de dados incompletos ou desatualizados;</li>
+          <li>anonimização, bloqueio ou eliminação de dados desnecessários;</li>
+          <li>portabilidade e informação sobre com quem compartilhamos;</li>
+          <li>revogação do consentimento, quando ele for a base do tratamento.</li>
+        </ul>
+        <p style="margin:0;font-size:17px;line-height:1.75;color:#3E3C38">Para exercer esses direitos, fale com a gente pelo WhatsApp informado no rodapé do site.</p>
+      </section>
+      <section style="display:flex;flex-direction:column;gap:14px;padding-top:32px;border-top:1px solid rgba(11,11,11,.12)">
+        <h2 style="margin:0;font-size:clamp(22px,2.2vw,28px);font-weight:700;letter-spacing:-.02em;line-height:1.2">10. Segurança</h2>
+        <p style="margin:0;font-size:17px;line-height:1.75;color:#3E3C38">Usamos conexão segura (HTTPS) e limitamos o acesso aos dados às pessoas que precisam deles para atender você.</p>
+      </section>
+      <section style="display:flex;flex-direction:column;gap:14px;padding-top:32px;border-top:1px solid rgba(11,11,11,.12)">
+        <h2 style="margin:0;font-size:clamp(22px,2.2vw,28px);font-weight:700;letter-spacing:-.02em;line-height:1.2">11. Crianças e adolescentes</h2>
+        <p style="margin:0;font-size:17px;line-height:1.75;color:#3E3C38">Dados de menores de 18 anos, como no Corte Kids, devem ser informados pelo responsável legal.</p>
+      </section>
+      <section style="display:flex;flex-direction:column;gap:14px;padding-top:32px;border-top:1px solid rgba(11,11,11,.12)">
+        <h2 style="margin:0;font-size:clamp(22px,2.2vw,28px);font-weight:700;letter-spacing:-.02em;line-height:1.2">12. Mudanças nesta política</h2>
+        <p style="margin:0;font-size:17px;line-height:1.75;color:#3E3C38">Podemos atualizar esta política. A data da última atualização fica no topo da página.</p>
+      </section>
+    </article>
+  </main>
+  <dc-import name="SiteFooter" hint-size="100%,460px"></dc-import>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{}">
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

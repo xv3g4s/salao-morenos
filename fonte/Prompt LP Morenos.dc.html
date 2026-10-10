@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<title>Prompt de Landing Page — Salão Morenos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  body { margin:0; font-family:Poppins, system-ui, sans-serif; background:#FCFBF8; color:#111312; -webkit-font-smoothing:antialiased; text-wrap:pretty; }
+  * { box-sizing:border-box; }
+  a { color:#243D34; } a:hover { color:#B79A6A; }
+  :focus-visible { outline:2px solid #B79A6A; outline-offset:3px; }
+</style>
+</helmet>
+
+<article style="max-width:900px;margin:0 auto;padding:clamp(28px,5vw,64px) clamp(20px,4vw,40px) 80px">
+
+  <header style="border-bottom:1px solid rgba(17,19,18,.12);padding-bottom:28px;margin-bottom:40px;display:flex;flex-direction:column;gap:14px">
+    <span style="font-size:11px;font-weight:600;letter-spacing:.24em;text-transform:uppercase;color:#B79A6A">Documento de execução · Rebranding digital</span>
+    <h1 style="margin:0;font-size:clamp(28px,3.6vw,42px);line-height:1.12;font-weight:700;letter-spacing:-.02em">Prompt de landing page — Salão Morenos</h1>
+    <p style="margin:0;font-size:16px;line-height:1.7;color:#5C625D;max-width:62ch">Adaptação do prompt genérico de landing page à realidade do Salão Morenos: barbearia com três unidades em Serra, Espírito Santo. Campos preenchidos com o que já está confirmado; o que falta está marcado como pendência, não como conteúdo.</p>
+  </header>
+
+  <sc-for list="{{ blocks }}" as="b" hint-placeholder-count="10">
+    <section style="margin-bottom:44px">
+      <div style="display:flex;gap:14px;align-items:baseline;border-bottom:1px solid rgba(17,19,18,.1);padding-bottom:10px;margin-bottom:20px">
+        <span style="font-size:13px;font-weight:700;color:#B79A6A;letter-spacing:.08em">{{ b.n }}</span>
+        <h2 style="margin:0;font-size:clamp(20px,2.2vw,26px);font-weight:600;line-height:1.25;letter-spacing:-.01em">{{ b.titulo }}</h2>
+      </div>
+      <sc-if value="{{ b.intro }}" hint-placeholder-val="{{ true }}">
+        <p style="margin:0 0 18px;font-size:16px;line-height:1.75;color:#111312;max-width:66ch">{{ b.intro }}</p>
+      </sc-if>
+      <sc-for list="{{ b.groups }}" as="g" hint-placeholder-count="2">
+        <div style="margin-bottom:22px">
+          <sc-if value="{{ g.label }}" hint-placeholder-val="{{ true }}">
+            <h3 style="margin:0 0 10px;font-size:14px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#243D34">{{ g.label }}</h3>
+          </sc-if>
+          <ul style="margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:10px">
+            <sc-for list="{{ g.items }}" as="i" hint-placeholder-count="4">
+              <li style="display:flex;gap:12px;align-items:flex-start">
+                <span aria-hidden="true" style="flex-shrink:0;width:6px;height:6px;border-radius:50%;background:#B79A6A;margin-top:9px"></span>
+                <span style="font-size:15px;line-height:1.7;color:#111312;max-width:70ch">{{ i }}</span>
+              </li>
+            </sc-for>
+          </ul>
+        </div>
+      </sc-for>
+      <sc-if value="{{ b.nota }}">
+        <p style="margin:0;font-size:14px;line-height:1.65;color:#5C625D;background:#F5F2EB;border-left:3px solid #B79A6A;border-radius:0 8px 8px 0;padding:14px 16px;max-width:70ch">{{ b.nota }}</p>
+      </sc-if>
+    </section>
+  </sc-for>
+
+  <section style="background:#111312;color:#FCFBF8;border-radius:16px;padding:clamp(26px,4vw,40px)">
+    <h2 style="margin:0 0 8px;font-size:clamp(20px,2.2vw,26px);font-weight:600">Pendências que travam a publicação</h2>
+    <p style="margin:0 0 20px;font-size:15px;line-height:1.7;color:#C9CEC8;max-width:62ch">Lista única. Enquanto um item estiver aberto, o bloco correspondente fica sem conteúdo definitivo na página.</p>
+    <ol style="margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:12px">
+      <sc-for list="{{ pendencias }}" as="p" hint-placeholder-count="8">
+        <li style="display:flex;gap:14px;align-items:flex-start;border-bottom:1px solid rgba(245,242,235,.12);padding-bottom:12px">
+          <span aria-hidden="true" style="flex-shrink:0;font-size:12px;font-weight:600;color:#B79A6A;min-width:22px">{{ p.n }}</span>
+          <span style="font-size:15px;line-height:1.65;color:#F5F2EB;max-width:66ch">{{ p.t }}</span>
+        </li>
+      </sc-for>
+    </ol>
+  </section>
+
+</article>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:900,&quot;height&quot;:1200}}">
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      blocks: [
+        {
+          n: '01', titulo: 'Objetivo e dados reais',
+          intro: 'Landing page de campanha do Salão Morenos, barbearia em Serra, Espírito Santo. Conversão principal: agendamento na unidade escolhida. Conversão secundária: interesse em assinar O Clube.',
+          groups: [
+            { label: 'Confirmado', items: [
+              'Nome: Salão Morenos. Nicho: barbearia masculina. Área de atendimento: Serra, ES — bairros Cidade Continental e Novo Horizonte.',
+              'Três unidades: Av. Terceiro Mundo (Cidade Continental — Setor Ásia, 29163-603); Av. Brasil (Novo Horizonte, 29163-331); Av. Industrial, 830 — Loja 3 (Novo Horizonte, 29163-357).',
+              'Serviço prioritário: corte masculino e barba. Serviços de consulta: barboterapia, visagismo, dia do noivo, corporativo.',
+              'Público: homens de Serra que buscam a marca pelo nome e homens da região escolhendo uma barbearia pela primeira vez.',
+              'Agendamento hoje acontece no painel Cash Barber, com agenda por unidade.',
+              'Avaliações reais publicadas no Google, com autoria identificada.',
+              'Logo existente: assinatura circular com chapéu e navalhas cruzadas, aplicada em negativo.',
+            ]},
+            { label: 'Ainda não fornecido — usar placeholder explícito', items: [
+              'Telefone e WhatsApp por unidade. Os contatos antigos com DDD 41 foram descartados e não devem ser reutilizados.',
+              'Horários de funcionamento por unidade.',
+              'Números dos imóveis da Av. Terceiro Mundo e da Av. Brasil.',
+              'Planos, valores, limites de uso e regras de cancelamento de O Clube.',
+              'Link de agenda do Cash Barber por unidade.',
+              'Fotos em alta de fachada, interior, equipe e trabalhos autorizados.',
+              'Domínio final, endpoint de captura, política de privacidade e CNPJ.',
+            ]},
+          ],
+          nota: 'Nada de ano de fundação, número de membros, quantidade de atendimentos, liderança nacional, pioneirismo em assinatura ou certificação. Remover qualquer referência a John Six, Curitiba, Ecoville e Vitória como origem ou prova de localização.',
+        },
+        {
+          n: '02', titulo: 'Estratégia de conversão e copy',
+          intro: 'O visitante chega com uma pergunta prática: onde cortar o cabelo perto de onde ele já passa, e como marcar. A copy responde isso antes de falar de marca.',
+          groups: [
+            { label: 'Decisões fixas', items: [
+              'Conversão principal: agendar na unidade. Todo CTA primário leva ao seletor das três unidades e, dali, à agenda daquele endereço.',
+              'Conversão secundária: conhecer O Clube. Nunca apresentada como requisito para ser atendido.',
+              'CTAs padronizados: “Escolher unidade e agendar”, “Agendar nesta unidade”, “Ver planos do Clube”, “Consultar disponibilidade de visagismo”, “Consultar minha data” (dia do noivo), “Conversar sobre uma proposta” (corporativo).',
+              'Objeções a antecipar: qual unidade é a minha, precisa ser assinante, quanto custa, quanto tempo leva, atendem criança, tem horário no fim do dia.',
+            ]},
+            { label: 'Tom', items: [
+              'Concreto sobre o atendimento: o que acontece na cadeira, o que o cliente escolhe, como manter o resultado.',
+              'Sem discurso de poder, elite, autoridade ou superioridade. Sem “impecável”, “padrão nº 1”, “respeito se conquista”.',
+              'Sem urgência inventada, escassez, contagem de vagas ou garantia de resultado.',
+              'Parágrafos curtos, subtítulo informativo, lista só quando facilita a leitura.',
+            ]},
+          ],
+          nota: 'Primeira dobra deve responder em uma tela: é a Morenos, atende em Serra, tem três endereços, e o agendamento está a um toque.',
+        },
+        {
+          n: '03', titulo: 'Direção de arte',
+          intro: 'A paleta escura genérica do prompt original (#09090a / #f2f2f3) é substituída pela paleta do rebranding da Morenos, que já está aprovada como proposta.',
+          groups: [
+            { label: 'Cores', items: [
+              'Preto carvão #111312 nas áreas de maior presença. Verde profundo #243D34 em um bloco de argumento.',
+              'Marfim #F5F2EB e branco quente #FCFBF8 nas seções informativas.',
+              'Bronze #B79A6A apenas em categoria, linha, numeração e detalhe. Nunca em texto pequeno sobre fundo claro.',
+              'Cinza de texto #5C625D em apoio; texto longo sempre em alto contraste.',
+              'Máximo de duas trocas de fundo por narrativa. Alternar claro e escuro conforme o assunto, sem transformar cada bloco em faixa isolada.',
+            ]},
+            { label: 'Tipografia e composição', items: [
+              'Poppins: 600/700 em títulos, 400/500 em corpo. Caixa alta só em microcategoria e na assinatura da marca.',
+              'clamp() para escala fluida. Container de 1200 a 1280 px, margem confortável no celular.',
+              'Fotografia real grande combinada com bloco editorial. Card apenas onde há comparação: unidades e planos.',
+              'Borda discreta, arredondamento moderado, sombra suave só para indicar profundidade.',
+            ]},
+            { label: 'Proibido', items: [
+              'Gradiente chamativo, brilho artificial, excesso de dourado, efeito de vidro, halo forte.',
+              'Foto escurecida ao ponto de perder textura de pele e cabelo.',
+              'Imagem de ambiente luxuoso genérico apresentada como instalação da empresa.',
+              'Símbolo inventado de bigode, coroa, caveira ou tesouras cruzadas como marca central.',
+              'Movimento: revelação curta e discreta, com prefers-reduced-motion respeitado. Sem rolagem controlada, cursor customizado ou contador fictício.',
+            ]},
+          ],
+        },
+        {
+          n: '04', titulo: 'Estrutura da página',
+          intro: 'A sequência de 16 blocos do prompt original é enxugada para 11. Barbearia de bairro não sustenta demonstração de produto digital, comparativo de concorrência nem bloco de cases com resultado mensurado.',
+          groups: [
+            { label: 'Sequência', items: [
+              '1. Hero — H1 com marca, serviço e cidade; apoio explicando para quem é; CTA de agendar; acesso rápido às três unidades; foto real de atendimento.',
+              '2. Unidades — três cards com foto de fachada, bairro, avenida, endereço, “Conhecer unidade” e “Agendar nesta unidade”. As duas de Novo Horizonte destacam a avenida.',
+              '3. Serviços — corte masculino, barba e barboterapia, visagismo, dia do noivo, com descrição curta e indicação de onde está disponível. Acesso ao catálogo completo.',
+              '4. Como é o atendimento — substitui “demonstração da solução”: as etapas reais da visita, da conversa inicial à orientação de manutenção.',
+              '5. O espaço e a equipe — fotografia real de interior e profissionais, com comodidades apenas confirmadas.',
+              '6. O Clube — proposta da assinatura em poucas linhas, como funciona em três passos, e a diferença entre assinar e agendar avulso. Fonte única de dados para planos.',
+              '7. Avaliações — texto reproduzido como recebido, autoria conforme publicada no Google, unidade identificada quando houver o dado.',
+              '8. Sobre a Morenos — relação com a região, sem data de fundação, fundador ou trajetória inventada.',
+              '9. Dúvidas rápidas — como agendar, como escolher a unidade, atendimento avulso, serviços, Clube, horários.',
+              '10. Conversão final — as três unidades novamente e o acesso ao agendamento.',
+              '11. Rodapé — logo, descritor, links das páginas reais, endereços, contatos e política de privacidade.',
+            ]},
+            { label: 'Blocos descartados e por quê', items: [
+              'Demonstração de interface e dashboard: não há produto digital próprio; simular painel seria prova falsa.',
+              'Cases com resultado comprovado: barbearia não tem case com métrica; o equivalente honesto é galeria de trabalhos autorizados.',
+              'Comparativo com a concorrência: sem dado verificável, viraria invenção de defeito alheio.',
+              'CTA de diagnóstico gratuito: não existe essa oferta. O equivalente é o agendamento e, no visagismo, a consulta de disponibilidade.',
+              'Coluna sticky de parceria e pilares institucionais: repetiriam a seção de atendimento.',
+            ]},
+          ],
+        },
+        {
+          n: '05', titulo: 'SEO local',
+          groups: [
+            { label: 'Intenção principal', items: [
+              'Busca pela marca: Salão Morenos, Morenos unidades, Morenos agendamento, Morenos Novo Horizonte, Morenos Cidade Continental.',
+              'Busca por serviço e região: barbearia em Serra, corte masculino em Serra, barboterapia em Serra, visagismo masculino em Serra, dia do noivo em Serra, barbearia em Novo Horizonte, barbearia em Cidade Continental.',
+              'Termos tratados como hipótese de intenção. Sem volume, dificuldade ou CPC — não há dado validado.',
+            ]},
+            { label: 'Implementação', items: [
+              'Title proposto: “Salão Morenos — Barbearia em Serra, ES | Agende sua unidade”.',
+              'Meta description citando os três endereços e a ação de agendar.',
+              'Um H1 por página, H2 por assunto, hierarquia semântica independente do tamanho visual.',
+              'Preservar as URLs existentes. Páginas novas de unidade e serviço com slug descritivo e estável.',
+              'Link interno descritivo entre serviço e as unidades que o oferecem, e de cada unidade para seus serviços.',
+              'Dados estruturados LocalBusiness por unidade, com nome, endereço e telefone iguais aos visíveis. Sem AggregateRating inventado.',
+              'Breadcrumbs, sitemap e robots coerentes. Ambiente de revisão fora do índice, com liberação conferida no lançamento.',
+            ]},
+          ],
+          nota: 'Não criar página de bairro sem unidade real. Não repetir lista de bairros. Não prometer primeira posição.',
+        },
+        {
+          n: '06', titulo: 'UX, responsividade e acessibilidade',
+          groups: [
+            { items: [
+              'Mobile-first. Cabeçalho compacto e fixo, com “Agendar” sempre visível — o visitante nunca precisa abrir o menu para descobrir como marcar.',
+              'Barra inferior discreta no celular com “Agendar” e “Unidades”, com espaço reservado para não cobrir conteúdo.',
+              'Área de toque mínima de 44 px. Foco visível, navegação por teclado, contraste AA.',
+              'Modal do seletor de unidades: fecha por botão e por Escape, foco preso enquanto aberto, devolvido ao CTA de origem.',
+              'Nenhum popup automático no carregamento. Nenhuma rolagem horizontal.',
+              'Formulário com label persistente, erro junto ao campo, estados de carregando, sucesso e falha.',
+            ]},
+          ],
+        },
+        {
+          n: '07', titulo: 'Fluxo de agendamento',
+          groups: [
+            { items: [
+              'CTA geral abre seletor simples das três unidades; após a escolha, encaminha para a agenda daquele endereço no Cash Barber.',
+              'Em página de unidade, o botão principal já usa aquela unidade, com troca fácil.',
+              'Sem cadastro antes de mostrar endereços e serviços.',
+              'Enquanto os links por unidade não forem fornecidos, manter interface de demonstração e registrar a pendência. Não exibir horários disponíveis nem “Agendamento confirmado” por clique.',
+            ]},
+          ],
+        },
+        {
+          n: '08', titulo: 'Formulários e canais',
+          groups: [
+            { label: 'Onde há formulário', items: [
+              'Corporativo: nome, empresa, contato e interesse. CTA “Conversar sobre uma proposta”.',
+              'Dia do noivo: nome, contato, data pretendida e quantidade de pessoas. CTA “Consultar minha data”.',
+              'Trabalhe Conosco: canal separado do agendamento, com campo de área de atuação e envio de portfólio.',
+              'Nenhum campo de faturamento ou porte na captura de cliente final — não é usado no atendimento.',
+            ]},
+            { label: 'Integração', items: [
+              'Envio para planilha via Apps Script com doPost, validação também no servidor, proteção contra entrada interpretada como fórmula, antispam e bloqueio de envio duplicado.',
+              'Sucesso exibido apenas após confirmação real do servidor; em falha, preservar os dados digitados.',
+              'Requisição opaca em no-cors não conta como confirmação de lead salvo.',
+              'UTMs capturadas em campos separados, origem preservada na navegação e na abertura do modal, sem sobrescrever origem válida com valor vazio.',
+              'WhatsApp por deep link com número internacional e mensagem contextual codificada, incluindo a unidade escolhida.',
+              'Aviso claro de uso dos dados e link para a política de privacidade.',
+            ]},
+          ],
+          nota: 'Endpoint, planilha, destinatários de notificação e número de WhatsApp ainda não fornecidos: entregar código e instruções, marcando a integração como pendente de teste. Nenhuma credencial trocada no chat.',
+        },
+        {
+          n: '09', titulo: 'Performance e mensuração',
+          groups: [
+            { label: 'Performance', items: [
+              'Foto do hero é o LCP: sem lazy loading, com dimensão reservada e versão otimizada.',
+              'Lazy nas imagens abaixo da dobra; aspect-ratio definido para evitar deslocamento.',
+              'Poucos pesos de Poppins. Sem vídeo com reprodução automática. Efeitos mínimos.',
+            ]},
+            { label: 'Eventos', items: [
+              'Seleção de unidade, clique em agendamento, clique em WhatsApp, clique em telefone, clique em rota, interesse em assinatura, envio de formulário — associados à unidade quando aplicável.',
+              'Nenhum dado pessoal enviado a ferramenta de analytics.',
+              'Clique, contato recebido e agendamento confirmado registrados como eventos distintos. Abertura de modal não é lead.',
+              'Nada disso aparece na experiência do visitante.',
+            ]},
+          ],
+        },
+        {
+          n: '10', titulo: 'Ordem de trabalho e revisão final',
+          groups: [
+            { items: [
+              'Sequência: pendências levantadas, posicionamento e SEO definidos, copy e hierarquia escritas, layout e interações implementados, integrações configuradas conforme acesso, experiência validada, pendências informadas.',
+              'Conferir antes de entregar: grafia “Salão Morenos” em todo texto; diferenciação clara entre as três unidades; destino de cada CTA igual ao rótulo; nenhuma referência a outra empresa ou cidade; legibilidade no celular; clareza dos planos; veracidade de cada afirmação; caminho curto até o agendamento.',
+              'Não declarar como testado o que não foi executado — em especial o recebimento na planilha e a propagação de UTMs.',
+            ]},
+          ],
+        },
+      ],
+      pendencias: [
+        { n: '01', t: 'Telefone e WhatsApp de cada unidade, no formato internacional para o deep link.' },
+        { n: '02', t: 'Horários de funcionamento por unidade, por dia da semana.' },
+        { n: '03', t: 'Número do imóvel na Av. Terceiro Mundo e na Av. Brasil.' },
+        { n: '04', t: 'Planos de O Clube: nome, valor, serviços inclusos, limite de uso, unidades participantes, fidelidade e cancelamento.' },
+        { n: '05', t: 'Link de agenda do Cash Barber por unidade.' },
+        { n: '06', t: 'Fotos em alta: fachada, interior, equipe, detalhes de corte e trabalhos autorizados, por unidade.' },
+        { n: '07', t: 'Logo em vetor, positiva e negativa.' },
+        { n: '08', t: 'Unidades que realizam visagismo e dia do noivo, e itens confirmados de cada um.' },
+        { n: '09', t: 'Unidade de origem de cada avaliação do Google e autorização de uso dos textos.' },
+        { n: '10', t: 'Oferta corporativa confirmada: o que é vendido, como é contratado, onde é atendido.' },
+        { n: '11', t: 'Domínio final, endpoint da planilha, destinatários de notificação e política de privacidade.' },
+        { n: '12', t: 'Perfis sociais ativos e CNPJ para o rodapé.' },
+      ],
+    };
+  }
+}
+</script>
+</body>
+</html>

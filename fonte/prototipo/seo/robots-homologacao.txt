@@ -1,0 +1,3 @@
+# Usar somente em novosite.salaomorenos.com.br
+User-agent: *
+Disallow: /
