@@ -489,6 +489,12 @@ def publica_estaticos(palco: pathlib.Path, homologacao: bool, avaliacoes: bool) 
         if destino_api.exists():
             shutil.rmtree(destino_api)
 
+    # site-config.js e site-loader.js passaram a ir embutidos nas paginas: se
+    # sobraram de um build anterior, saem — arquivo orfao em producao so
+    # confunde quem for depurar.
+    for orfao in ("site-config.js", "site-loader.js"):
+        (PUB / orfao).unlink(missing_ok=True)
+
     robots = "robots-homologacao.txt" if homologacao else "robots.txt"
     shutil.copy2(PROTO / "seo" / robots, PUB / "robots.txt")
     shutil.copy2(PROTO / "seo" / "sitemap.xml", PUB / "sitemap.xml")
