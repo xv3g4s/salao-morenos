@@ -51,3 +51,20 @@ Vitória como localização, John Six, Curitiba, Ecoville, telefones DDD 41, "ma
 - [ ] JSON-LD LocalBusiness por unidade só com dados confirmados
 - [ ] srcset/AVIF das imagens
 - [ ] redirects do WordPress antigo (as 9 URLs atuais foram mantidas)
+
+
+---
+
+## Avaliações do Google (integração Places API)
+
+Adicionado depois do handoff — ver `GOOGLE-REVIEWS-INTEGRATION.md` na raiz.
+
+- [ ] Google Cloud: projeto, faturamento e **Places API (New)** ativos
+- [ ] API Key exclusiva do servidor, restrita à Places API (New) e ao IP da conta
+- [ ] `GOOGLE_MAPS_API_KEY` configurada em `~/.morenos-env.php` (fora do public_html)
+- [ ] Place ID das três unidades validado pelo endereço (`npm run find:google-places`)
+- [ ] **Política de Privacidade**: acrescentar que a seção de depoimentos exibe
+      conteúdo público do Google Maps (texto, nome e foto de perfil dos autores),
+      carregado por requisição feita pelo servidor do site
+- [ ] **Termos de Uso**: revisar junto, na mesma passagem jurídica que já estava
+      pendente (razão social, CNPJ, encarregado)

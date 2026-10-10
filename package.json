@@ -1,0 +1,17 @@
+{
+  "name": "salao-morenos-site",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Site do Salao Morenos (Serra, ES) — HTML estatico pre-renderizado a partir do design do Claude Design.",
+  "type": "module",
+  "scripts": {
+    "build": "python3 fonte/build.py",
+    "build:homologacao": "python3 fonte/build.py --homologacao",
+    "check": "node fonte/checar.mjs public",
+    "test:avaliacoes": "node fonte/testes/avaliacoes.mjs",
+    "find:google-places": "node fonte/scripts/find-google-place-ids.mjs"
+  },
+  "devDependencies": {
+    "playwright": "^1.49.0"
+  }
+}

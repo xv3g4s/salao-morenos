@@ -21,9 +21,13 @@ tmp/
 *.tmp
 
 # Chaves e segredos - NUNCA versionar
+# (a chave da Places API e os Place IDs vivem no ambiente da hospedagem)
 *.pem
 *.key
 id_rsa*
 id_ed25519*
+deploy-key*
+.morenos-env.php
 .env
 .env.*
+!.env.example

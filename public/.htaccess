@@ -17,6 +17,29 @@ DirectoryIndex index.html
   RewriteRule ^(.*)$ https://%1/$1 [R=301,L]
 </IfModule>
 
+# ---------- Rota interna das avaliacoes do Google ----------
+# O site e estatico; o unico codigo de servidor e este endpoint em PHP, que
+# guarda a chave da Places API. URL limpa -> arquivo .php.
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteRule ^api/google-reviews/?$ api/google-reviews.php [L]
+</IfModule>
+
+# config.php so e util quando incluido pelo endpoint; acesso direto, nunca.
+<Files "config.php">
+  Require all denied
+</Files>
+
+# Se o PHP estiver desligado nesta conta, um .php seria servido como texto.
+# Esta linha garante que a pasta /api so entregue conteudo processado.
+<IfModule !mod_php.c>
+  <IfModule !proxy_fcgi_module>
+    <FilesMatch "\.php$">
+      Require all denied
+    </FilesMatch>
+  </IfModule>
+</IfModule>
+
 # ---------- Compressao ----------
 <IfModule mod_deflate.c>
   AddOutputFilterByType DEFLATE text/html text/plain text/css text/xml

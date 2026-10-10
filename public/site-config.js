@@ -156,7 +156,7 @@
   // Tela de abertura (site-loader.js). Para rever a abertura: abrir qualquer página com ?intro na URL,
   // ou rodar sessionStorage.removeItem('morenos_intro_seen') no console.
   C.loader = {
-    showOncePerSession: false, // true = só na primeira página da sessão
+    showOncePerSession: true, // true = só na primeira página da sessão
     minimumVisibleTime: 1200,
     maximumVisibleTime: 4500,
     exitDuration: 560,

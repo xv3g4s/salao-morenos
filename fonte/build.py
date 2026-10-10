@@ -116,7 +116,8 @@ __COMPONENTES__
 # O design nao traz favicon; o repositorio ja tinha os arquivos.
 FAVICONS = """<link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="icon" href="/favicon-192.png" sizes="192x192" type="image/png">
-<link rel="apple-touch-icon" href="/apple-touch-icon.png">"""
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<script src="/avaliacoes-google.js" defer></script>"""
 
 VIEWPORT = '<meta name="viewport" content="width=device-width, initial-scale=1">'
 
@@ -164,6 +165,15 @@ def patch_config(js: str, homologacao: bool) -> str:
         "  C.routes = C.paths;\n\n")
     js = js.replace(agulha, ponte + agulha, 1)
 
+    # A tela de abertura do prototipo reaparece a cada carga de pagina. Num
+    # site de 17 rotas isso significa ver a intro em toda navegacao interna e a
+    # cada volta para a aba. Uma vez por sessao e o comportamento certo em
+    # producao (o proprio prototipo ja preve a chave).
+    antes = "showOncePerSession: false"
+    if antes not in js:
+        raise SystemExit("erro: nao achei C.loader.showOncePerSession no site-config.js")
+    js = js.replace(antes, "showOncePerSession: true", 1)
+
     estagio = "homologacao" if homologacao else "producao"
     js, n = re.subn(r"stage: /novosite\\\./\.test\(location\.hostname\) \? 'homologacao' : 'producao',",
                     f"stage: '{estagio}',  // fixado no build", js, count=1)
@@ -191,6 +201,13 @@ def monta_palco(palco: pathlib.Path, homologacao: bool) -> None:
         encoding="utf-8")
     for js in ("site-loader.js", "smooth-scroll.js", "support.js"):
         shutil.copy2(PROTO / js, palco / js)
+
+    # Durante a pre-renderizacao, /api/google-reviews nao existe: o script real
+    # pintaria o estado de erro e ele ficaria congelado no HTML. O palco recebe
+    # um stub, e a copia estatica guarda a secao como o design a desenhou. O
+    # script de verdade (public/avaliacoes-google.js) so roda no site no ar.
+    (palco / "avaliacoes-google.js").write_text(
+        "/* stub de build: o script real roda so no site publicado */\n", encoding="utf-8")
 
     for pasta in ASSETS_PROTO:
         shutil.copytree(PROTO / pasta, palco / pasta)
