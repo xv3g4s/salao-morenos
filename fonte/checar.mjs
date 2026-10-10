@@ -43,6 +43,28 @@ const MIME = {
   '.txt': 'text/plain; charset=utf-8', '.json': 'application/json',
 };
 
+// O servidor de teste aplica as regras de bloqueio do .htaccess. Sem isto ele
+// seria mais permissivo que a HostGator e esconderia o tipo de erro que ja
+// aconteceu em producao: uma regra bloqueando *.dc.html derrubou o cabecalho,
+// o rodape e o corpo das paginas internas, e o teste local passava.
+const REGRAS_NEGADAS = (() => {
+  const f = path.join(RAIZ, '.htaccess');
+  if (!fs.existsSync(f)) return [];
+  let txt = fs.readFileSync(f, 'utf8')
+    .replace(/<IfModule\s+![^>]*>[\s\S]*?<\/IfModule>/gi, '');  // so valem sem o modulo
+  const regras = [];
+  for (const [tag, literal] of [['FilesMatch', false], ['Files', true]]) {
+    const re = new RegExp(`<${tag}\\s+"([^"]+)"\\s*>([\\s\\S]*?)<\\/${tag}>`, 'gi');
+    for (const m of txt.matchAll(re)) {
+      if (!/Require all denied|Deny from all/i.test(m[2])) continue;
+      regras.push(new RegExp(literal ? `^${m[1].replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$` : m[1]));
+    }
+  }
+  return regras;
+})();
+
+const negado = (f) => REGRAS_NEGADAS.some((re) => re.test(path.basename(f)));
+
 const arquivoDe = (url) => {
   let p = decodeURIComponent(url.split('?')[0].split('#')[0]);
   let f = path.join(RAIZ, p);
@@ -53,6 +75,7 @@ const arquivoDe = (url) => {
 
 const server = http.createServer((req, res) => {
   const f = arquivoDe(req.url);
+  if (negado(f)) { res.writeHead(403); return res.end('bloqueado pelo .htaccess'); }
   if (!f.startsWith(RAIZ) || !fs.existsSync(f) || fs.statSync(f).isDirectory()) {
     const e404 = path.join(RAIZ, '404.html');
     if (fs.existsSync(e404)) {
@@ -96,6 +119,18 @@ const checa = (cond, msg) => (cond ? ok : falhas).push(msg);
   checa(quebrados.length === 0,
     quebrados.length ? `LINK INTERNO QUEBRADO: ${quebrados.slice(0, 5).join(', ')}`
                      : 'todo link interno resolve para uma pagina que existe');
+}
+
+// os componentes precisam ser servidos: o navegador os busca em tempo de execucao
+{
+  const comps = ['SiteHeader', 'SiteFooter', 'PaginaMorenos']
+    .map((c) => path.join(RAIZ, '_dc', `${c}.dc.html`));
+  const faltando = comps.filter((f) => !fs.existsSync(f));
+  const barrados = comps.filter((f) => negado(f));
+  checa(faltando.length === 0, `componentes em /_dc/ publicados (${comps.length - faltando.length}/3)`);
+  checa(barrados.length === 0,
+    barrados.length ? `COMPONENTE BLOQUEADO PELO .htaccess: ${barrados.map((f) => path.basename(f)).join(', ')}`
+                    : 'nenhum componente de /_dc/ bloqueado pelo .htaccess');
 }
 
 const browser = await chromium.launch();

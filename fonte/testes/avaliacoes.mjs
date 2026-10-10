@@ -29,6 +29,14 @@ const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
 const PUB = path.join(RAIZ, 'public');
 const CHAVE_FALSA = 'AIzaSyFAKE-chave-de-teste-nunca-real';
 
+// A integracao nasce desligada: por padrao a secao de depoimentos fica como o
+// design a desenhou. Estes testes so fazem sentido num build que a ligou.
+if (!fs.existsSync(path.join(PUB, 'avaliacoes-google.js'))) {
+  console.log('\nPULADO: a integracao de avaliacoes do Google nao esta neste build.');
+  console.log('Para testar:  python3 fonte/build.py --avaliacoes-google && node fonte/testes/avaliacoes.mjs\n');
+  process.exit(0);
+}
+
 const ok = [], falhas = [];
 const checa = (cond, msg) => (cond ? ok : falhas).push(msg);
 const espera = (ms) => new Promise((r) => setTimeout(r, ms));

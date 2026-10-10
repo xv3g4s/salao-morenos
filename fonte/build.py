@@ -116,19 +116,26 @@ __COMPONENTES__
 # O design nao traz favicon; o repositorio ja tinha os arquivos.
 FAVICONS = """<link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="icon" href="/favicon-192.png" sizes="192x192" type="image/png">
-<link rel="apple-touch-icon" href="/apple-touch-icon.png">
-<script src="/avaliacoes-google.js" defer></script>"""
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">"""
+
+# A integracao de avaliacoes do Google e OPCIONAL e nasce DESLIGADA: por padrao
+# a secao de depoimentos fica exatamente como o design a desenhou. Com
+# --avaliacoes-google o build publica fonte/avaliacoes/ (o script e a rota PHP)
+# e carrega o script nas paginas. Ver GOOGLE-REVIEWS-INTEGRATION.md.
+SCRIPT_AVALIACOES = '<script src="/avaliacoes-google.js" defer></script>'
+AVALIACOES_DIR = FONTE / "avaliacoes"
 
 VIEWPORT = '<meta name="viewport" content="width=device-width, initial-scale=1">'
 
 
-def patch_pagina(html: str) -> str:
+def patch_pagina(html: str, avaliacoes: bool = False) -> str:
     """Prepara uma pagina do prototipo para virar pagina publicada."""
     falhas = []
 
     if html.count(VIEWPORT) != 1:
         falhas.append("a meta viewport")
-    html = html.replace(VIEWPORT, VIEWPORT + "\n" + FAVICONS, 1)
+    cabeca = FAVICONS + ("\n" + SCRIPT_AVALIACOES if avaliacoes else "")
+    html = html.replace(VIEWPORT, VIEWPORT + "\n" + cabeca, 1)
 
     html = troca_links(RELATIVO_RE.sub(r'\1/\2', html))
     for js in JS_SITE:
@@ -184,7 +191,7 @@ def patch_config(js: str, homologacao: bool) -> str:
     return js
 
 
-def monta_palco(palco: pathlib.Path, homologacao: bool) -> None:
+def monta_palco(palco: pathlib.Path, homologacao: bool, avaliacoes: bool) -> None:
     """Monta a arvore que o Chromium vai enxergar — igual a publicada."""
     (palco / "_dc").mkdir(parents=True)
     for c in COMPONENTES:
@@ -194,7 +201,8 @@ def monta_palco(palco: pathlib.Path, homologacao: bool) -> None:
 
     for arquivo, *_ in ROTAS:
         alvo = palco / arquivo
-        alvo.write_text(patch_pagina((PROTO / arquivo).read_text(encoding="utf-8")), encoding="utf-8")
+        alvo.write_text(patch_pagina((PROTO / arquivo).read_text(encoding="utf-8"), avaliacoes),
+                        encoding="utf-8")
 
     (palco / "site-config.js").write_text(
         patch_config((PROTO / "site-config.js").read_text(encoding="utf-8"), homologacao),
@@ -206,8 +214,9 @@ def monta_palco(palco: pathlib.Path, homologacao: bool) -> None:
     # pintaria o estado de erro e ele ficaria congelado no HTML. O palco recebe
     # um stub, e a copia estatica guarda a secao como o design a desenhou. O
     # script de verdade (public/avaliacoes-google.js) so roda no site no ar.
-    (palco / "avaliacoes-google.js").write_text(
-        "/* stub de build: o script real roda so no site publicado */\n", encoding="utf-8")
+    if avaliacoes:
+        (palco / "avaliacoes-google.js").write_text(
+            "/* stub de build: o script real roda so no site publicado */\n", encoding="utf-8")
 
     for pasta in ASSETS_PROTO:
         shutil.copytree(PROTO / pasta, palco / pasta)
@@ -215,7 +224,7 @@ def monta_palco(palco: pathlib.Path, homologacao: bool) -> None:
     shutil.copytree(PUB / "vendor", palco / "vendor")
 
 
-def publica_estaticos(palco: pathlib.Path, homologacao: bool) -> None:
+def publica_estaticos(palco: pathlib.Path, homologacao: bool, avaliacoes: bool) -> None:
     """Copia para a raiz do repositorio tudo que nao e pagina."""
     for pasta in (*ASSETS_PROTO, "_dc"):
         destino = PUB / pasta
@@ -225,13 +234,75 @@ def publica_estaticos(palco: pathlib.Path, homologacao: bool) -> None:
     for js in JS_SITE:
         shutil.copy2(palco / js, PUB / js)
 
+    # Integracao de avaliacoes: publicada so quando pedida; caso contrario, o
+    # que por acaso tenha sobrado de um build anterior sai de public/.
+    destino_js = PUB / "avaliacoes-google.js"
+    destino_api = PUB / "api"
+    if avaliacoes:
+        shutil.copy2(AVALIACOES_DIR / "avaliacoes-google.js", destino_js)
+        if destino_api.exists():
+            shutil.rmtree(destino_api)
+        shutil.copytree(AVALIACOES_DIR / "api", destino_api)
+    else:
+        destino_js.unlink(missing_ok=True)
+        if destino_api.exists():
+            shutil.rmtree(destino_api)
+
     robots = "robots-homologacao.txt" if homologacao else "robots.txt"
     shutil.copy2(PROTO / "seo" / robots, PUB / "robots.txt")
     shutil.copy2(PROTO / "seo" / "sitemap.xml", PUB / "sitemap.xml")
 
 
+# Arquivos que o .htaccess bloqueia de proposito.
+BLOQUEIO_ESPERADO = {".htaccess", ".gitignore", ".cpanel.yml", "config.php"}
+
+
+def confere_htaccess() -> None:
+    """Nenhum arquivo que o site serve pode cair numa regra de bloqueio.
+
+    Isto ja aconteceu: o .htaccess herdado bloqueava `*.dc.html`, e os
+    componentes de /_dc/ — que o NAVEGADOR busca em tempo de execucao — voltavam
+    403. O cabecalho e o rodape apareciam vazios e as paginas internas ficavam
+    sem corpo. O checar.mjs nao pega isso, porque serve os arquivos por Node, sem
+    Apache. Entao a conferencia e aqui, lendo as regras e testando nome por nome.
+    """
+    arquivo = PUB / ".htaccess"
+    if not arquivo.exists():
+        print("  aviso: public/.htaccess nao existe; nada a conferir")
+        return
+    texto = arquivo.read_text(encoding="utf-8")
+
+    # Regras dentro de <IfModule !algo> so valem quando o modulo falta: ignorar.
+    texto = re.sub(r"<IfModule\s+![^>]*>.*?</IfModule>", "", texto, flags=re.S | re.I)
+
+    padroes = []
+    for tag, literal in (("FilesMatch", False), ("Files", True)):
+        for m in re.finditer(rf'<{tag}\s+"([^"]+)"\s*>(.*?)</{tag}>', texto, re.S | re.I):
+            if "Require all denied" not in m.group(2) and "Deny from all" not in m.group(2):
+                continue
+            padroes.append("^" + re.escape(m.group(1)) + "$" if literal else m.group(1))
+
+    bloqueados = []
+    for f in sorted(PUB.rglob("*")):
+        if not f.is_file() or f.name in BLOQUEIO_ESPERADO:
+            continue
+        for padrao in padroes:
+            if re.search(padrao, f.name):
+                bloqueados.append((f.relative_to(PUB).as_posix(), padrao))
+                break
+
+    if bloqueados:
+        linhas = "\n".join(f"       {caminho}  <- regra {padrao}" for caminho, padrao in bloqueados[:12])
+        raise SystemExit(
+            "erro: o .htaccess bloqueia arquivo que o site precisa servir:\n" + linhas +
+            "\n       Ajuste a regra em public/.htaccess antes de publicar.")
+
+    print(f"  .htaccess: {len(padroes)} regra(s) de bloqueio, nenhum arquivo publicado atingido")
+
+
 def main() -> int:
     homologacao = "--homologacao" in sys.argv
+    avaliacoes = "--avaliacoes-google" in sys.argv
     so_rota = None
     if "--so-rota" in sys.argv:
         so_rota = sys.argv[sys.argv.index("--so-rota") + 1]
@@ -244,12 +315,13 @@ def main() -> int:
             raise SystemExit(f"erro: rota desconhecida: {so_rota}")
 
     print(f"ambiente: {'HOMOLOGACAO (noindex)' if homologacao else 'producao'}")
+    print(f"avaliacoes do Google: {'LIGADAS' if avaliacoes else 'desligadas (depoimentos como no design)'}")
     print(f"rotas: {len(rotas)}")
 
     with tempfile.TemporaryDirectory() as tmp:
         palco = pathlib.Path(tmp) / "palco"
         palco.mkdir()
-        monta_palco(palco, homologacao)
+        monta_palco(palco, homologacao, avaliacoes)
 
         plano = [{"arquivo": r[0], "saida": r[1], "minTexto": r[2] if len(r) > 2 else 1200}
                  for r in rotas]
@@ -265,8 +337,9 @@ def main() -> int:
                 "       disco para inspecao, mas os estaticos (img/, _dc/, js) nao foram\n"
                 "       republicados — conserte a rota e rode o build de novo.")
 
-        publica_estaticos(palco, homologacao)
+        publica_estaticos(palco, homologacao, avaliacoes)
 
+    confere_htaccess()
     print("estaticos publicados: img/ assets/ _dc/ fonts/ vendor/ + js do site + robots/sitemap")
     return 0
 

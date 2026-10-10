@@ -82,8 +82,14 @@ DirectoryIndex index.html
 </IfModule>
 
 # ---------- Protecao ----------
-# Bloqueia acesso a arquivos internos caso algum dia subam por engano
-<FilesMatch "^(\.htaccess|\.gitignore|\.cpanel\.yml|.*\.dc\.html)$">
+# Bloqueia arquivos internos caso algum dia subam por engano.
+#
+# ATENCAO: *.dc.html NAO pode entrar nesta lista. Os componentes em /_dc/
+# (SiteHeader, SiteFooter, PaginaMorenos) sao buscados pelo NAVEGADOR em tempo
+# de execucao; bloqueados, o cabecalho e o rodape aparecem vazios e as 13
+# paginas internas ficam sem corpo. Quem guarda o design de referencia e a
+# pasta fonte/, que nunca e publicada.
+<FilesMatch "^(\.htaccess|\.gitignore|\.cpanel\.yml|package\.json|.*\.(md|py|mjs|csv|yml|yaml)|\.env.*)$">
   Require all denied
 </FilesMatch>
 

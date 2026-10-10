@@ -8,8 +8,8 @@ Site da barbearia Salão Morenos: três unidades em Serra, Espírito Santo.
 
 ```bash
 python3 fonte/build.py             # gera as 17 rotas em public/
-node fonte/checar.mjs public       # 65 verificações sobre o site gerado
-node fonte/testes/avaliacoes.mjs   # 53 verificações da integração com o Google
+node fonte/checar.mjs public       # 67 verificações sobre o site gerado
+node fonte/testes/avaliacoes.mjs   # 53 verificações da integração com o Google (build --avaliacoes-google)
 ```
 
 ---
@@ -22,10 +22,9 @@ public/            TUDO que vai para o ar (o .cpanel.yml copia public/. para pub
   unidades/ servicos/ visagismo/ dia-do-noivo/ o-clube/ cultura/
   corporativo/ trabalhe-conosco/ politica-de-privacidade/ termos-de-uso/
   404.html
-  api/               rota interna em PHP (avaliações do Google)
   _dc/               componentes do runtime (SiteHeader, SiteFooter, PaginaMorenos)
   img/ assets/ fonts/ vendor/
-  support.js site-config.js site-loader.js smooth-scroll.js avaliacoes-google.js
+  support.js site-config.js site-loader.js smooth-scroll.js
   robots.txt sitemap.xml .htaccess
 
 fonte/             nunca publicado
@@ -33,6 +32,7 @@ fonte/             nunca publicado
   build.py           gera as rotas
   prerender.mjs      captura estática
   checar.mjs         confere o site gerado
+  avaliacoes/        integração opcional do Google (script + rota PHP)
   testes/            testes da integração de avaliações
   scripts/           utilitários (descobrir Place IDs)
   HANDOFF.md  MIGRATION-CHECKLIST.md  PENDENCIAS.md
@@ -79,11 +79,19 @@ se o design mudar, o build para e avisa em vez de publicar errado:
 `python3 fonte/build.py --homologacao` fixa `noindex` e usa o robots de
 homologação.
 
-## Avaliações do Google
+## Avaliações do Google — opcional, desligada
 
-A seção de depoimentos carrega avaliações reais das três unidades pela Places
-API (New), com a chave só no servidor (`public/api/google-reviews.php`).
-Configuração, variáveis de ambiente, limites e checklist do Google Cloud:
+A seção de depoimentos sai **como o design a desenhou**. Existe uma integração
+pronta que troca aquele conteúdo pelas avaliações reais das três unidades
+(Places API New, chave só no servidor), mas ela **não entra no build por
+padrão**:
+
+```bash
+python3 fonte/build.py --avaliacoes-google   # publica o script + a rota /api/
+```
+
+Sem a flag, `fonte/avaliacoes/` nem chega a `public/`. Configuração, variáveis
+de ambiente, limites e checklist do Google Cloud:
 **`GOOGLE-REVIEWS-INTEGRATION.md`**.
 
 ## Publicação

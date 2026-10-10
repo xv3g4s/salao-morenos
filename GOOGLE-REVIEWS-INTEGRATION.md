@@ -4,6 +4,16 @@ Integração das avaliações públicas das três unidades do Salão Morenos, pe
 **Google Places API (New)**. Sem scraping, sem Puppeteer, sem copiar página de
 resultado do Google: só a API oficial, chamada **pelo servidor**.
 
+> **Estado: desligada.** Por decisão do cliente, a seção de depoimentos ficou
+> como o design a desenhou. Tudo o que está descrito aqui continua pronto em
+> `fonte/avaliacoes/` e entra no site com uma flag:
+>
+> ```bash
+> python3 fonte/build.py --avaliacoes-google
+> ```
+>
+> Sem a flag, nem o script nem a rota `/api/` são publicados.
+
 - Provider atual: `google-places`
 - Provider futuro: `google-business-profile` (ver o fim deste arquivo)
 
@@ -27,9 +37,9 @@ navegador ──GET /api/google-reviews──► Apache/PHP ──Places API (Ne
 
 | arquivo | papel |
 | --- | --- |
-| `public/api/google-reviews.php` | a rota interna: consulta as três unidades e normaliza |
-| `public/api/config.php` | lê as variáveis de ambiente e lista as unidades |
-| `public/avaliacoes-google.js` | o front-end: assume a seção e pinta as avaliações |
+| `fonte/avaliacoes/api/google-reviews.php` | a rota interna: consulta as três unidades e normaliza |
+| `fonte/avaliacoes/api/config.php` | lê as variáveis de ambiente e lista as unidades |
+| `fonte/avaliacoes/avaliacoes-google.js` | o front-end: assume a seção e pinta as avaliações |
 | `fonte/scripts/find-google-place-ids.mjs` | descobre os Place IDs (Text Search New) |
 | `fonte/testes/avaliacoes.mjs` | 53 verificações, endpoint + componente |
 | `.env.example` | nomes das variáveis, sem valores |
@@ -162,7 +172,8 @@ Via `dataLayer`, só se ele existir (sem GTM/GA4 configurado, nada quebra):
 ## Como testar
 
 ```bash
-npm run test:avaliacoes    # 53 verificações: endpoint PHP + componente no navegador
+python3 fonte/build.py --avaliacoes-google   # liga a integração neste build
+npm run test:avaliacoes                     # 53 verificações: endpoint PHP + componente
 ```
 
 Cobre chave ausente, Place ID ausente, arquivo de ambiente quebrado, unidade
