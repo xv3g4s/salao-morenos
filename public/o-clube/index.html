@@ -49,6 +49,7 @@
       }
     }
   </style>
+<meta name="robots" content="noindex, nofollow">
 <link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="icon" href="/favicon-192.png" sizes="192x192" type="image/png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
@@ -63,9 +64,10 @@ transition-duration:.01ms !important;scroll-behavior:auto !important}}</style>
   var C = {};
 
   C.env = {
-    // "homologacao" aplica noindex,nofollow. Mudar para "producao" ao migrar para o domínio principal.
-    stage: 'producao',  // fixado no build
-    siteUrl: 'https://salaomorenos.com.br',
+    // Fixado pelo build. Hoje serve só para o analytics saber de onde vem o evento:
+    // a indexação é decidida no HTML, não aqui.
+    stage: 'homologacao',  // fixado no build
+    siteUrl: 'https://novosite.salaomorenos.com.br',
   };
 
   C.brand = { name: 'Salão Morenos', city: 'Serra', state: 'ES', region: 'Serra — Espírito Santo' };
@@ -113,6 +115,8 @@ transition-duration:.01ms !important;scroll-behavior:auto !important}}</style>
     privacidade: '/politica-de-privacidade/', termos: '/termos-de-uso/',
   };
 
+  C.imagens = {"/img/hero-wide.webp": "/img/hero-wide-900.webp 900w, /img/hero-wide-1200.webp 1200w, /img/hero-wide.webp 1672w"};  // gerado no build
+
   // --- aplicado no build (fonte/build.py) ---
   // No prototipo, C.routes aponta para arquivos (unidades.dc.html) porque
   // e assim que ele e aberto. No site publicado, link interno tem que ser
@@ -155,7 +159,9 @@ transition-duration:.01ms !important;scroll-behavior:auto !important}}</style>
   });
   C.locations.forEach(function (l) {
     l.enderecoLinha = l.logradouro + ', ' + l.bairro + ', ' + l.cidade + ' — ' + l.estado + ', CEP ' + l.cep;
-    l.rota = l.googleProfile || ('https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(l.logradouro + ', ' + l.bairro + ', ' + l.cidade + ' - ' + l.estado + ', ' + l.cep));
+    // "Como chegar" abre a ROTA ate o endereco, nao uma busca por ele: a busca
+    // devolve uma lista e o visitante ainda tem que escolher.
+    l.rota = 'https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(l.logradouro + ', ' + l.bairro + ', ' + l.cidade + ' - ' + l.estado + ', ' + l.cep);
     l.mapaEmbed = 'https://maps.google.com/maps?q=' + encodeURIComponent(l.logradouro + ', ' + l.bairro + ', ' + l.cidade + ' - ' + l.estado + ', ' + l.cep) + '&z=16&output=embed';
     l.agendar = l.bookingUrl || C.links.booking;
     l.pagina = C.routes[l.id];
@@ -197,9 +203,9 @@ transition-duration:.01ms !important;scroll-behavior:auto !important}}</style>
       itens: ['Corte personalizado', 'Desconto em serviços da barbearia', 'Desconto em produtos'] },
     { id: 'plano-due', nome: 'Plano Due', tipo: ['custo'], preco: 'R$ 68,99', desc: 'Barba e corte ou 2 cortes.',
       itens: ['Cabelo ou barba', 'Desconto em serviços', 'Desconto em produtos'] },
-    { id: 'familia-8', nome: 'Família Corte e Barba Clássico', tipo: ['familia'], preco: 'R$ 209,90', desc: '8 procedimentos mensais.',
+    { id: 'familia-8', nome: 'Família Corte e Barba Clássico — 8 procedimentos', tipo: ['familia'], preco: 'R$ 209,90', desc: '8 procedimentos mensais, para dividir entre a família.',
       itens: ['Cabelo ou barba', 'Descontos em serviços', 'Descontos em produtos'] },
-    { id: 'familia-6', nome: 'Família Corte e Barba Clássico', tipo: ['familia'], preco: 'R$ 169,90', desc: '6 procedimentos mensais.',
+    { id: 'familia-6', nome: 'Família Corte e Barba Clássico — 6 procedimentos', tipo: ['familia'], preco: 'R$ 169,90', desc: '6 procedimentos mensais, para dividir entre a família.',
       itens: ['Cabelo ou barba', 'Descontos em serviços', 'Descontos em produtos'] },
   ];
   C.clubPlans.forEach(function (p) { p.source = 'legacy-site'; p.needsConfirmation = true; p.periodo = '/mês'; });
@@ -231,7 +237,7 @@ transition-duration:.01ms !important;scroll-behavior:auto !important}}</style>
     showOncePerSession: true, // true = só na primeira página da sessão
     minimumVisibleTime: 1200,
     maximumVisibleTime: 9000,
-    exitDuration: 560,
+    exitDuration: 420,
     sessionKey: 'morenos_intro_seen',
     logo: '/assets/morenos-loader-outline-white.webp', logoW: 720, logoH: 669,
   };
@@ -240,10 +246,10 @@ transition-duration:.01ms !important;scroll-behavior:auto !important}}</style>
   C.getUnit = function () { try { return localStorage.getItem(C.selectedUnitKey); } catch (e) { return null; } };
   C.setUnit = function (id) { try { localStorage.setItem(C.selectedUnitKey, id); } catch (e) {} C.track('unit_select', { unit: id }); };
 
-  // Homologação: noindex,nofollow controlado só por aqui.
-  if (C.env.stage === 'homologacao') {
-    var m = document.createElement('meta'); m.name = 'robots'; m.content = 'noindex, nofollow'; document.head.appendChild(m);
-  }
+  // O noindex de homologação NÃO mora aqui. Ele é escrito no <head> pelo build
+  // (fonte/build.py, --homologacao), porque o robô de busca lê o HTML que o
+  // servidor entrega e não espera o JavaScript da página rodar: um noindex
+  // injetado em tempo de execução pode simplesmente não ser visto.
 
   window.MORENOS = C;
 })();
@@ -277,7 +283,7 @@ transition-duration:.01ms !important;scroll-behavior:auto !important}}</style>
       showOncePerSession: C.showOncePerSession, sessionKey: C.sessionKey,
       logo: C.logo, logoW: C.logoW, logoH: C.logoH,
       minimumVisibleTime: 0,      // sem espera artificial: sai quando ficar pronta
-      maximumVisibleTime: 6000,   // rede de segurança, não alvo
+      maximumVisibleTime: 3500,   // rede de segurança, não alvo
       exitDuration: 260,
     };
   }
@@ -376,9 +382,16 @@ transition-duration:.01ms !important;scroll-behavior:auto !important}}</style>
     obs.observe(raiz, { attributes: true, attributeFilter: ['class'] });
     // sem runtime (JS bloqueado, erro de rede) a cópia estática é a página:
     // não faz sentido segurar a tela esperando uma troca que não vem
-    setTimeout(function () { obs.disconnect(); r(); }, 6000);
+    setTimeout(function () { obs.disconnect(); r(); }, 3500);
   });
-  var sinais = [domPronto, logoPronta, fontes, hero, carregou, montado];
+  // window.load espera TODA imagem que a pagina comecou a buscar, inclusive a
+  // que esta a tres rolagens de distancia. Numa rede de celular isso chegou a
+  // 6s com a tela de abertura na frente do conteudo — o preloader deixou de
+  // cobrir o carregamento e virou o carregamento. A espera continua, com
+  // teto: 1,5s depois de o resto estar pronto, a tela sai de qualquer forma.
+  // O que o visitante ve ja esta pintado; o que falta e rodape.
+  var carregouComTeto = Promise.race([carregou, espera(1500)]);
+  var sinais = [domPronto, logoPronta, fontes, hero, carregouComTeto, montado];
   var tudo = Promise.allSettled ? Promise.allSettled(sinais)
     : Promise.all(sinais.map(function (p) { return Promise.resolve(p).catch(function () {}); }));
   var minimo = reduz ? 0 : C.minimumVisibleTime;
@@ -388,7 +401,7 @@ transition-duration:.01ms !important;scroll-behavior:auto !important}}</style>
     if (saiu) return; saiu = true;
     marcarVisto();
     var dur = reduz ? 250 : C.exitDuration;
-    var pausa = reduz ? 0 : (curto ? 120 : 380);   // modo curto quase nao pausa
+    var pausa = reduz ? 0 : (curto ? 100 : 240);   // modo curto quase nao pausa
     el.classList.add('site-loader--ready');
     setTimeout(function () {
       var w = el.querySelector('.site-loader__logo-wrap');
@@ -448,14 +461,14 @@ html,body{background:#080908}
 <title data-dc-tpl="1">Clube Salão Morenos | Planos e Assinatura</title>
 <meta name="description" content="Clube Salão Morenos: planos mensais de corte e barba em Serra, ES. Compare os planos, veja como funciona e assine online." data-dc-tpl="2">
 <meta name="theme-color" content="#0B0B0B" data-dc-tpl="3">
-<link rel="canonical" href="https://salaomorenos.com.br/o-clube/" data-dc-tpl="4">
+<link rel="canonical" href="https://novosite.salaomorenos.com.br/o-clube/" data-dc-tpl="4">
 <meta property="og:type" content="website" data-dc-tpl="5">
 <meta property="og:locale" content="pt_BR" data-dc-tpl="6">
 <meta property="og:site_name" content="Salão Morenos" data-dc-tpl="7">
 <meta property="og:title" content="Clube Salão Morenos | Planos e Assinatura" data-dc-tpl="8">
 <meta property="og:description" content="Clube Salão Morenos: planos mensais de corte e barba em Serra, ES. Compare os planos, veja como funciona e assine online." data-dc-tpl="9">
-<meta property="og:url" content="https://salaomorenos.com.br/o-clube/" data-dc-tpl="10">
-<meta property="og:image" content="https://salaomorenos.com.br/img/foto-atendimento.webp" data-dc-tpl="11">
+<meta property="og:url" content="https://novosite.salaomorenos.com.br/o-clube/" data-dc-tpl="10">
+<meta property="og:image" content="https://novosite.salaomorenos.com.br/img/foto-atendimento.webp" data-dc-tpl="11">
 <meta name="twitter:card" content="summary_large_image" data-dc-tpl="12">
 <link rel="preload" as="image" href="/img/foto-atendimento.webp" fetchpriority="high" data-dc-tpl="13">
 <script src="/smooth-scroll.js" defer="" data-dc-tpl="14"></script>
@@ -540,7 +553,7 @@ html,body{background:#080908}
   @keyframes metal { 0% { background-position:0% 50%; } 100% { background-position:200% 50%; } }
   @media (prefers-reduced-motion: reduce) { html { scroll-behavior:auto; } * { animation:none !important; transition:none !important; } }
 </style>
-<script type="application/ld+json" data-dc-tpl="17">{"@context":"https://schema.org","@graph":[{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Início","item":"https://salaomorenos.com.br/"},{"@type":"ListItem","position":2,"name":"O Clube","item":"https://salaomorenos.com.br/o-clube/"}]}]}</script>
+<script type="application/ld+json" data-dc-tpl="17">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://novosite.salaomorenos.com.br/#organizacao","name":"Salão Morenos","url":"https://novosite.salaomorenos.com.br/","logo":"https://novosite.salaomorenos.com.br/favicon-192.png","areaServed":"Serra, ES","contactPoint":{"@type":"ContactPoint","contactType":"customer service","telephone":"+5527998713993","availableLanguage":"pt-BR"},"subOrganization":[{"@id":"https://novosite.salaomorenos.com.br/unidades/cidade-continental/#unidade"},{"@id":"https://novosite.salaomorenos.com.br/unidades/novo-horizonte-av-brasil/#unidade"},{"@id":"https://novosite.salaomorenos.com.br/unidades/novo-horizonte-av-industrial/#unidade"}]},{"@type":"WebSite","@id":"https://novosite.salaomorenos.com.br/#site","url":"https://novosite.salaomorenos.com.br/","name":"Salão Morenos","inLanguage":"pt-BR","publisher":{"@id":"https://novosite.salaomorenos.com.br/#organizacao"}},{"@type":"BreadcrumbList","@id":"https://novosite.salaomorenos.com.br/o-clube/#trilha","itemListElement":[{"@type":"ListItem","position":1,"name":"Início","item":"https://novosite.salaomorenos.com.br/"},{"@type":"ListItem","position":2,"name":"O Clube","item":"https://novosite.salaomorenos.com.br/o-clube/"}]}]}</script>
 <style></style>
 <style data-dc-tpl="1">
   @keyframes metal { 0% { background-position:0% 50%; } 100% { background-position:200% 50%; } }
@@ -563,25 +576,25 @@ html,body{background:#080908}
   @keyframes pmMetal { 0% { background-position:0% 50%; } 100% { background-position:200% 50%; } }
 </style>
 <style data-runtime-css="">/* regras que o runtime cria via CSSOM */
-.scp0:hover { color: rgb(183, 154, 106) !important; }
-.scp1:hover { filter: brightness(1.08) !important; transform: translateY(-2px) !important; }
-.scp2:hover { filter: brightness(1.2) !important; transform: translateY(-2px) !important; }
-.scp3:hover { background: rgb(27, 27, 27) !important; }
-.scp4:hover { color: rgb(246, 244, 239) !important; }
-.scp5:hover { transform: translateY(-4px) !important; }
+.scp0:focus { left: 12px !important; top: 12px !important; }
+.scp1:hover { color: rgb(183, 154, 106) !important; }
+.scp2:hover { filter: brightness(1.2) !important; }
+.scp3:hover { filter: brightness(1.08) !important; }
+.scp4:hover { background: rgba(246, 244, 239, 0.07) !important; }
+.scp5:hover { border-color: rgb(183, 154, 106) !important; }
 .scp6:hover { background: rgb(183, 154, 106) !important; color: rgb(11, 11, 11) !important; }
 .scp7:hover { border-color: rgb(183, 154, 106) !important; color: rgb(183, 154, 106) !important; }
-.scp8:hover { transform: translateY(-4px) !important; color: rgb(246, 244, 239) !important; }
-.scp9:hover { color: rgb(11, 11, 11) !important; }
-.scpa:hover { transform: translateY(-4px) !important; box-shadow: rgba(11, 11, 11, 0.5) 0px 28px 50px -30px !important; }
-.scpb:hover { border-color: rgb(183, 154, 106) !important; transform: translateY(-4px) !important; }
-.scpc:hover { transform: translateY(-4px) !important; box-shadow: rgba(11, 11, 11, 0.55) 0px 28px 50px -28px !important; }
-.scpd:hover { transform: scale(1.05) !important; }
-.scpe:hover { filter: brightness(1.08) !important; }
-.scpf:hover { filter: brightness(1.2) !important; }
-.scpg:focus { left: 12px !important; top: 12px !important; }
-.scph:hover { background: rgba(246, 244, 239, 0.07) !important; }
-.scpi:hover { border-color: rgb(183, 154, 106) !important; }</style>
+.scp8:hover { filter: brightness(1.08) !important; transform: translateY(-2px) !important; }
+.scp9:hover { filter: brightness(1.2) !important; transform: translateY(-2px) !important; }
+.scpa:hover { background: rgb(27, 27, 27) !important; }
+.scpb:hover { color: rgb(246, 244, 239) !important; }
+.scpc:hover { transform: translateY(-4px) !important; }
+.scpd:hover { transform: translateY(-4px) !important; color: rgb(246, 244, 239) !important; }
+.scpe:hover { color: rgb(11, 11, 11) !important; }
+.scpf:hover { transform: translateY(-4px) !important; box-shadow: rgba(11, 11, 11, 0.5) 0px 28px 50px -30px !important; }
+.scpg:hover { border-color: rgb(183, 154, 106) !important; transform: translateY(-4px) !important; }
+.scph:hover { transform: translateY(-4px) !important; box-shadow: rgba(11, 11, 11, 0.55) 0px 28px 50px -28px !important; }
+.scpi:hover { transform: scale(1.05) !important; }</style>
 <style id="mo-troca">
   x-dc { display: none !important; }
   #dc-root { display: none; }
@@ -592,10 +605,10 @@ html,body{background:#080908}
 <body>
 <div id="mo-estatico">
 <div class="sc-host" data-sc-name="o-clube"><div data-dc-tpl="18" style="background: rgb(11, 11, 11); min-height: 100vh;">
-  <div class="sc-host" data-sc-name="SiteHeader" data-dc-tpl="19" style="position: sticky; top: 0px; z-index: 60;"><a data-dc-tpl="2" href="#conteudo" class="scpg" style="position: absolute; left: -9999px; top: 0px; z-index: 100; background: rgb(246, 244, 239); color: rgb(11, 11, 11); padding: 14px 20px; font-size: 14px; font-weight: 700;">Pular para o conteúdo</a><header data-dc-tpl="3" style="position: sticky; top: 0px; z-index: 60; background: rgba(11, 11, 11, 0.94); backdrop-filter: blur(8px); border-bottom: 1px solid rgba(246, 244, 239, 0.1); font-family: Poppins, system-ui, sans-serif; color: rgb(246, 244, 239);">
+  <div class="sc-host" data-sc-name="SiteHeader" data-dc-tpl="19" style="position: sticky; top: 0px; z-index: 60;"><a data-dc-tpl="2" href="#conteudo" class="scp0" style="position: absolute; left: -9999px; top: 0px; z-index: 100; background: rgb(246, 244, 239); color: rgb(11, 11, 11); padding: 14px 20px; font-size: 14px; font-weight: 700;">Pular para o conteúdo</a><header data-dc-tpl="3" style="position: sticky; top: 0px; z-index: 60; background: rgba(11, 11, 11, 0.94); backdrop-filter: blur(8px); border-bottom: 1px solid rgba(246, 244, 239, 0.1); font-family: Poppins, system-ui, sans-serif; color: rgb(246, 244, 239);">
   <div data-dc-tpl="4" style="max-width: 1480px; margin: 0px auto; padding: clamp(6px, 1.4vw, 10px) clamp(12px, 3vw, 36px); display: flex; align-items: center; justify-content: space-between; gap: clamp(10px, 2vw, 24px);">
     <a data-dc-tpl="5" href="/" aria-label="Salão Morenos, página inicial" style="display: flex; align-items: center; flex-shrink: 0;">
-      <img data-dc-tpl="6" decoding="async" src="/img/logo.webp" alt="Salão Morenos" width="624" height="624" style="height: clamp(54px, 13vw, 82px); width: auto;" fetchpriority="high">
+      <img data-dc-tpl="6" decoding="async" src="/img/logo.webp" alt="Salão Morenos" width="624" height="624" style="height: clamp(54px, 13vw, 82px); width: auto;">
     </a>
 
     
@@ -616,14 +629,14 @@ html,body{background:#080908}
   
 
   
-    <section data-dc-tpl="30" aria-label="Morenos faz parte da sua rotina? Conheça o Clube." style="background: radial-gradient(60% 70% at 80% 40%, rgba(183, 154, 106, 0.1), transparent 70%), rgb(11, 11, 11); padding: clamp(24px, 3.4vw, 48px) clamp(16px, 3vw, 36px) clamp(48px, 6vw, 88px);">
+    <section data-dc-tpl="30" aria-label="Clube Morenos: a assinatura mensal da barbearia" style="background: radial-gradient(60% 70% at 80% 40%, rgba(183, 154, 106, 0.1), transparent 70%), rgb(11, 11, 11); padding: clamp(24px, 3.4vw, 48px) clamp(16px, 3vw, 36px) clamp(48px, 6vw, 88px);">
       <div data-dc-tpl="31" style="max-width: 1480px; margin: 0px auto; display: flex; flex-wrap: wrap; gap: clamp(28px, 4.4vw, 72px); align-items: center;">
         <div data-dc-tpl="32" style="flex: 1 1 440px; display: flex; flex-direction: column; gap: 22px; min-width: 0px;">
             <nav data-dc-tpl="33" aria-label="Você está em" style="font-size: 12px; color: rgb(197, 194, 187);">
               <ol data-dc-tpl="34" style="list-style: none; margin: 0px; padding: 0px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center;">
                 
                   <li data-dc-tpl="36" style="display: flex; gap: 8px; align-items: center;">
-                    <a data-dc-tpl="38" href="/" class="scp0" style="color: rgb(197, 194, 187); text-decoration: none;"><span class="sc-interp">Início</span></a><span data-dc-tpl="39" aria-hidden="true" style="color: rgb(124, 121, 117);">/</span>
+                    <a data-dc-tpl="38" href="/" class="scp1" style="color: rgb(197, 194, 187); text-decoration: none;"><span class="sc-interp">Início</span></a><span data-dc-tpl="39" aria-hidden="true" style="color: rgb(124, 121, 117);">/</span>
                     
                   </li>
                 
@@ -635,20 +648,20 @@ html,body{background:#080908}
               </ol>
             </nav>
             <span data-dc-tpl="42" style="font-size: 12px; font-weight: 700; letter-spacing: 0.3em; text-transform: uppercase; color: rgb(183, 154, 106);"><span class="sc-interp">O Clube</span></span>
-            <h1 data-dc-tpl="43" style="margin: 0px; max-width: 15ch; font-size: clamp(38px, 4.8vw, 70px); line-height: 0.98; font-weight: 700; letter-spacing: -0.035em; text-wrap: balance;"><span class="sc-interp">Morenos faz parte da sua rotina? Conheça o Clube.</span></h1>
-            <p data-dc-tpl="44" style="margin: 0px; max-width: 52ch; font-size: clamp(16px, 1.4vw, 19px); line-height: 1.6; color: rgb(214, 211, 204);"><span class="sc-interp">A assinatura mensal da Morenos. Você escolhe um plano e mantém corte e barba em dia sem pagar a cada visita.</span></p>
+            <h1 data-dc-tpl="43" style="margin: 0px; max-width: 15ch; font-size: clamp(38px, 4.8vw, 70px); line-height: 0.98; font-weight: 700; letter-spacing: -0.035em; text-wrap: balance;"><span class="sc-interp">Clube Morenos: a assinatura mensal da barbearia</span></h1>
+            <p data-dc-tpl="44" style="margin: 0px; max-width: 52ch; font-size: clamp(16px, 1.4vw, 19px); line-height: 1.6; color: rgb(214, 211, 204);"><span class="sc-interp">Você escolhe um plano, paga uma mensalidade e agenda quando precisar, em qualquer uma das três unidades.</span></p>
             <div data-dc-tpl="45" style="display: flex; flex-wrap: wrap; gap: 12px; margin-top: 6px;">
               
-                <a data-dc-tpl="48" href="#planos" target="_self" rel="" class="scp1" style="display: inline-flex; padding: 1.5px; border-radius: 100px; background: linear-gradient(100deg, rgb(138, 131, 120) 0%, rgb(58, 58, 58) 16%, rgb(207, 201, 190) 30%, rgb(255, 255, 255) 42%, rgb(207, 201, 190) 54%, rgb(58, 58, 58) 70%, rgb(138, 131, 120) 100%) 0% 0% / 200% 100%; animation: 7s linear 0s infinite normal none running metal; box-shadow: rgba(0, 0, 0, 0.6) 0px 12px 26px -10px; text-decoration: none; transition: filter 0.45s, transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);"><span data-dc-tpl="49" style="display: flex; align-items: center; justify-content: center; border-radius: 100px; background: linear-gradient(rgb(255, 255, 255) 0%, rgb(232, 229, 223) 100%); color: rgb(11, 11, 11); font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; padding: 16px 26px; min-height: 50px; font-size: 13px;"><span class="sc-interp">Ver planos</span></span></a>
+                <a data-dc-tpl="48" href="#planos" target="_self" rel="" class="scp8" style="display: inline-flex; padding: 1.5px; border-radius: 100px; background: linear-gradient(100deg, rgb(138, 131, 120) 0%, rgb(58, 58, 58) 16%, rgb(207, 201, 190) 30%, rgb(255, 255, 255) 42%, rgb(207, 201, 190) 54%, rgb(58, 58, 58) 70%, rgb(138, 131, 120) 100%) 0% 0% / 200% 100%; animation: 7s linear 0s infinite normal none running metal; box-shadow: rgba(0, 0, 0, 0.6) 0px 12px 26px -10px; text-decoration: none; transition: filter 0.45s, transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);"><span data-dc-tpl="49" style="display: flex; align-items: center; justify-content: center; border-radius: 100px; background: linear-gradient(rgb(255, 255, 255) 0%, rgb(232, 229, 223) 100%); color: rgb(11, 11, 11); font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; padding: 16px 26px; min-height: 50px; font-size: 13px;"><span class="sc-interp">Ver planos</span></span></a>
                 
               
                 
-                <a data-dc-tpl="51" href="https://wa.me/5527998713993?text=Ol%C3%A1!%20Vim%20pelo%20site%20da%20Morenos%20e%20gostaria%20de%20informa%C3%A7%C3%B5es%20sobre%20o%20Clube." target="_blank" rel="noopener noreferrer" class="scp2" style="display: inline-flex; padding: 1.5px; border-radius: 100px; background: linear-gradient(100deg, rgb(11, 11, 11) 0%, rgb(58, 58, 58) 18%, rgb(156, 150, 140) 32%, rgb(243, 239, 232) 42%, rgb(156, 150, 140) 52%, rgb(58, 58, 58) 68%, rgb(11, 11, 11) 100%) 0% 0% / 200% 100%; animation: 7s linear 0s infinite normal none running metal; box-shadow: rgba(0, 0, 0, 0.85) 0px 12px 26px -10px; text-decoration: none; transition: filter 0.45s, transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);"><span data-dc-tpl="52" style="display: flex; align-items: center; justify-content: center; border-radius: 100px; background: linear-gradient(rgb(32, 32, 32) 0%, rgb(0, 0, 0) 100%); color: rgb(232, 229, 223); font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; padding: 16px 26px; min-height: 50px; font-size: 13px;"><span class="sc-interp">Agendar como visitante</span></span></a>
+                <a data-dc-tpl="51" href="https://wa.me/5527998713993?text=Ol%C3%A1!%20Vim%20pelo%20site%20da%20Morenos%20e%20gostaria%20de%20informa%C3%A7%C3%B5es%20sobre%20o%20Clube." target="_blank" rel="noopener noreferrer" class="scp9" style="display: inline-flex; padding: 1.5px; border-radius: 100px; background: linear-gradient(100deg, rgb(11, 11, 11) 0%, rgb(58, 58, 58) 18%, rgb(156, 150, 140) 32%, rgb(243, 239, 232) 42%, rgb(156, 150, 140) 52%, rgb(58, 58, 58) 68%, rgb(11, 11, 11) 100%) 0% 0% / 200% 100%; animation: 7s linear 0s infinite normal none running metal; box-shadow: rgba(0, 0, 0, 0.85) 0px 12px 26px -10px; text-decoration: none; transition: filter 0.45s, transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);"><span data-dc-tpl="52" style="display: flex; align-items: center; justify-content: center; border-radius: 100px; background: linear-gradient(rgb(32, 32, 32) 0%, rgb(0, 0, 0) 100%); color: rgb(232, 229, 223); font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; padding: 16px 26px; min-height: 50px; font-size: 13px;"><span class="sc-interp">Agendar como visitante</span></span></a>
               
             </div>
         </div>
         <div data-dc-tpl="53" style="flex: 1 1 360px; max-width: 520px; width: 100%; margin: 0px auto; position: relative; aspect-ratio: 4 / 5; border-radius: 32px; overflow: hidden; background: rgb(23, 23, 23); box-shadow: rgba(0, 0, 0, 0.9) 0px 40px 90px -40px;">
-          <img data-dc-tpl="54" src="/img/foto-atendimento.webp" alt="Barbeiro cortando o cabelo de um cliente" width="800" height="1000" fetchpriority="high" decoding="async" style="position: absolute; inset: 0px; width: 100%; height: 100%; object-fit: cover; object-position: 50% 40%; animation: 1.6s cubic-bezier(0.22, 1, 0.36, 1) 0s 1 normal both running pmZoom;" loading="lazy">
+          <img data-dc-tpl="54" src="/img/foto-atendimento.webp" alt="Barbeiro cortando o cabelo de um cliente" width="800" height="1000" fetchpriority="high" decoding="async" style="position: absolute; inset: 0px; width: 100%; height: 100%; object-fit: cover; object-position: 50% 40%; animation: 1.6s cubic-bezier(0.22, 1, 0.36, 1) 0s 1 normal both running pmZoom;">
           <span data-dc-tpl="55" aria-hidden="true" style="position: absolute; inset: 0px; background: linear-gradient(transparent 55%, rgba(8, 8, 8, 0.75) 100%);"></span>
           <span data-dc-tpl="56" style="position: absolute; left: 18px; bottom: 18px; right: 18px; display: flex; align-items: center; gap: 10px; font-size: 11px; font-weight: 700; letter-spacing: 0.24em; text-transform: uppercase; color: rgb(246, 244, 239);"><span data-dc-tpl="57" aria-hidden="true" style="width: 22px; height: 1.5px; background: rgb(183, 154, 106);"></span>Salão Morenos · Serra — ES</span>
         </div>
@@ -740,8 +753,8 @@ html,body{background:#080908}
               <h2 data-dc-tpl="286" style="margin: 0px; font-size: clamp(26px, 2.9vw, 38px); font-weight: 700; line-height: 1.06; letter-spacing: -0.025em; color: rgb(246, 244, 239);">Assinatura mensal, agenda no celular.</h2>
               <p data-dc-tpl="287" style="margin: 0px; font-size: clamp(15px, 1.3vw, 17px); line-height: 1.65; color: rgb(181, 178, 171); max-width: 40ch;">Você escolhe o plano, assina pela plataforma da Morenos e agenda pelo celular na unidade que preferir, sem pagar a cada visita.</p>
               <div data-dc-tpl="288" style="display: flex; flex-direction: column; gap: 10px; margin-top: 6px; max-width: 320px; width: 100%;">
-                <a data-dc-tpl="289" href="https://cashbarber.com.br/salaomorenos" target="_blank" rel="noopener noreferrer" class="scpe" style="display: inline-flex; padding: 1.5px; border-radius: 100px; background: linear-gradient(100deg, rgb(138, 131, 120) 0%, rgb(58, 58, 58) 16%, rgb(207, 201, 190) 30%, rgb(255, 255, 255) 42%, rgb(207, 201, 190) 54%, rgb(58, 58, 58) 70%, rgb(138, 131, 120) 100%) 0% 0% / 200% 100%; animation: 7s linear 0s infinite normal none running metal; box-shadow: rgba(0, 0, 0, 0.6) 0px 12px 26px -10px; border: 0px; cursor: pointer; font-family: inherit; width: 100%; transition: background-color 0.45s cubic-bezier(0.22, 1, 0.36, 1), background 0.45s cubic-bezier(0.22, 1, 0.36, 1), color 0.35s, border-color 0.35s, transform 0.5s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.5s, opacity 0.4s, filter 0.45s;"><span data-dc-tpl="290" style="display: flex; align-items: center; justify-content: center; border-radius: 100px; background: linear-gradient(rgb(255, 255, 255) 0%, rgb(232, 229, 223) 100%); color: rgb(11, 11, 11); font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; padding: 17px 24px; min-height: 50px; font-size: 13px; width: 100%; transition: background 0.3s;">Seja membro</span></a>
-                <a data-dc-tpl="291" href="https://wa.me/5527998713993?text=Ol%C3%A1!%20Vim%20pelo%20seu%20site%20e%20quero%20agendar%20um%20corte%20como%20visitante" target="_blank" rel="noopener noreferrer" class="scpf" style="display: inline-flex; padding: 1.5px; border-radius: 100px; background: linear-gradient(100deg, rgb(11, 11, 11) 0%, rgb(58, 58, 58) 18%, rgb(156, 150, 140) 32%, rgb(243, 239, 232) 42%, rgb(156, 150, 140) 52%, rgb(58, 58, 58) 68%, rgb(11, 11, 11) 100%) 0% 0% / 200% 100%; animation: 7s linear 0s infinite normal none running metal; box-shadow: rgba(0, 0, 0, 0.85) 0px 12px 26px -10px; text-decoration: none; width: 100%; transition: background-color 0.45s cubic-bezier(0.22, 1, 0.36, 1), background 0.45s cubic-bezier(0.22, 1, 0.36, 1), color 0.35s, border-color 0.35s, transform 0.5s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.5s, opacity 0.4s, filter 0.45s;"><span data-dc-tpl="292" class="scp4" style="display: flex; align-items: center; justify-content: center; border-radius: 100px; background: linear-gradient(rgb(32, 32, 32) 0%, rgb(0, 0, 0) 100%); color: rgb(197, 194, 187); font-size: 13px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; padding: 17px 24px; min-height: 50px; width: 100%; transition: color 0.3s;">Agendar como visitante</span></a>
+                <a data-dc-tpl="289" href="https://cashbarber.com.br/salaomorenos" target="_blank" rel="noopener noreferrer" class="scp3" style="display: inline-flex; padding: 1.5px; border-radius: 100px; background: linear-gradient(100deg, rgb(138, 131, 120) 0%, rgb(58, 58, 58) 16%, rgb(207, 201, 190) 30%, rgb(255, 255, 255) 42%, rgb(207, 201, 190) 54%, rgb(58, 58, 58) 70%, rgb(138, 131, 120) 100%) 0% 0% / 200% 100%; animation: 7s linear 0s infinite normal none running metal; box-shadow: rgba(0, 0, 0, 0.6) 0px 12px 26px -10px; border: 0px; cursor: pointer; font-family: inherit; width: 100%; transition: background-color 0.45s cubic-bezier(0.22, 1, 0.36, 1), background 0.45s cubic-bezier(0.22, 1, 0.36, 1), color 0.35s, border-color 0.35s, transform 0.5s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.5s, opacity 0.4s, filter 0.45s;"><span data-dc-tpl="290" style="display: flex; align-items: center; justify-content: center; border-radius: 100px; background: linear-gradient(rgb(255, 255, 255) 0%, rgb(232, 229, 223) 100%); color: rgb(11, 11, 11); font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; padding: 17px 24px; min-height: 50px; font-size: 13px; width: 100%; transition: background 0.3s;">Seja membro</span></a>
+                <a data-dc-tpl="291" href="https://wa.me/5527998713993?text=Ol%C3%A1!%20Vim%20pelo%20seu%20site%20e%20quero%20agendar%20um%20corte%20como%20visitante" target="_blank" rel="noopener noreferrer" class="scp2" style="display: inline-flex; padding: 1.5px; border-radius: 100px; background: linear-gradient(100deg, rgb(11, 11, 11) 0%, rgb(58, 58, 58) 18%, rgb(156, 150, 140) 32%, rgb(243, 239, 232) 42%, rgb(156, 150, 140) 52%, rgb(58, 58, 58) 68%, rgb(11, 11, 11) 100%) 0% 0% / 200% 100%; animation: 7s linear 0s infinite normal none running metal; box-shadow: rgba(0, 0, 0, 0.85) 0px 12px 26px -10px; text-decoration: none; width: 100%; transition: background-color 0.45s cubic-bezier(0.22, 1, 0.36, 1), background 0.45s cubic-bezier(0.22, 1, 0.36, 1), color 0.35s, border-color 0.35s, transform 0.5s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.5s, opacity 0.4s, filter 0.45s;"><span data-dc-tpl="292" class="scpb" style="display: flex; align-items: center; justify-content: center; border-radius: 100px; background: linear-gradient(rgb(32, 32, 32) 0%, rgb(0, 0, 0) 100%); color: rgb(197, 194, 187); font-size: 13px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; padding: 17px 24px; min-height: 50px; width: 100%; transition: color 0.3s;">Agendar como visitante</span></a>
               </div>
             </div>
 
@@ -997,7 +1010,7 @@ html,body{background:#080908}
         </div>
         <div data-dc-tpl="177" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr)); gap: 16px;">
           
-            <article data-dc-tpl="179" data-rv="1" class="scpa" style="background: rgb(255, 255, 255); border: 1px solid rgba(11, 11, 11, 0.1); border-radius: 24px; padding: 28px; display: flex; flex-direction: column; gap: 16px; box-shadow: rgba(11, 11, 11, 0.5) 0px 20px 40px -34px; transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.6s;">
+            <article data-dc-tpl="179" data-rv="1" class="scpf" style="background: rgb(255, 255, 255); border: 1px solid rgba(11, 11, 11, 0.1); border-radius: 24px; padding: 28px; display: flex; flex-direction: column; gap: 16px; box-shadow: rgba(11, 11, 11, 0.5) 0px 20px 40px -34px; transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.6s;">
               <div data-dc-tpl="180" style="display: flex; flex-direction: column; gap: 6px;">
                 <h3 data-dc-tpl="181" style="margin: 0px; font-size: 21px; font-weight: 700; letter-spacing: -0.01em; line-height: 1.2;"><span class="sc-interp">Corte Ilimitado</span></h3>
                 <span data-dc-tpl="182" style="font-size: 14px; color: rgb(95, 92, 87);"><span class="sc-interp">Para quem mantém o corte sempre em dia.</span></span>
@@ -1017,7 +1030,7 @@ html,body{background:#080908}
               <a data-dc-tpl="191" href="https://cashbarber.com.br/salaomorenos" target="_blank" rel="noopener noreferrer" class="scp6" style="margin-top: auto; display: flex; align-items: center; justify-content: center; min-height: 50px; border-radius: 100px; background: rgb(11, 11, 11); color: rgb(246, 244, 239); font-size: 13px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; text-decoration: none; transition: background 0.35s;">Assinar</a>
             </article>
           
-            <article data-dc-tpl="179" data-rv="1" class="scpa" style="background: rgb(255, 255, 255); border: 1px solid rgba(11, 11, 11, 0.1); border-radius: 24px; padding: 28px; display: flex; flex-direction: column; gap: 16px; box-shadow: rgba(11, 11, 11, 0.5) 0px 20px 40px -34px; transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.6s;">
+            <article data-dc-tpl="179" data-rv="1" class="scpf" style="background: rgb(255, 255, 255); border: 1px solid rgba(11, 11, 11, 0.1); border-radius: 24px; padding: 28px; display: flex; flex-direction: column; gap: 16px; box-shadow: rgba(11, 11, 11, 0.5) 0px 20px 40px -34px; transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.6s;">
               <div data-dc-tpl="180" style="display: flex; flex-direction: column; gap: 6px;">
                 <h3 data-dc-tpl="181" style="margin: 0px; font-size: 21px; font-weight: 700; letter-spacing: -0.01em; line-height: 1.2;"><span class="sc-interp">Combo Supremo Ilimitado</span></h3>
                 <span data-dc-tpl="182" style="font-size: 14px; color: rgb(95, 92, 87);"><span class="sc-interp">Corte e barba no mesmo plano.</span></span>
@@ -1037,7 +1050,7 @@ html,body{background:#080908}
               <a data-dc-tpl="191" href="https://cashbarber.com.br/salaomorenos" target="_blank" rel="noopener noreferrer" class="scp6" style="margin-top: auto; display: flex; align-items: center; justify-content: center; min-height: 50px; border-radius: 100px; background: rgb(11, 11, 11); color: rgb(246, 244, 239); font-size: 13px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; text-decoration: none; transition: background 0.35s;">Assinar</a>
             </article>
           
-            <article data-dc-tpl="179" data-rv="1" class="scpa" style="background: rgb(255, 255, 255); border: 1px solid rgba(11, 11, 11, 0.1); border-radius: 24px; padding: 28px; display: flex; flex-direction: column; gap: 16px; box-shadow: rgba(11, 11, 11, 0.5) 0px 20px 40px -34px; transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.6s;">
+            <article data-dc-tpl="179" data-rv="1" class="scpf" style="background: rgb(255, 255, 255); border: 1px solid rgba(11, 11, 11, 0.1); border-radius: 24px; padding: 28px; display: flex; flex-direction: column; gap: 16px; box-shadow: rgba(11, 11, 11, 0.5) 0px 20px 40px -34px; transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.6s;">
               <div data-dc-tpl="180" style="display: flex; flex-direction: column; gap: 6px;">
                 <h3 data-dc-tpl="181" style="margin: 0px; font-size: 21px; font-weight: 700; letter-spacing: -0.01em; line-height: 1.2;"><span class="sc-interp">Barba Premium Ilimitada</span></h3>
                 <span data-dc-tpl="182" style="font-size: 14px; color: rgb(95, 92, 87);"><span class="sc-interp">Para quem cuida da barba com frequência.</span></span>
@@ -1053,7 +1066,7 @@ html,body{background:#080908}
               <a data-dc-tpl="191" href="https://cashbarber.com.br/salaomorenos" target="_blank" rel="noopener noreferrer" class="scp6" style="margin-top: auto; display: flex; align-items: center; justify-content: center; min-height: 50px; border-radius: 100px; background: rgb(11, 11, 11); color: rgb(246, 244, 239); font-size: 13px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; text-decoration: none; transition: background 0.35s;">Assinar</a>
             </article>
           
-            <article data-dc-tpl="179" data-rv="1" class="scpa" style="background: rgb(255, 255, 255); border: 1px solid rgba(11, 11, 11, 0.1); border-radius: 24px; padding: 28px; display: flex; flex-direction: column; gap: 16px; box-shadow: rgba(11, 11, 11, 0.5) 0px 20px 40px -34px; transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.6s;">
+            <article data-dc-tpl="179" data-rv="1" class="scpf" style="background: rgb(255, 255, 255); border: 1px solid rgba(11, 11, 11, 0.1); border-radius: 24px; padding: 28px; display: flex; flex-direction: column; gap: 16px; box-shadow: rgba(11, 11, 11, 0.5) 0px 20px 40px -34px; transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.6s;">
               <div data-dc-tpl="180" style="display: flex; flex-direction: column; gap: 6px;">
                 <h3 data-dc-tpl="181" style="margin: 0px; font-size: 21px; font-weight: 700; letter-spacing: -0.01em; line-height: 1.2;"><span class="sc-interp">Plano One</span></h3>
                 <span data-dc-tpl="182" style="font-size: 14px; color: rgb(95, 92, 87);"><span class="sc-interp">Só corte.</span></span>
@@ -1071,7 +1084,7 @@ html,body{background:#080908}
               <a data-dc-tpl="191" href="https://cashbarber.com.br/salaomorenos" target="_blank" rel="noopener noreferrer" class="scp6" style="margin-top: auto; display: flex; align-items: center; justify-content: center; min-height: 50px; border-radius: 100px; background: rgb(11, 11, 11); color: rgb(246, 244, 239); font-size: 13px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; text-decoration: none; transition: background 0.35s;">Assinar</a>
             </article>
           
-            <article data-dc-tpl="179" data-rv="1" class="scpa" style="background: rgb(255, 255, 255); border: 1px solid rgba(11, 11, 11, 0.1); border-radius: 24px; padding: 28px; display: flex; flex-direction: column; gap: 16px; box-shadow: rgba(11, 11, 11, 0.5) 0px 20px 40px -34px; transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.6s;">
+            <article data-dc-tpl="179" data-rv="1" class="scpf" style="background: rgb(255, 255, 255); border: 1px solid rgba(11, 11, 11, 0.1); border-radius: 24px; padding: 28px; display: flex; flex-direction: column; gap: 16px; box-shadow: rgba(11, 11, 11, 0.5) 0px 20px 40px -34px; transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.6s;">
               <div data-dc-tpl="180" style="display: flex; flex-direction: column; gap: 6px;">
                 <h3 data-dc-tpl="181" style="margin: 0px; font-size: 21px; font-weight: 700; letter-spacing: -0.01em; line-height: 1.2;"><span class="sc-interp">Plano Due</span></h3>
                 <span data-dc-tpl="182" style="font-size: 14px; color: rgb(95, 92, 87);"><span class="sc-interp">Barba e corte ou 2 cortes.</span></span>
@@ -1089,10 +1102,10 @@ html,body{background:#080908}
               <a data-dc-tpl="191" href="https://cashbarber.com.br/salaomorenos" target="_blank" rel="noopener noreferrer" class="scp6" style="margin-top: auto; display: flex; align-items: center; justify-content: center; min-height: 50px; border-radius: 100px; background: rgb(11, 11, 11); color: rgb(246, 244, 239); font-size: 13px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; text-decoration: none; transition: background 0.35s;">Assinar</a>
             </article>
           
-            <article data-dc-tpl="179" data-rv="1" class="scpa" style="background: rgb(255, 255, 255); border: 1px solid rgba(11, 11, 11, 0.1); border-radius: 24px; padding: 28px; display: flex; flex-direction: column; gap: 16px; box-shadow: rgba(11, 11, 11, 0.5) 0px 20px 40px -34px; transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.6s;">
+            <article data-dc-tpl="179" data-rv="1" class="scpf" style="background: rgb(255, 255, 255); border: 1px solid rgba(11, 11, 11, 0.1); border-radius: 24px; padding: 28px; display: flex; flex-direction: column; gap: 16px; box-shadow: rgba(11, 11, 11, 0.5) 0px 20px 40px -34px; transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.6s;">
               <div data-dc-tpl="180" style="display: flex; flex-direction: column; gap: 6px;">
-                <h3 data-dc-tpl="181" style="margin: 0px; font-size: 21px; font-weight: 700; letter-spacing: -0.01em; line-height: 1.2;"><span class="sc-interp">Família Corte e Barba Clássico</span></h3>
-                <span data-dc-tpl="182" style="font-size: 14px; color: rgb(95, 92, 87);"><span class="sc-interp">8 procedimentos mensais.</span></span>
+                <h3 data-dc-tpl="181" style="margin: 0px; font-size: 21px; font-weight: 700; letter-spacing: -0.01em; line-height: 1.2;"><span class="sc-interp">Família Corte e Barba Clássico — 8 procedimentos</span></h3>
+                <span data-dc-tpl="182" style="font-size: 14px; color: rgb(95, 92, 87);"><span class="sc-interp">8 procedimentos mensais, para dividir entre a família.</span></span>
               </div>
               <div data-dc-tpl="183" style="display: flex; align-items: baseline; gap: 6px;"><span data-dc-tpl="184" style="font-size: clamp(30px, 2.6vw, 38px); font-weight: 700; letter-spacing: -0.03em;"><span class="sc-interp">R$ 209,90</span></span><span data-dc-tpl="185" style="font-size: 14px; color: rgb(95, 92, 87);"><span class="sc-interp">/mês</span></span></div>
               <ul data-dc-tpl="186" style="list-style: none; margin: 0px; padding: 16px 0px 0px; display: flex; flex-direction: column; gap: 10px; border-top: 1px solid rgba(11, 11, 11, 0.1);">
@@ -1107,10 +1120,10 @@ html,body{background:#080908}
               <a data-dc-tpl="191" href="https://cashbarber.com.br/salaomorenos" target="_blank" rel="noopener noreferrer" class="scp6" style="margin-top: auto; display: flex; align-items: center; justify-content: center; min-height: 50px; border-radius: 100px; background: rgb(11, 11, 11); color: rgb(246, 244, 239); font-size: 13px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; text-decoration: none; transition: background 0.35s;">Assinar</a>
             </article>
           
-            <article data-dc-tpl="179" data-rv="1" class="scpa" style="background: rgb(255, 255, 255); border: 1px solid rgba(11, 11, 11, 0.1); border-radius: 24px; padding: 28px; display: flex; flex-direction: column; gap: 16px; box-shadow: rgba(11, 11, 11, 0.5) 0px 20px 40px -34px; transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.6s;">
+            <article data-dc-tpl="179" data-rv="1" class="scpf" style="background: rgb(255, 255, 255); border: 1px solid rgba(11, 11, 11, 0.1); border-radius: 24px; padding: 28px; display: flex; flex-direction: column; gap: 16px; box-shadow: rgba(11, 11, 11, 0.5) 0px 20px 40px -34px; transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.6s;">
               <div data-dc-tpl="180" style="display: flex; flex-direction: column; gap: 6px;">
-                <h3 data-dc-tpl="181" style="margin: 0px; font-size: 21px; font-weight: 700; letter-spacing: -0.01em; line-height: 1.2;"><span class="sc-interp">Família Corte e Barba Clássico</span></h3>
-                <span data-dc-tpl="182" style="font-size: 14px; color: rgb(95, 92, 87);"><span class="sc-interp">6 procedimentos mensais.</span></span>
+                <h3 data-dc-tpl="181" style="margin: 0px; font-size: 21px; font-weight: 700; letter-spacing: -0.01em; line-height: 1.2;"><span class="sc-interp">Família Corte e Barba Clássico — 6 procedimentos</span></h3>
+                <span data-dc-tpl="182" style="font-size: 14px; color: rgb(95, 92, 87);"><span class="sc-interp">6 procedimentos mensais, para dividir entre a família.</span></span>
               </div>
               <div data-dc-tpl="183" style="display: flex; align-items: baseline; gap: 6px;"><span data-dc-tpl="184" style="font-size: clamp(30px, 2.6vw, 38px); font-weight: 700; letter-spacing: -0.03em;"><span class="sc-interp">R$ 169,90</span></span><span data-dc-tpl="185" style="font-size: 14px; color: rgb(95, 92, 87);"><span class="sc-interp">/mês</span></span></div>
               <ul data-dc-tpl="186" style="list-style: none; margin: 0px; padding: 16px 0px 0px; display: flex; flex-direction: column; gap: 10px; border-top: 1px solid rgba(11, 11, 11, 0.1);">
@@ -1324,14 +1337,22 @@ html,body{background:#080908}
           
           
           
+            <div data-dc-tpl="106" style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 4px;">
+              
+                <a data-dc-tpl="108" href="/unidades/" class="scp7" style="display: inline-flex; align-items: center; min-height: 44px; padding: 10px 18px; border-radius: 100px; border: 1px solid rgba(246, 244, 239, 0.24); color: rgb(246, 244, 239); font-size: 13px; font-weight: 600; text-decoration: none; transition: border-color 0.35s, color 0.35s;"><span class="sc-interp">Ver as três unidades</span> →</a>
+              
+                <a data-dc-tpl="108" href="/servicos/" class="scp7" style="display: inline-flex; align-items: center; min-height: 44px; padding: 10px 18px; border-radius: 100px; border: 1px solid rgba(246, 244, 239, 0.24); color: rgb(246, 244, 239); font-size: 13px; font-weight: 600; text-decoration: none; transition: border-color 0.35s, color 0.35s;"><span class="sc-interp">Conhecer os serviços</span> →</a>
+              
+            </div>
+          
           
             <div data-dc-tpl="110" style="display: flex; flex-wrap: wrap; gap: 12px; margin-top: 8px;">
               
-                <a data-dc-tpl="113" href="https://cashbarber.com.br/salaomorenos" target="_blank" rel="noopener noreferrer" class="scp1" style="display: inline-flex; padding: 1.5px; border-radius: 100px; background: linear-gradient(100deg, rgb(138, 131, 120) 0%, rgb(58, 58, 58) 16%, rgb(207, 201, 190) 30%, rgb(255, 255, 255) 42%, rgb(207, 201, 190) 54%, rgb(58, 58, 58) 70%, rgb(138, 131, 120) 100%) 0% 0% / 200% 100%; animation: 7s linear 0s infinite normal none running metal; box-shadow: rgba(0, 0, 0, 0.5) 0px 12px 26px -10px; text-decoration: none; transition: filter 0.45s, transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);"><span data-dc-tpl="114" style="display: flex; align-items: center; justify-content: center; border-radius: 100px; background: linear-gradient(rgb(255, 255, 255) 0%, rgb(232, 229, 223) 100%); color: rgb(11, 11, 11); font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; padding: 16px 26px; min-height: 50px; font-size: 13px;"><span class="sc-interp">Assinar agora</span></span></a>
+                <a data-dc-tpl="113" href="https://cashbarber.com.br/salaomorenos" target="_blank" rel="noopener noreferrer" class="scp8" style="display: inline-flex; padding: 1.5px; border-radius: 100px; background: linear-gradient(100deg, rgb(138, 131, 120) 0%, rgb(58, 58, 58) 16%, rgb(207, 201, 190) 30%, rgb(255, 255, 255) 42%, rgb(207, 201, 190) 54%, rgb(58, 58, 58) 70%, rgb(138, 131, 120) 100%) 0% 0% / 200% 100%; animation: 7s linear 0s infinite normal none running metal; box-shadow: rgba(0, 0, 0, 0.5) 0px 12px 26px -10px; text-decoration: none; transition: filter 0.45s, transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);"><span data-dc-tpl="114" style="display: flex; align-items: center; justify-content: center; border-radius: 100px; background: linear-gradient(rgb(255, 255, 255) 0%, rgb(232, 229, 223) 100%); color: rgb(11, 11, 11); font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; padding: 16px 26px; min-height: 50px; font-size: 13px;"><span class="sc-interp">Assinar agora</span></span></a>
                 
               
                 
-                <a data-dc-tpl="116" href="https://wa.me/5527998713993?text=Ol%C3%A1!%20Vim%20pelo%20site%20da%20Morenos%20e%20gostaria%20de%20informa%C3%A7%C3%B5es%20sobre%20o%20Clube." target="_blank" rel="noopener noreferrer" class="scp2" style="display: inline-flex; padding: 1.5px; border-radius: 100px; background: linear-gradient(100deg, rgb(11, 11, 11) 0%, rgb(58, 58, 58) 18%, rgb(156, 150, 140) 32%, rgb(243, 239, 232) 42%, rgb(156, 150, 140) 52%, rgb(58, 58, 58) 68%, rgb(11, 11, 11) 100%) 0% 0% / 200% 100%; animation: 7s linear 0s infinite normal none running metal; box-shadow: rgba(0, 0, 0, 0.85) 0px 12px 26px -10px; text-decoration: none; transition: filter 0.45s, transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);"><span data-dc-tpl="117" style="display: flex; align-items: center; justify-content: center; border-radius: 100px; background: linear-gradient(rgb(32, 32, 32) 0%, rgb(0, 0, 0) 100%); color: rgb(232, 229, 223); font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; padding: 16px 26px; min-height: 50px; font-size: 13px;"><span class="sc-interp">Agendar como visitante</span></span></a>
+                <a data-dc-tpl="116" href="https://wa.me/5527998713993?text=Ol%C3%A1!%20Vim%20pelo%20site%20da%20Morenos%20e%20gostaria%20de%20informa%C3%A7%C3%B5es%20sobre%20o%20Clube." target="_blank" rel="noopener noreferrer" class="scp9" style="display: inline-flex; padding: 1.5px; border-radius: 100px; background: linear-gradient(100deg, rgb(11, 11, 11) 0%, rgb(58, 58, 58) 18%, rgb(156, 150, 140) 32%, rgb(243, 239, 232) 42%, rgb(156, 150, 140) 52%, rgb(58, 58, 58) 68%, rgb(11, 11, 11) 100%) 0% 0% / 200% 100%; animation: 7s linear 0s infinite normal none running metal; box-shadow: rgba(0, 0, 0, 0.85) 0px 12px 26px -10px; text-decoration: none; transition: filter 0.45s, transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);"><span data-dc-tpl="117" style="display: flex; align-items: center; justify-content: center; border-radius: 100px; background: linear-gradient(rgb(32, 32, 32) 0%, rgb(0, 0, 0) 100%); color: rgb(232, 229, 223); font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; padding: 16px 26px; min-height: 50px; font-size: 13px;"><span class="sc-interp">Agendar como visitante</span></span></a>
               
             </div>
           
@@ -1384,48 +1405,50 @@ html,body{background:#080908}
           <nav data-dc-tpl="11" aria-label="Morenos" style="flex: 1 1 160px; display: flex; flex-direction: column; gap: 12px;">
             <span data-dc-tpl="12" style="font-size: 11px; font-weight: 700; letter-spacing: 0.24em; text-transform: uppercase; color: rgb(183, 154, 106); margin-bottom: 4px;"><span class="sc-interp">Morenos</span></span>
             
-              <a data-dc-tpl="14" href="/cultura/" class="scp4" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Sobre a Morenos</span></a>
+              <a data-dc-tpl="14" href="/cultura/" target="_self" rel="" class="scpb" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Sobre a Morenos</span></a>
             
-              <a data-dc-tpl="14" href="/corporativo/" class="scp4" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Corporativo</span></a>
+              <a data-dc-tpl="14" href="/corporativo/" target="_self" rel="" class="scpb" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Corporativo</span></a>
             
-              <a data-dc-tpl="14" href="/trabalhe-conosco/" class="scp4" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Trabalhe Conosco</span></a>
+              <a data-dc-tpl="14" href="/trabalhe-conosco/" target="_self" rel="" class="scpb" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Trabalhe Conosco</span></a>
             
           </nav>
         
           <nav data-dc-tpl="11" aria-label="Serviços" style="flex: 1 1 160px; display: flex; flex-direction: column; gap: 12px;">
             <span data-dc-tpl="12" style="font-size: 11px; font-weight: 700; letter-spacing: 0.24em; text-transform: uppercase; color: rgb(183, 154, 106); margin-bottom: 4px;"><span class="sc-interp">Serviços</span></span>
             
-              <a data-dc-tpl="14" href="/servicos/corte-masculino/" class="scp4" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Corte Masculino</span></a>
+              <a data-dc-tpl="14" href="/servicos/corte-masculino/" target="_self" rel="" class="scpb" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Corte Masculino</span></a>
             
-              <a data-dc-tpl="14" href="/servicos/barboterapia/" class="scp4" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Barboterapia</span></a>
+              <a data-dc-tpl="14" href="/servicos/barboterapia/" target="_self" rel="" class="scpb" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Barboterapia</span></a>
             
-              <a data-dc-tpl="14" href="/visagismo/" class="scp4" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Visagismo</span></a>
+              <a data-dc-tpl="14" href="/visagismo/" target="_self" rel="" class="scpb" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Visagismo</span></a>
             
-              <a data-dc-tpl="14" href="/dia-do-noivo/" class="scp4" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Dia do Noivo</span></a>
+              <a data-dc-tpl="14" href="/dia-do-noivo/" target="_self" rel="" class="scpb" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Dia do Noivo</span></a>
             
-              <a data-dc-tpl="14" href="/servicos/" class="scp4" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Todos os serviços</span></a>
+              <a data-dc-tpl="14" href="/servicos/" target="_self" rel="" class="scpb" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Todos os serviços</span></a>
             
           </nav>
         
           <nav data-dc-tpl="11" aria-label="Unidades" style="flex: 1 1 160px; display: flex; flex-direction: column; gap: 12px;">
             <span data-dc-tpl="12" style="font-size: 11px; font-weight: 700; letter-spacing: 0.24em; text-transform: uppercase; color: rgb(183, 154, 106); margin-bottom: 4px;"><span class="sc-interp">Unidades</span></span>
             
-              <a data-dc-tpl="14" href="/unidades/cidade-continental/" class="scp4" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Cidade Continental</span></a>
+              <a data-dc-tpl="14" href="/unidades/" target="_self" rel="" class="scpb" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Todas as unidades</span></a>
             
-              <a data-dc-tpl="14" href="/unidades/novo-horizonte-av-brasil/" class="scp4" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Novo Horizonte — Av. Brasil</span></a>
+              <a data-dc-tpl="14" href="/unidades/cidade-continental/" target="_self" rel="" class="scpb" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Cidade Continental</span></a>
             
-              <a data-dc-tpl="14" href="/unidades/novo-horizonte-av-industrial/" class="scp4" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Novo Horizonte — Av. Industrial</span></a>
+              <a data-dc-tpl="14" href="/unidades/novo-horizonte-av-brasil/" target="_self" rel="" class="scpb" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Novo Horizonte — Av. Brasil</span></a>
+            
+              <a data-dc-tpl="14" href="/unidades/novo-horizonte-av-industrial/" target="_self" rel="" class="scpb" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Novo Horizonte — Av. Industrial</span></a>
             
           </nav>
         
           <nav data-dc-tpl="11" aria-label="Clube" style="flex: 1 1 160px; display: flex; flex-direction: column; gap: 12px;">
             <span data-dc-tpl="12" style="font-size: 11px; font-weight: 700; letter-spacing: 0.24em; text-transform: uppercase; color: rgb(183, 154, 106); margin-bottom: 4px;"><span class="sc-interp">Clube</span></span>
             
-              <a data-dc-tpl="14" href="/o-clube/" class="scp4" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Conhecer o Clube</span></a>
+              <a data-dc-tpl="14" href="/o-clube/" target="_self" rel="" class="scpb" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Conhecer o Clube</span></a>
             
-              <a data-dc-tpl="14" href="/o-clube/#planos" class="scp4" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Planos</span></a>
+              <a data-dc-tpl="14" href="/o-clube/#planos" target="_self" rel="" class="scpb" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Planos</span></a>
             
-              <a data-dc-tpl="14" href="https://cashbarber.com.br/salaomorenos" class="scp4" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Assinar</span></a>
+              <a data-dc-tpl="14" href="https://cashbarber.com.br/salaomorenos" target="_blank" rel="noopener noreferrer" class="scpb" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Assinar</span></a>
             
           </nav>
         
@@ -1434,10 +1457,10 @@ html,body{background:#080908}
     <div data-dc-tpl="15" style="margin-top: clamp(32px, 4vw, 56px); padding-top: 24px; border-top: 1px solid rgba(246, 244, 239, 0.12); display: flex; flex-wrap: wrap; gap: 12px; justify-content: space-between;">
       <span data-dc-tpl="16" style="font-size: 12px; color: rgb(124, 121, 117);">Serra — Espírito Santo · Cidade Continental · Novo Horizonte — Av. Brasil · Novo Horizonte — Av. Industrial</span>
       <span data-dc-tpl="17" style="display: flex; flex-wrap: wrap; gap: 18px;">
-        <a data-dc-tpl="18" href="/politica-de-privacidade/" class="scp0" style="font-size: 12px; color: rgb(197, 194, 187); text-decoration: none;">Política de Privacidade</a>
-        <a data-dc-tpl="19" href="/termos-de-uso/" class="scp0" style="font-size: 12px; color: rgb(197, 194, 187); text-decoration: none;">Termos de Uso</a>
+        <a data-dc-tpl="18" href="/politica-de-privacidade/" class="scp1" style="font-size: 12px; color: rgb(197, 194, 187); text-decoration: none;">Política de Privacidade</a>
+        <a data-dc-tpl="19" href="/termos-de-uso/" class="scp1" style="font-size: 12px; color: rgb(197, 194, 187); text-decoration: none;">Termos de Uso</a>
       </span>
-      <a data-dc-tpl="20" href="https://wa.me/5527998713993?text=Ol%C3%A1!%20Vim%20pelo%20seu%20site%20e%20quero%20agendar%20um%20corte%20como%20visitante" target="_blank" rel="noopener noreferrer" class="scp0" style="font-size: 12px; color: rgb(197, 194, 187); text-decoration: none;">WhatsApp <span class="sc-interp">+55 27 99871-3993</span></a>
+      <a data-dc-tpl="20" href="https://wa.me/5527998713993?text=Ol%C3%A1!%20Vim%20pelo%20seu%20site%20e%20quero%20agendar%20um%20corte%20como%20visitante" target="_blank" rel="noopener noreferrer" class="scp1" style="font-size: 12px; color: rgb(197, 194, 187); text-decoration: none;">WhatsApp <span class="sc-interp">+55 27 99871-3993</span></a>
     </div>
   </footer></div></div></div></div>
 </div>
@@ -1446,14 +1469,14 @@ html,body{background:#080908}
 <title>Clube Salão Morenos | Planos e Assinatura</title>
 <meta name="description" content="Clube Salão Morenos: planos mensais de corte e barba em Serra, ES. Compare os planos, veja como funciona e assine online.">
 <meta name="theme-color" content="#0B0B0B">
-<link rel="canonical" href="https://salaomorenos.com.br/o-clube/">
+<link rel="canonical" href="https://novosite.salaomorenos.com.br/o-clube/">
 <meta property="og:type" content="website">
 <meta property="og:locale" content="pt_BR">
 <meta property="og:site_name" content="Salão Morenos">
 <meta property="og:title" content="Clube Salão Morenos | Planos e Assinatura">
 <meta property="og:description" content="Clube Salão Morenos: planos mensais de corte e barba em Serra, ES. Compare os planos, veja como funciona e assine online.">
-<meta property="og:url" content="https://salaomorenos.com.br/o-clube/">
-<meta property="og:image" content="https://salaomorenos.com.br/img/foto-atendimento.webp">
+<meta property="og:url" content="https://novosite.salaomorenos.com.br/o-clube/">
+<meta property="og:image" content="https://novosite.salaomorenos.com.br/img/foto-atendimento.webp">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="preload" as="image" href="/img/foto-atendimento.webp" fetchpriority="high">
 <script src="/smooth-scroll.js" defer></script>
@@ -1538,7 +1561,7 @@ html,body{background:#080908}
   @keyframes metal { 0% { background-position:0% 50%; } 100% { background-position:200% 50%; } }
   @media (prefers-reduced-motion: reduce) { html { scroll-behavior:auto; } * { animation:none !important; transition:none !important; } }
 </style>
-<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Início","item":"https://salaomorenos.com.br/"},{"@type":"ListItem","position":2,"name":"O Clube","item":"https://salaomorenos.com.br/o-clube/"}]}]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://novosite.salaomorenos.com.br/#organizacao","name":"Salão Morenos","url":"https://novosite.salaomorenos.com.br/","logo":"https://novosite.salaomorenos.com.br/favicon-192.png","areaServed":"Serra, ES","contactPoint":{"@type":"ContactPoint","contactType":"customer service","telephone":"+5527998713993","availableLanguage":"pt-BR"},"subOrganization":[{"@id":"https://novosite.salaomorenos.com.br/unidades/cidade-continental/#unidade"},{"@id":"https://novosite.salaomorenos.com.br/unidades/novo-horizonte-av-brasil/#unidade"},{"@id":"https://novosite.salaomorenos.com.br/unidades/novo-horizonte-av-industrial/#unidade"}]},{"@type":"WebSite","@id":"https://novosite.salaomorenos.com.br/#site","url":"https://novosite.salaomorenos.com.br/","name":"Salão Morenos","inLanguage":"pt-BR","publisher":{"@id":"https://novosite.salaomorenos.com.br/#organizacao"}},{"@type":"BreadcrumbList","@id":"https://novosite.salaomorenos.com.br/o-clube/#trilha","itemListElement":[{"@type":"ListItem","position":1,"name":"Início","item":"https://novosite.salaomorenos.com.br/"},{"@type":"ListItem","position":2,"name":"O Clube","item":"https://novosite.salaomorenos.com.br/o-clube/"}]}]}</script>
 </helmet>
 <div style="background:#0B0B0B;min-height:100vh">
   <dc-import name="SiteHeader" ativo="clube" hint-size="100%,98px" style="position:sticky;top:0;z-index:60;display:block"></dc-import>

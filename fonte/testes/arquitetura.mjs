@@ -125,6 +125,18 @@ for (const rota of ROTAS) {
   checa(rolagem.desceu, `${rota}: rolar a pagina nao mexeu em nada`);
   checa(rolagem.visivel, `${rota}: o rodape nao e alcancado ao rolar ate o fim`);
 
+  // O grafo chega duas vezes no HTML (o <head> da pagina e o <helmet> do
+  // template). A troca das camadas tem que deixar UM — dois grafos iguais nao
+  // quebram nada, mas dois grafos que divergirem um dia, sim.
+  const grafos = await pagina.evaluate(() =>
+    [...document.querySelectorAll('script[type="application/ld+json"]')].map((s) => s.textContent.trim()));
+  checa(grafos.length <= 1, `${rota}: ${grafos.length} blocos JSON-LD no DOM depois da troca`);
+  if (grafos.length === 1) {
+    let valido = true;
+    try { JSON.parse(grafos[0]); } catch (e) { valido = false; }
+    checa(valido, `${rota}: JSON-LD invalido no DOM`);
+  }
+
   mapa[rota] = dados;
   checa(dados.h1.length === 1, `${rota}: ${dados.h1.length} <h1>`);
   checa(!RECADOS.test(dados.texto) && !RECADOS_I.test(dados.texto),

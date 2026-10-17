@@ -1,3 +1,10 @@
+# >>> homologacao: inserido pelo build, nao editar a mao >>>
+# Ambiente de aprovacao. Nada daqui pode entrar no indice de busca.
+<IfModule mod_headers.c>
+  Header set X-Robots-Tag "noindex, nofollow"
+</IfModule>
+# <<< homologacao <<<
+
 # Salao Moreno's - configuracao de producao (Apache / HostGator)
 
 # ---------- Pagina inicial ----------
@@ -15,6 +22,20 @@ DirectoryIndex index.html
   # Remove o www (o canonical do site aponta para salaomorenos.com.br)
   RewriteCond %{HTTP_HOST} ^www\.(.+)$ [NC]
   RewriteRule ^(.*)$ https://%1/$1 [R=301,L]
+
+  # Uma pagina, um endereco. /servicos/index.html servia a mesma pagina que
+  # /servicos/ e respondia 200 nas duas: duas URLs para o mesmo conteudo, e o
+  # canonical de uma delas apontando para a outra. Agora o /index.html manda
+  # para a forma com barra, de uma vez.
+  RewriteCond %{THE_REQUEST} \s/+(.*/)?index\.html[\s?] [NC]
+  RewriteRule ^(.*/)?index\.html$ /%1 [R=301,L]
+</IfModule>
+
+# Pasta sem barra final (/servicos) redireciona para /servicos/ em vez de
+# servir a pagina nos dois enderecos. E o padrao do Apache; fica explicito
+# porque o site depende disso para nao duplicar URL.
+<IfModule mod_dir.c>
+  DirectorySlash On
 </IfModule>
 
 # ---------- Rota interna das avaliacoes do Google ----------
@@ -80,6 +101,17 @@ DirectoryIndex index.html
   Header always unset X-Powered-By
 </IfModule>
 
+# ---------- Componentes do runtime (/_dc/) ----------
+# SiteHeader, SiteFooter e PaginaMorenos sao documentos HTML completos que o
+# NAVEGADOR busca em tempo de execucao. Eles precisam continuar servidos (ja
+# houve um 403 aqui que esvaziou o site inteiro), mas nao sao paginas: sem
+# isto, respondem 200 e podem ser indexados como se fossem conteudo.
+<IfModule mod_headers.c>
+  <FilesMatch "\.dc\.html$">
+    Header set X-Robots-Tag "noindex, nofollow"
+  </FilesMatch>
+</IfModule>
+
 # ---------- MIME types ----------
 <IfModule mod_mime.c>
   AddType image/webp .webp
@@ -101,4 +133,9 @@ DirectoryIndex index.html
 # Sem listagem de diretorio
 Options -Indexes
 
-ErrorDocument 404 /index.html
+# ---------- Pagina nao encontrada ----------
+# Servia /index.html: qualquer URL errada devolvia a home inteira. O status ate
+# era 404, mas o visitante via a home sem entender o que aconteceu, e o robo
+# encontrava o conteudo da home em dezenas de enderecos diferentes. A pagina de
+# erro propria ja existe e tem noindex.
+ErrorDocument 404 /404.html

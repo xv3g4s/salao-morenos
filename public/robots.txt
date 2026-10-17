@@ -1,4 +1,6 @@
+# Ambiente de aprovacao (nao e o site publico).
+# O rastreio fica liberado de proposito: e assim que o robo le o
+# noindex que cada pagina traz no <head> e no cabecalho HTTP.
+# Sem Sitemap: aqui — o sitemap definitivo e o do dominio final.
 User-agent: *
 Allow: /
-
-Sitemap: https://salaomorenos.com.br/sitemap.xml

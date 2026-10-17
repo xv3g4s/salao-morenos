@@ -192,12 +192,31 @@ for (const { arquivo, saida, minTexto = 1200 } of ROTAS) {
       el.style.visibility = '';
     });
 
-    // 3) A primeira imagem (LCP) nao pode esperar; o resto pode.
+    // 3) A imagem que decide o LCP nao pode esperar; o resto pode.
+    //
+    // Antes isto era "a primeira do DOM", que e a LOGO DO CABECALHO: a logo
+    // ganhava prioridade alta e a foto de abertura — a maior imagem da pagina
+    // e a que o visitante olha — era marcada loading="lazy", justamente a
+    // imagem que nao pode ser adiada. Agora o alvo e o que o design marcou
+    // como prioritario dentro do <main>, e so o que nasce abaixo da primeira
+    // dobra vira lazy.
     const imgs = [...document.querySelectorAll('#dc-root img')];
-    imgs.forEach((img, i) => {
-      if (i === 0) { img.removeAttribute('loading'); img.setAttribute('fetchpriority', 'high'); }
-      else if (!img.getAttribute('loading')) img.setAttribute('loading', 'lazy');
+    const principal = document.querySelector('#dc-root main img[fetchpriority="high"]')
+      || document.querySelector('#dc-root main img')
+      || imgs[0];
+    const dobra = window.innerHeight;
+    imgs.forEach((img) => {
       if (!img.getAttribute('decoding')) img.setAttribute('decoding', 'async');
+      if (img === principal) {
+        img.removeAttribute('loading');
+        img.setAttribute('fetchpriority', 'high');
+        return;
+      }
+      if (img.getAttribute('fetchpriority') === 'high') img.removeAttribute('fetchpriority');
+      if (img.getAttribute('loading')) return;
+      const r = img.getBoundingClientRect();
+      // acima da dobra o lazy atrasa o que ja esta na tela
+      if (r.top > dobra) img.setAttribute('loading', 'lazy');
     });
 
     // 4) Na copia estatica nada abre: um botao nao pode anunciar estado aberto.

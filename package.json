@@ -8,10 +8,12 @@
     "build": "python3 fonte/build.py",
     "build:homologacao": "python3 fonte/build.py --homologacao",
     "check": "node fonte/checar.mjs public",
-    "test:avaliacoes": "node fonte/testes/avaliacoes.mjs",
-    "find:google-places": "node fonte/scripts/find-google-place-ids.mjs",
     "test:arquitetura": "node fonte/testes/arquitetura.mjs public",
-    "mapa": "node fonte/testes/arquitetura.mjs public --mapa"
+    "test:seo": "node fonte/testes/seo.mjs public",
+    "test:avaliacoes": "node fonte/testes/avaliacoes.mjs",
+    "mapa": "node fonte/testes/arquitetura.mjs public --mapa",
+    "auditar:site-antigo": "node fonte/scripts/auditar-site-antigo.mjs",
+    "find:google-places": "node fonte/scripts/find-google-place-ids.mjs"
   },
   "devDependencies": {
     "playwright": "^1.49.0"

@@ -124,3 +124,83 @@ sair do jeito que está hoje:
   `/dia-do-noivo/`: eram as mesmas quatro fotos, sem relação com a página.
 - O banner do Clube ficou só em `/servicos/`, `/servicos/corte-masculino/` e
   `/servicos/barboterapia/`.
+
+---
+
+## Revisão de SEO (out/2026) — o que depende do cliente
+
+O que foi implementado está no relatório e em `fonte/MIGRACAO.md`. Aqui fica só
+o que **nenhum ajuste de código resolve**: informação que a Morenos tem e o
+site não.
+
+### Por unidade
+
+**Cidade Continental — Avenida Terceiro Mundo**
+- [ ] **Número do imóvel** (hoje a página publica a avenida sem número, e a
+      rota do Google Maps vai sem número também).
+- [ ] Complemento, se houver (loja, sala).
+- [ ] Telefone próprio, se existir — ou confirmar que o WhatsApp é central.
+- [ ] Horário próprio — ou confirmar que é igual ao das outras duas.
+- [ ] Link do Perfil da Empresa no Google (`g.page/...` ou "Compartilhar").
+- [ ] Link de agendamento próprio no Cashbarber, se existir.
+- [ ] Lista dos serviços que esta unidade faz.
+- [ ] Fotos: a fachada já está identificada; faltam fotos do interior.
+
+**Novo Horizonte — Avenida Brasil**
+- [ ] **Número do imóvel** (mesma situação da Cidade Continental).
+- [ ] Complemento, se houver.
+- [ ] Telefone próprio, se existir.
+- [ ] Horário próprio — ou confirmar que é igual.
+- [ ] Link do Perfil da Empresa no Google.
+- [ ] Link de agendamento próprio no Cashbarber.
+- [ ] Lista dos serviços desta unidade.
+- [ ] **Fotos identificadas**: hoje a página usa foto de atendimento, não a
+      fachada — ninguém confirmou que a foto de fachada do acervo é deste
+      endereço, e um cartão com o nome da avenida sobre uma fachada afirma que
+      aquele prédio é aquele lugar.
+
+**Novo Horizonte — Avenida Industrial, 830 — Loja 3**
+- [ ] Confirmar número e loja (é a única com número no site).
+- [ ] Telefone próprio, se existir.
+- [ ] Horário próprio — ou confirmar que é igual.
+- [ ] Link do Perfil da Empresa no Google.
+- [ ] Link de agendamento próprio no Cashbarber.
+- [ ] Lista dos serviços desta unidade.
+- [ ] **Fotos identificadas** (mesma situação da Av. Brasil).
+
+### Para o site todo
+
+- [ ] **Grafia do nome.** O site escreve "Salão Morenos"; a fachada da foto
+      mostra "Salão Moreno's". Qual é a razão social e qual é o nome de
+      fachada? Os dois precisam bater com o Perfil da Empresa, senão o Google
+      trata como negócios diferentes.
+- [ ] **Preço dos serviços avulsos.** Hoje só o Clube tem valor publicado.
+- [ ] **Duração do Corte Kids** (é o único item do catálogo sem duração, sob
+      um texto que diz "durações aproximadas").
+- [ ] **Regras do Clube**: periodicidade e agendamentos simultâneos continuam
+      sem valor confirmado e, por isso, fora da página.
+- [ ] **História e equipe** para a página Sobre (`/cultura/`): ano de início,
+      quem fundou, quantos profissionais. Sem isso, a página fica curta — e
+      curta e verdadeira é melhor que longa e inventada.
+- [ ] **Estacionamento, acessibilidade, estrutura**: nada publicado porque
+      nada foi informado. É o tipo de informação que decide a visita.
+- [ ] **Procedência dos três depoimentos** publicados na Home (vieram do perfil
+      do Google na montagem do design): confirmar que podem continuar no ar e
+      de qual unidade é cada um — ou ligar a integração da Places API.
+- [ ] **Razão social, CNPJ, endereço da sede e e-mail do encarregado (DPO)**
+      para a Política de Privacidade e os Termos (revisão jurídica).
+- [ ] **Instagram e Facebook oficiais** (hoje o site não publica nenhum perfil;
+      sem eles, o `sameAs` do JSON-LD fica de fora).
+- [ ] **Vaga aberta?** A página Trabalhe Conosco hoje diz, no FAQ, que não
+      anuncia vaga e que o envio segue pelo WhatsApp. Se houver vaga, muda.
+
+### Só na publicação definitiva
+
+- [ ] Auditar os sitemaps do WordPress antigo (posts, categorias, ElementsKit)
+      com `npm run auditar:site-antigo https://salaomorenos.com.br` — este
+      ambiente de desenvolvimento não alcança o domínio do cliente.
+- [ ] Decidir, no CSV que o script gera, o destino de cada URL antiga que não
+      tem equivalente. **Não redirecionar tudo para a home.**
+- [ ] Verificar a propriedade no Search Console e enviar o sitemap definitivo.
+- [ ] Apontar o campo "site" de cada Perfil da Empresa para a página da unidade.
+- [ ] Desligar ou redirecionar o subdomínio de aprovação.

@@ -30,7 +30,7 @@
     <sc-if value="{{ isDesktop }}" hint-placeholder-val="{{ true }}">
       <nav aria-label="Principal" style="display:flex;align-items:center;gap:clamp(0px,.4vw,6px);flex:1 1 auto;justify-content:center;min-width:0">
         <sc-for list="{{ navMenus }}" as="m" hint-placeholder-count="2">
-          <button type="button" onClick="{{ m.toggle }}" onMouseEnter="{{ m.open }}" aria-expanded="{{ m.isOpen }}" aria-haspopup="true" style="font-family:inherit;cursor:pointer;background:transparent;border:0;color:{{ m.color }};font-size:clamp(11px,.92vw,13px);font-weight:600;letter-spacing:.12em;text-transform:uppercase;padding:14px clamp(8px,1vw,16px);min-height:46px;display:flex;align-items:center;gap:6px;white-space:nowrap;transition:color .35s ease" style-hover="color:#B79A6A">{{ m.titulo }}<span aria-hidden="true" style="font-size:9px;transform:{{ m.chevron }};transition:transform .25s ease">▼</span></button>
+          <a href="{{ m.verTudoHref }}" onMouseEnter="{{ m.open }}" aria-expanded="{{ m.isOpen }}" aria-haspopup="true" style="font-family:inherit;cursor:pointer;text-decoration:none;color:{{ m.color }};font-size:clamp(11px,.92vw,13px);font-weight:600;letter-spacing:.12em;text-transform:uppercase;padding:14px clamp(8px,1vw,16px);min-height:46px;display:flex;align-items:center;gap:6px;white-space:nowrap;transition:color .35s ease" style-hover="color:#B79A6A">{{ m.titulo }}<span aria-hidden="true" style="font-size:9px;transform:{{ m.chevron }};transition:transform .25s ease">▼</span></a>
         </sc-for>
         <a href="o-clube.dc.html" onMouseEnter="{{ closeNav }}" style="color:{{ corClube }};font-size:clamp(11px,.92vw,13px);font-weight:600;letter-spacing:.12em;text-transform:uppercase;padding:14px clamp(8px,1vw,16px);white-space:nowrap;text-decoration:none;transition:color .3s ease" style-hover="color:#B79A6A">O Clube</a>
         <a href="cultura.dc.html" onMouseEnter="{{ closeNav }}" style="color:{{ corSobre }};font-size:clamp(11px,.92vw,13px);font-weight:600;letter-spacing:.12em;text-transform:uppercase;padding:14px clamp(8px,1vw,16px);white-space:nowrap;text-decoration:none;transition:color .3s ease" style-hover="color:#B79A6A">Sobre a Morenos</a>
@@ -168,7 +168,7 @@ class Component extends DCLogic {
     this.onAgendar = (e) => {
       this.fecharNav(); this.mexerMenu(false);
       const M = window.MORENOS;
-      this.abrirBooking((e.detail && e.detail.unit) || (M && M.getUnit()) || null);
+      this.abrirBooking((e.detail && e.detail.unit) || (M && M.unidadeDaPagina) || (M && M.getUnit()) || null);
       if (M) M.track('booking_click', { origem: (e.detail && e.detail.origem) || 'cta' });
     };
     window.addEventListener('morenos:agendar', this.onAgendar);
@@ -243,7 +243,7 @@ class Component extends DCLogic {
       menuPointer: st.menuOpen ? 'auto' : 'none',
       toggleMenu: () => this.mexerMenu(!st.menuOpen),
       bookingOpen: st.bookingOpen,
-      openBooking: () => { this.fecharNav(); this.mexerMenu(false); this.abrirBooking((M && M.getUnit()) || null); if (M) M.track('booking_click', { origem: 'header' }); },
+      openBooking: () => { this.fecharNav(); this.mexerMenu(false); this.abrirBooking((M && M.unidadeDaPagina) || (M && M.getUnit()) || null); if (M) M.track('booking_click', { origem: 'header' }); },
       closeBooking: () => this.fecharBooking(),
       fundoClick: (e) => { if (e.target === e.currentTarget) this.fecharBooking(); },
       overlayAnim: st.bookingSaindo ? 'overlayOut .38s ease both' : 'overlayIn .45s ease both',

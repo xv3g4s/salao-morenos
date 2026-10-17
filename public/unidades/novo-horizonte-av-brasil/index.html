@@ -49,6 +49,7 @@
       }
     }
   </style>
+<meta name="robots" content="noindex, nofollow">
 <link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="icon" href="/favicon-192.png" sizes="192x192" type="image/png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
@@ -63,9 +64,10 @@ transition-duration:.01ms !important;scroll-behavior:auto !important}}</style>
   var C = {};
 
   C.env = {
-    // "homologacao" aplica noindex,nofollow. Mudar para "producao" ao migrar para o domínio principal.
-    stage: 'producao',  // fixado no build
-    siteUrl: 'https://salaomorenos.com.br',
+    // Fixado pelo build. Hoje serve só para o analytics saber de onde vem o evento:
+    // a indexação é decidida no HTML, não aqui.
+    stage: 'homologacao',  // fixado no build
+    siteUrl: 'https://novosite.salaomorenos.com.br',
   };
 
   C.brand = { name: 'Salão Morenos', city: 'Serra', state: 'ES', region: 'Serra — Espírito Santo' };
@@ -113,6 +115,8 @@ transition-duration:.01ms !important;scroll-behavior:auto !important}}</style>
     privacidade: '/politica-de-privacidade/', termos: '/termos-de-uso/',
   };
 
+  C.imagens = {"/img/hero-wide.webp": "/img/hero-wide-900.webp 900w, /img/hero-wide-1200.webp 1200w, /img/hero-wide.webp 1672w"};  // gerado no build
+
   // --- aplicado no build (fonte/build.py) ---
   // No prototipo, C.routes aponta para arquivos (unidades.dc.html) porque
   // e assim que ele e aberto. No site publicado, link interno tem que ser
@@ -155,7 +159,9 @@ transition-duration:.01ms !important;scroll-behavior:auto !important}}</style>
   });
   C.locations.forEach(function (l) {
     l.enderecoLinha = l.logradouro + ', ' + l.bairro + ', ' + l.cidade + ' — ' + l.estado + ', CEP ' + l.cep;
-    l.rota = l.googleProfile || ('https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(l.logradouro + ', ' + l.bairro + ', ' + l.cidade + ' - ' + l.estado + ', ' + l.cep));
+    // "Como chegar" abre a ROTA ate o endereco, nao uma busca por ele: a busca
+    // devolve uma lista e o visitante ainda tem que escolher.
+    l.rota = 'https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(l.logradouro + ', ' + l.bairro + ', ' + l.cidade + ' - ' + l.estado + ', ' + l.cep);
     l.mapaEmbed = 'https://maps.google.com/maps?q=' + encodeURIComponent(l.logradouro + ', ' + l.bairro + ', ' + l.cidade + ' - ' + l.estado + ', ' + l.cep) + '&z=16&output=embed';
     l.agendar = l.bookingUrl || C.links.booking;
     l.pagina = C.routes[l.id];
@@ -197,9 +203,9 @@ transition-duration:.01ms !important;scroll-behavior:auto !important}}</style>
       itens: ['Corte personalizado', 'Desconto em serviços da barbearia', 'Desconto em produtos'] },
     { id: 'plano-due', nome: 'Plano Due', tipo: ['custo'], preco: 'R$ 68,99', desc: 'Barba e corte ou 2 cortes.',
       itens: ['Cabelo ou barba', 'Desconto em serviços', 'Desconto em produtos'] },
-    { id: 'familia-8', nome: 'Família Corte e Barba Clássico', tipo: ['familia'], preco: 'R$ 209,90', desc: '8 procedimentos mensais.',
+    { id: 'familia-8', nome: 'Família Corte e Barba Clássico — 8 procedimentos', tipo: ['familia'], preco: 'R$ 209,90', desc: '8 procedimentos mensais, para dividir entre a família.',
       itens: ['Cabelo ou barba', 'Descontos em serviços', 'Descontos em produtos'] },
-    { id: 'familia-6', nome: 'Família Corte e Barba Clássico', tipo: ['familia'], preco: 'R$ 169,90', desc: '6 procedimentos mensais.',
+    { id: 'familia-6', nome: 'Família Corte e Barba Clássico — 6 procedimentos', tipo: ['familia'], preco: 'R$ 169,90', desc: '6 procedimentos mensais, para dividir entre a família.',
       itens: ['Cabelo ou barba', 'Descontos em serviços', 'Descontos em produtos'] },
   ];
   C.clubPlans.forEach(function (p) { p.source = 'legacy-site'; p.needsConfirmation = true; p.periodo = '/mês'; });
@@ -231,7 +237,7 @@ transition-duration:.01ms !important;scroll-behavior:auto !important}}</style>
     showOncePerSession: true, // true = só na primeira página da sessão
     minimumVisibleTime: 1200,
     maximumVisibleTime: 9000,
-    exitDuration: 560,
+    exitDuration: 420,
     sessionKey: 'morenos_intro_seen',
     logo: '/assets/morenos-loader-outline-white.webp', logoW: 720, logoH: 669,
   };
@@ -240,10 +246,10 @@ transition-duration:.01ms !important;scroll-behavior:auto !important}}</style>
   C.getUnit = function () { try { return localStorage.getItem(C.selectedUnitKey); } catch (e) { return null; } };
   C.setUnit = function (id) { try { localStorage.setItem(C.selectedUnitKey, id); } catch (e) {} C.track('unit_select', { unit: id }); };
 
-  // Homologação: noindex,nofollow controlado só por aqui.
-  if (C.env.stage === 'homologacao') {
-    var m = document.createElement('meta'); m.name = 'robots'; m.content = 'noindex, nofollow'; document.head.appendChild(m);
-  }
+  // O noindex de homologação NÃO mora aqui. Ele é escrito no <head> pelo build
+  // (fonte/build.py, --homologacao), porque o robô de busca lê o HTML que o
+  // servidor entrega e não espera o JavaScript da página rodar: um noindex
+  // injetado em tempo de execução pode simplesmente não ser visto.
 
   window.MORENOS = C;
 })();
@@ -277,7 +283,7 @@ transition-duration:.01ms !important;scroll-behavior:auto !important}}</style>
       showOncePerSession: C.showOncePerSession, sessionKey: C.sessionKey,
       logo: C.logo, logoW: C.logoW, logoH: C.logoH,
       minimumVisibleTime: 0,      // sem espera artificial: sai quando ficar pronta
-      maximumVisibleTime: 6000,   // rede de segurança, não alvo
+      maximumVisibleTime: 3500,   // rede de segurança, não alvo
       exitDuration: 260,
     };
   }
@@ -376,9 +382,16 @@ transition-duration:.01ms !important;scroll-behavior:auto !important}}</style>
     obs.observe(raiz, { attributes: true, attributeFilter: ['class'] });
     // sem runtime (JS bloqueado, erro de rede) a cópia estática é a página:
     // não faz sentido segurar a tela esperando uma troca que não vem
-    setTimeout(function () { obs.disconnect(); r(); }, 6000);
+    setTimeout(function () { obs.disconnect(); r(); }, 3500);
   });
-  var sinais = [domPronto, logoPronta, fontes, hero, carregou, montado];
+  // window.load espera TODA imagem que a pagina comecou a buscar, inclusive a
+  // que esta a tres rolagens de distancia. Numa rede de celular isso chegou a
+  // 6s com a tela de abertura na frente do conteudo — o preloader deixou de
+  // cobrir o carregamento e virou o carregamento. A espera continua, com
+  // teto: 1,5s depois de o resto estar pronto, a tela sai de qualquer forma.
+  // O que o visitante ve ja esta pintado; o que falta e rodape.
+  var carregouComTeto = Promise.race([carregou, espera(1500)]);
+  var sinais = [domPronto, logoPronta, fontes, hero, carregouComTeto, montado];
   var tudo = Promise.allSettled ? Promise.allSettled(sinais)
     : Promise.all(sinais.map(function (p) { return Promise.resolve(p).catch(function () {}); }));
   var minimo = reduz ? 0 : C.minimumVisibleTime;
@@ -388,7 +401,7 @@ transition-duration:.01ms !important;scroll-behavior:auto !important}}</style>
     if (saiu) return; saiu = true;
     marcarVisto();
     var dur = reduz ? 250 : C.exitDuration;
-    var pausa = reduz ? 0 : (curto ? 120 : 380);   // modo curto quase nao pausa
+    var pausa = reduz ? 0 : (curto ? 100 : 240);   // modo curto quase nao pausa
     el.classList.add('site-loader--ready');
     setTimeout(function () {
       var w = el.querySelector('.site-loader__logo-wrap');
@@ -448,14 +461,14 @@ html,body{background:#080908}
 <title data-dc-tpl="1">Salão Morenos Novo Horizonte — Av. Brasil | Serra</title>
 <meta name="description" content="Salão Morenos em Novo Horizonte, na Avenida Brasil, Serra — ES, CEP 29163-331. Corte, barba e agendamento online." data-dc-tpl="2">
 <meta name="theme-color" content="#0B0B0B" data-dc-tpl="3">
-<link rel="canonical" href="https://salaomorenos.com.br/unidades/novo-horizonte-av-brasil/" data-dc-tpl="4">
+<link rel="canonical" href="https://novosite.salaomorenos.com.br/unidades/novo-horizonte-av-brasil/" data-dc-tpl="4">
 <meta property="og:type" content="website" data-dc-tpl="5">
 <meta property="og:locale" content="pt_BR" data-dc-tpl="6">
 <meta property="og:site_name" content="Salão Morenos" data-dc-tpl="7">
 <meta property="og:title" content="Salão Morenos Novo Horizonte — Av. Brasil | Serra" data-dc-tpl="8">
 <meta property="og:description" content="Salão Morenos em Novo Horizonte, na Avenida Brasil, Serra — ES, CEP 29163-331. Corte, barba e agendamento online." data-dc-tpl="9">
-<meta property="og:url" content="https://salaomorenos.com.br/unidades/novo-horizonte-av-brasil/" data-dc-tpl="10">
-<meta property="og:image" content="https://salaomorenos.com.br/img/foto-salao.webp" data-dc-tpl="11">
+<meta property="og:url" content="https://novosite.salaomorenos.com.br/unidades/novo-horizonte-av-brasil/" data-dc-tpl="10">
+<meta property="og:image" content="https://novosite.salaomorenos.com.br/img/foto-salao.webp" data-dc-tpl="11">
 <meta name="twitter:card" content="summary_large_image" data-dc-tpl="12">
 <link rel="preload" as="image" href="/img/foto-salao.webp" fetchpriority="high" data-dc-tpl="13">
 <script src="/smooth-scroll.js" defer="" data-dc-tpl="14"></script>
@@ -540,7 +553,7 @@ html,body{background:#080908}
   @keyframes metal { 0% { background-position:0% 50%; } 100% { background-position:200% 50%; } }
   @media (prefers-reduced-motion: reduce) { html { scroll-behavior:auto; } * { animation:none !important; transition:none !important; } }
 </style>
-<script type="application/ld+json" data-dc-tpl="17">{"@context":"https://schema.org","@graph":[{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Início","item":"https://salaomorenos.com.br/"},{"@type":"ListItem","position":2,"name":"Unidades","item":"https://salaomorenos.com.br/unidades/"},{"@type":"ListItem","position":3,"name":"Novo Horizonte — Av. Brasil","item":"https://salaomorenos.com.br/unidades/novo-horizonte-av-brasil/"}]},{"@type":"HairSalon","@id":"https://salaomorenos.com.br/unidades/novo-horizonte-av-brasil/#unidade","name":"Salão Morenos — Novo Horizonte, Avenida Brasil","url":"https://salaomorenos.com.br/unidades/novo-horizonte-av-brasil/","image":"https://salaomorenos.com.br/img/foto-salao.webp","address":{"@type":"PostalAddress","streetAddress":"Avenida Brasil","addressLocality":"Serra","addressRegion":"ES","postalCode":"29163-331","addressCountry":"BR"},"areaServed":"Serra, ES","parentOrganization":{"@type":"Organization","name":"Salão Morenos","url":"https://salaomorenos.com.br/"}}]}</script>
+<script type="application/ld+json" data-dc-tpl="17">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://novosite.salaomorenos.com.br/#organizacao","name":"Salão Morenos","url":"https://novosite.salaomorenos.com.br/","logo":"https://novosite.salaomorenos.com.br/favicon-192.png","areaServed":"Serra, ES","contactPoint":{"@type":"ContactPoint","contactType":"customer service","telephone":"+5527998713993","availableLanguage":"pt-BR"},"subOrganization":[{"@id":"https://novosite.salaomorenos.com.br/unidades/cidade-continental/#unidade"},{"@id":"https://novosite.salaomorenos.com.br/unidades/novo-horizonte-av-brasil/#unidade"},{"@id":"https://novosite.salaomorenos.com.br/unidades/novo-horizonte-av-industrial/#unidade"}]},{"@type":"WebSite","@id":"https://novosite.salaomorenos.com.br/#site","url":"https://novosite.salaomorenos.com.br/","name":"Salão Morenos","inLanguage":"pt-BR","publisher":{"@id":"https://novosite.salaomorenos.com.br/#organizacao"}},{"@type":"BreadcrumbList","@id":"https://novosite.salaomorenos.com.br/unidades/novo-horizonte-av-brasil/#trilha","itemListElement":[{"@type":"ListItem","position":1,"name":"Início","item":"https://novosite.salaomorenos.com.br/"},{"@type":"ListItem","position":2,"name":"Unidades","item":"https://novosite.salaomorenos.com.br/unidades/"},{"@type":"ListItem","position":3,"name":"Novo Horizonte — Av. Brasil","item":"https://novosite.salaomorenos.com.br/unidades/novo-horizonte-av-brasil/"}]},{"@type":"HairSalon","@id":"https://novosite.salaomorenos.com.br/unidades/novo-horizonte-av-brasil/#unidade","name":"Salão Morenos — Novo Horizonte — Avenida Brasil","url":"https://novosite.salaomorenos.com.br/unidades/novo-horizonte-av-brasil/","address":{"@type":"PostalAddress","streetAddress":"Avenida Brasil","addressLocality":"Serra","addressRegion":"ES","postalCode":"29163-331","addressCountry":"BR"},"areaServed":"Serra, ES","parentOrganization":{"@id":"https://novosite.salaomorenos.com.br/#organizacao"}}]}</script>
 <style></style>
 <style data-dc-tpl="1">
   @keyframes metal { 0% { background-position:0% 50%; } 100% { background-position:200% 50%; } }
@@ -595,7 +608,7 @@ html,body{background:#080908}
   <div class="sc-host" data-sc-name="SiteHeader" data-dc-tpl="19" style="position: sticky; top: 0px; z-index: 60;"><a data-dc-tpl="2" href="#conteudo" class="scp0" style="position: absolute; left: -9999px; top: 0px; z-index: 100; background: rgb(246, 244, 239); color: rgb(11, 11, 11); padding: 14px 20px; font-size: 14px; font-weight: 700;">Pular para o conteúdo</a><header data-dc-tpl="3" style="position: sticky; top: 0px; z-index: 60; background: rgba(11, 11, 11, 0.94); backdrop-filter: blur(8px); border-bottom: 1px solid rgba(246, 244, 239, 0.1); font-family: Poppins, system-ui, sans-serif; color: rgb(246, 244, 239);">
   <div data-dc-tpl="4" style="max-width: 1480px; margin: 0px auto; padding: clamp(6px, 1.4vw, 10px) clamp(12px, 3vw, 36px); display: flex; align-items: center; justify-content: space-between; gap: clamp(10px, 2vw, 24px);">
     <a data-dc-tpl="5" href="/" aria-label="Salão Morenos, página inicial" style="display: flex; align-items: center; flex-shrink: 0;">
-      <img data-dc-tpl="6" decoding="async" src="/img/logo.webp" alt="Salão Morenos" width="624" height="624" style="height: clamp(54px, 13vw, 82px); width: auto;" fetchpriority="high">
+      <img data-dc-tpl="6" decoding="async" src="/img/logo.webp" alt="Salão Morenos" width="624" height="624" style="height: clamp(54px, 13vw, 82px); width: auto;">
     </a>
 
     
@@ -648,12 +661,12 @@ html,body{background:#080908}
                 
               
                 
-                <a data-dc-tpl="51" href="https://www.google.com/maps/search/?api=1&amp;query=Avenida%20Brasil%2C%20Novo%20Horizonte%2C%20Serra%20-%20ES%2C%2029163-331" target="_blank" rel="noopener noreferrer" class="scp9" style="display: inline-flex; padding: 1.5px; border-radius: 100px; background: linear-gradient(100deg, rgb(11, 11, 11) 0%, rgb(58, 58, 58) 18%, rgb(156, 150, 140) 32%, rgb(243, 239, 232) 42%, rgb(156, 150, 140) 52%, rgb(58, 58, 58) 68%, rgb(11, 11, 11) 100%) 0% 0% / 200% 100%; animation: 7s linear 0s infinite normal none running metal; box-shadow: rgba(0, 0, 0, 0.85) 0px 12px 26px -10px; text-decoration: none; transition: filter 0.45s, transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);"><span data-dc-tpl="52" style="display: flex; align-items: center; justify-content: center; border-radius: 100px; background: linear-gradient(rgb(32, 32, 32) 0%, rgb(0, 0, 0) 100%); color: rgb(232, 229, 223); font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; padding: 16px 26px; min-height: 50px; font-size: 13px;"><span class="sc-interp">Como chegar</span></span></a>
+                <a data-dc-tpl="51" href="https://www.google.com/maps/dir/?api=1&amp;destination=Avenida%20Brasil%2C%20Novo%20Horizonte%2C%20Serra%20-%20ES%2C%2029163-331" target="_blank" rel="noopener noreferrer" class="scp9" style="display: inline-flex; padding: 1.5px; border-radius: 100px; background: linear-gradient(100deg, rgb(11, 11, 11) 0%, rgb(58, 58, 58) 18%, rgb(156, 150, 140) 32%, rgb(243, 239, 232) 42%, rgb(156, 150, 140) 52%, rgb(58, 58, 58) 68%, rgb(11, 11, 11) 100%) 0% 0% / 200% 100%; animation: 7s linear 0s infinite normal none running metal; box-shadow: rgba(0, 0, 0, 0.85) 0px 12px 26px -10px; text-decoration: none; transition: filter 0.45s, transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);"><span data-dc-tpl="52" style="display: flex; align-items: center; justify-content: center; border-radius: 100px; background: linear-gradient(rgb(32, 32, 32) 0%, rgb(0, 0, 0) 100%); color: rgb(232, 229, 223); font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; padding: 16px 26px; min-height: 50px; font-size: 13px;"><span class="sc-interp">Como chegar</span></span></a>
               
             </div>
         </div>
         <div data-dc-tpl="53" style="flex: 1 1 360px; max-width: 520px; width: 100%; margin: 0px auto; position: relative; aspect-ratio: 4 / 5; border-radius: 32px; overflow: hidden; background: rgb(23, 23, 23); box-shadow: rgba(0, 0, 0, 0.9) 0px 40px 90px -40px;">
-          <img data-dc-tpl="54" src="/img/foto-atendimento-2.webp" alt="Ambiente do Salão Morenos durante o atendimento" width="800" height="1000" fetchpriority="high" decoding="async" style="position: absolute; inset: 0px; width: 100%; height: 100%; object-fit: cover; object-position: 50% 50%; animation: 1.6s cubic-bezier(0.22, 1, 0.36, 1) 0s 1 normal both running pmZoom;" loading="lazy">
+          <img data-dc-tpl="54" src="/img/foto-atendimento-2.webp" alt="Ambiente do Salão Morenos durante o atendimento" width="800" height="1000" fetchpriority="high" decoding="async" style="position: absolute; inset: 0px; width: 100%; height: 100%; object-fit: cover; object-position: 50% 50%; animation: 1.6s cubic-bezier(0.22, 1, 0.36, 1) 0s 1 normal both running pmZoom;">
           <span data-dc-tpl="55" aria-hidden="true" style="position: absolute; inset: 0px; background: linear-gradient(transparent 55%, rgba(8, 8, 8, 0.75) 100%);"></span>
           <span data-dc-tpl="56" style="position: absolute; left: 18px; bottom: 18px; right: 18px; display: flex; align-items: center; gap: 10px; font-size: 11px; font-weight: 700; letter-spacing: 0.24em; text-transform: uppercase; color: rgb(246, 244, 239);"><span data-dc-tpl="57" aria-hidden="true" style="width: 22px; height: 1.5px; background: rgb(183, 154, 106);"></span>Salão Morenos · Serra — ES</span>
         </div>
@@ -724,6 +737,8 @@ html,body{background:#080908}
               
                 <dd data-dc-tpl="67" style="margin: 0px; font-size: 16px; line-height: 1.5; color: rgb(246, 244, 239);"><span class="sc-interp">Sábado: 09:00 – 18:00</span></dd>
               
+                <dd data-dc-tpl="67" style="margin: 0px; font-size: 16px; line-height: 1.5; color: rgb(246, 244, 239);"><span class="sc-interp">O mesmo nas três unidades.</span></dd>
+              
               
             </div>
           
@@ -740,7 +755,9 @@ html,body{background:#080908}
               
                 <dd data-dc-tpl="67" style="margin: 0px; font-size: 16px; line-height: 1.5; color: rgb(246, 244, 239);"><span class="sc-interp">+55 27 99871-3993</span></dd>
               
-              <a data-dc-tpl="69" href="https://wa.me/5527998713993?text=Ol%C3%A1!%20Vim%20pelo%20seu%20site%20e%20quero%20agendar%20um%20corte%20como%20visitante" target="_blank" rel="noopener noreferrer" class="scpb" style="margin-top: auto; font-size: 12px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: rgb(183, 154, 106); text-decoration: none; min-height: 32px; display: inline-flex; align-items: center;"><span class="sc-interp">Conversar</span> →</a>
+                <dd data-dc-tpl="67" style="margin: 0px; font-size: 16px; line-height: 1.5; color: rgb(246, 244, 239);"><span class="sc-interp">Canal único para as três unidades.</span></dd>
+              
+              <a data-dc-tpl="69" href="https://wa.me/5527998713993?text=Ol%C3%A1!%20Vim%20pelo%20site%20da%20Morenos%2C%20pela%20p%C3%A1gina%20da%20unidade%20Novo%20Horizonte%20%E2%80%94%20Av.%20Brasil%2C%20e%20gostaria%20de%20informa%C3%A7%C3%B5es." target="_blank" rel="noopener noreferrer" class="scpb" style="margin-top: auto; font-size: 12px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: rgb(183, 154, 106); text-decoration: none; min-height: 32px; display: inline-flex; align-items: center;"><span class="sc-interp">Conversar</span> →</a>
             </div>
           
         </dl>
@@ -877,7 +894,7 @@ html,body{background:#080908}
           <span data-dc-tpl="216" style="font-size: 12px; font-weight: 700; letter-spacing: 0.3em; text-transform: uppercase; color: rgb(183, 154, 106);">Como chegar</span>
           <h2 data-dc-tpl="217" style="margin: 0px; font-size: clamp(30px, 3.8vw, 48px); line-height: 1.04; font-weight: 700; letter-spacing: -0.03em;"><span class="sc-interp">Novo Horizonte — Av. Brasil</span></h2>
           <p data-dc-tpl="218" style="margin: 0px; font-size: 17px; line-height: 1.65; color: rgb(197, 194, 187); max-width: 44ch;"><span class="sc-interp">Avenida Brasil, Novo Horizonte, Serra — ES, CEP 29163-331. Não confunda com a unidade da Avenida Industrial, no mesmo bairro.</span></p>
-          <a data-dc-tpl="219" href="https://www.google.com/maps/search/?api=1&amp;query=Avenida%20Brasil%2C%20Novo%20Horizonte%2C%20Serra%20-%20ES%2C%2029163-331" target="_blank" rel="noopener noreferrer" class="scp6" style="align-self: flex-start; display: inline-flex; align-items: center; min-height: 50px; padding: 14px 24px; border-radius: 100px; background: rgb(246, 244, 239); color: rgb(11, 11, 11); font-size: 13px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; text-decoration: none; transition: background 0.35s;">Abrir no Google Maps</a>
+          <a data-dc-tpl="219" href="https://www.google.com/maps/dir/?api=1&amp;destination=Avenida%20Brasil%2C%20Novo%20Horizonte%2C%20Serra%20-%20ES%2C%2029163-331" target="_blank" rel="noopener noreferrer" class="scp6" style="align-self: flex-start; display: inline-flex; align-items: center; min-height: 50px; padding: 14px 24px; border-radius: 100px; background: rgb(246, 244, 239); color: rgb(11, 11, 11); font-size: 13px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; text-decoration: none; transition: background 0.35s;">Abrir no Google Maps</a>
         </div>
         <div data-dc-tpl="220" style="flex: 1.4 1 440px; min-height: 380px; border-radius: 28px; overflow: hidden; border: 1px solid rgba(246, 244, 239, 0.12); background: rgb(23, 23, 23);">
           <iframe data-dc-tpl="221" src="https://maps.google.com/maps?q=Avenida%20Brasil%2C%20Novo%20Horizonte%2C%20Serra%20-%20ES%2C%2029163-331&amp;z=16&amp;output=embed" title="Mapa da unidade Novo Horizonte — Av. Brasil" loading="lazy" referrerpolicy="no-referrer-when-downgrade" style="width: 100%; height: 100%; min-height: 380px; border: 0px; display: block; filter: grayscale(0.6) contrast(1.05);"></iframe>
@@ -947,34 +964,6 @@ html,body{background:#080908}
           <div data-dc-tpl="252" style="background: rgb(246, 244, 239); color: rgb(11, 11, 11); border-radius: 20px; overflow: hidden; transition: background 0.5s cubic-bezier(0.22, 1, 0.36, 1), color 0.4s;">
             <h3 data-dc-tpl="253" style="margin: 0px;">
               <button data-dc-tpl="254" type="button" aria-expanded="false" style="font-family: inherit; cursor: pointer; width: 100%; text-align: left; background: transparent; border: 0px; color: inherit; padding: 22px 24px; display: flex; gap: 18px; align-items: center; justify-content: space-between; font-size: 17px; font-weight: 600; min-height: 64px;">
-                <span data-dc-tpl="255"><span class="sc-interp">Qual o horário de funcionamento?</span></span>
-                <span data-dc-tpl="256" aria-hidden="true" style="flex-shrink: 0; width: 32px; height: 32px; border-radius: 50%; border: 1px solid rgba(11, 11, 11, 0.25); display: flex; align-items: center; justify-content: center; font-size: 18px; transform: rotate(0deg); transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);">+</span>
-              </button>
-            </h3>
-            <div data-dc-tpl="257" style="display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.58s cubic-bezier(0.22, 1, 0.36, 1);">
-              <div data-dc-tpl="258" style="overflow: hidden; min-height: 0px;">
-                <p data-dc-tpl="259" style="margin: 0px; padding: 0px 24px 24px; font-size: 16px; line-height: 1.7; color: rgb(95, 92, 87); max-width: 66ch; transition: opacity 0.5s 0.05s;"><span class="sc-interp">Segunda a sexta: 08:00 – 20:00. Sábado: 09:00 – 18:00.</span></p>
-              </div>
-            </div>
-          </div>
-        
-          <div data-dc-tpl="252" style="background: rgb(246, 244, 239); color: rgb(11, 11, 11); border-radius: 20px; overflow: hidden; transition: background 0.5s cubic-bezier(0.22, 1, 0.36, 1), color 0.4s;">
-            <h3 data-dc-tpl="253" style="margin: 0px;">
-              <button data-dc-tpl="254" type="button" aria-expanded="false" style="font-family: inherit; cursor: pointer; width: 100%; text-align: left; background: transparent; border: 0px; color: inherit; padding: 22px 24px; display: flex; gap: 18px; align-items: center; justify-content: space-between; font-size: 17px; font-weight: 600; min-height: 64px;">
-                <span data-dc-tpl="255"><span class="sc-interp">Como chego?</span></span>
-                <span data-dc-tpl="256" aria-hidden="true" style="flex-shrink: 0; width: 32px; height: 32px; border-radius: 50%; border: 1px solid rgba(11, 11, 11, 0.25); display: flex; align-items: center; justify-content: center; font-size: 18px; transform: rotate(0deg); transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);">+</span>
-              </button>
-            </h3>
-            <div data-dc-tpl="257" style="display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.58s cubic-bezier(0.22, 1, 0.36, 1);">
-              <div data-dc-tpl="258" style="overflow: hidden; min-height: 0px;">
-                <p data-dc-tpl="259" style="margin: 0px; padding: 0px 24px 24px; font-size: 16px; line-height: 1.7; color: rgb(95, 92, 87); max-width: 66ch; transition: opacity 0.5s 0.05s;"><span class="sc-interp">O endereço é Avenida Brasil, Novo Horizonte, Serra — ES, CEP 29163-331. Use o botão Como chegar para abrir a rota no Google Maps.</span></p>
-              </div>
-            </div>
-          </div>
-        
-          <div data-dc-tpl="252" style="background: rgb(246, 244, 239); color: rgb(11, 11, 11); border-radius: 20px; overflow: hidden; transition: background 0.5s cubic-bezier(0.22, 1, 0.36, 1), color 0.4s;">
-            <h3 data-dc-tpl="253" style="margin: 0px;">
-              <button data-dc-tpl="254" type="button" aria-expanded="false" style="font-family: inherit; cursor: pointer; width: 100%; text-align: left; background: transparent; border: 0px; color: inherit; padding: 22px 24px; display: flex; gap: 18px; align-items: center; justify-content: space-between; font-size: 17px; font-weight: 600; min-height: 64px;">
                 <span data-dc-tpl="255"><span class="sc-interp">Posso ir sem agendar?</span></span>
                 <span data-dc-tpl="256" aria-hidden="true" style="flex-shrink: 0; width: 32px; height: 32px; border-radius: 50%; border: 1px solid rgba(11, 11, 11, 0.25); display: flex; align-items: center; justify-content: center; font-size: 18px; transform: rotate(0deg); transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);">+</span>
               </button>
@@ -1024,9 +1013,9 @@ html,body{background:#080908}
                 <h3 data-dc-tpl="85" style="margin: 0px; font-size: clamp(24px, 2.4vw, 32px); font-weight: 700; line-height: 1.06; letter-spacing: -0.02em;"><span class="sc-interp">Avenida Terceiro Mundo</span></h3>
                 <p data-dc-tpl="86" style="margin: 0px; font-size: 14px; line-height: 1.6; color: rgb(214, 211, 204);"><span class="sc-interp">Cidade Continental — Setor Ásia</span> · <span class="sc-interp">Serra</span> — <span class="sc-interp">ES</span> · CEP <span class="sc-interp">29163-603</span></p>
                 <div data-dc-tpl="87" style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px;">
-                  <a data-dc-tpl="88" href="/unidades/cidade-continental/" class="scp6" style="display: inline-flex; align-items: center; justify-content: center; min-height: 46px; padding: 12px 18px; border-radius: 100px; background: rgb(246, 244, 239); color: rgb(11, 11, 11); font-size: 12px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; text-decoration: none; transition: background 0.35s;">Conhecer unidade</a>
-                  <a data-dc-tpl="89" href="https://cashbarber.com.br/salaomorenos/inicio" target="_blank" rel="noopener noreferrer" class="scp7" style="display: inline-flex; align-items: center; justify-content: center; min-height: 46px; padding: 12px 18px; border-radius: 100px; border: 1px solid rgba(246, 244, 239, 0.42); color: rgb(246, 244, 239); font-size: 12px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; text-decoration: none; transition: border-color 0.35s, color 0.35s;">Agendar</a>
-                  <a data-dc-tpl="90" href="https://www.google.com/maps/search/?api=1&amp;query=Avenida%20Terceiro%20Mundo%2C%20Cidade%20Continental%20%E2%80%94%20Setor%20%C3%81sia%2C%20Serra%20-%20ES%2C%2029163-603" target="_blank" rel="noopener noreferrer" class="scp1" style="display: inline-flex; align-items: center; justify-content: center; min-height: 46px; padding: 12px 14px; color: rgb(197, 194, 187); font-size: 12px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; text-decoration: none;">Como chegar</a>
+                  <a data-dc-tpl="88" href="/unidades/cidade-continental/" aria-label="Conhecer a unidade Cidade Continental" class="scp6" style="display: inline-flex; align-items: center; justify-content: center; min-height: 46px; padding: 12px 18px; border-radius: 100px; background: rgb(246, 244, 239); color: rgb(11, 11, 11); font-size: 12px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; text-decoration: none; transition: background 0.35s;">Conhecer unidade</a>
+                  <a data-dc-tpl="89" href="https://cashbarber.com.br/salaomorenos/inicio" aria-label="Agendar na unidade Cidade Continental" target="_blank" rel="noopener noreferrer" class="scp7" style="display: inline-flex; align-items: center; justify-content: center; min-height: 46px; padding: 12px 18px; border-radius: 100px; border: 1px solid rgba(246, 244, 239, 0.42); color: rgb(246, 244, 239); font-size: 12px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; text-decoration: none; transition: border-color 0.35s, color 0.35s;">Agendar</a>
+                  <a data-dc-tpl="90" href="https://www.google.com/maps/dir/?api=1&amp;destination=Avenida%20Terceiro%20Mundo%2C%20Cidade%20Continental%20%E2%80%94%20Setor%20%C3%81sia%2C%20Serra%20-%20ES%2C%2029163-603" aria-label="Como chegar à unidade Cidade Continental" target="_blank" rel="noopener noreferrer" class="scp1" style="display: inline-flex; align-items: center; justify-content: center; min-height: 46px; padding: 12px 14px; color: rgb(197, 194, 187); font-size: 12px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; text-decoration: none;">Como chegar</a>
                 </div>
               </div>
             </article>
@@ -1039,9 +1028,9 @@ html,body{background:#080908}
                 <h3 data-dc-tpl="85" style="margin: 0px; font-size: clamp(24px, 2.4vw, 32px); font-weight: 700; line-height: 1.06; letter-spacing: -0.02em;"><span class="sc-interp">Avenida Industrial, 830 — Loja 3</span></h3>
                 <p data-dc-tpl="86" style="margin: 0px; font-size: 14px; line-height: 1.6; color: rgb(214, 211, 204);"><span class="sc-interp">Novo Horizonte</span> · <span class="sc-interp">Serra</span> — <span class="sc-interp">ES</span> · CEP <span class="sc-interp">29163-357</span></p>
                 <div data-dc-tpl="87" style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px;">
-                  <a data-dc-tpl="88" href="/unidades/novo-horizonte-av-industrial/" class="scp6" style="display: inline-flex; align-items: center; justify-content: center; min-height: 46px; padding: 12px 18px; border-radius: 100px; background: rgb(246, 244, 239); color: rgb(11, 11, 11); font-size: 12px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; text-decoration: none; transition: background 0.35s;">Conhecer unidade</a>
-                  <a data-dc-tpl="89" href="https://cashbarber.com.br/salaomorenos/inicio" target="_blank" rel="noopener noreferrer" class="scp7" style="display: inline-flex; align-items: center; justify-content: center; min-height: 46px; padding: 12px 18px; border-radius: 100px; border: 1px solid rgba(246, 244, 239, 0.42); color: rgb(246, 244, 239); font-size: 12px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; text-decoration: none; transition: border-color 0.35s, color 0.35s;">Agendar</a>
-                  <a data-dc-tpl="90" href="https://www.google.com/maps/search/?api=1&amp;query=Avenida%20Industrial%2C%20830%20%E2%80%94%20Loja%203%2C%20Novo%20Horizonte%2C%20Serra%20-%20ES%2C%2029163-357" target="_blank" rel="noopener noreferrer" class="scp1" style="display: inline-flex; align-items: center; justify-content: center; min-height: 46px; padding: 12px 14px; color: rgb(197, 194, 187); font-size: 12px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; text-decoration: none;">Como chegar</a>
+                  <a data-dc-tpl="88" href="/unidades/novo-horizonte-av-industrial/" aria-label="Conhecer a unidade Novo Horizonte — Av. Industrial" class="scp6" style="display: inline-flex; align-items: center; justify-content: center; min-height: 46px; padding: 12px 18px; border-radius: 100px; background: rgb(246, 244, 239); color: rgb(11, 11, 11); font-size: 12px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; text-decoration: none; transition: background 0.35s;">Conhecer unidade</a>
+                  <a data-dc-tpl="89" href="https://cashbarber.com.br/salaomorenos/inicio" aria-label="Agendar na unidade Novo Horizonte — Av. Industrial" target="_blank" rel="noopener noreferrer" class="scp7" style="display: inline-flex; align-items: center; justify-content: center; min-height: 46px; padding: 12px 18px; border-radius: 100px; border: 1px solid rgba(246, 244, 239, 0.42); color: rgb(246, 244, 239); font-size: 12px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; text-decoration: none; transition: border-color 0.35s, color 0.35s;">Agendar</a>
+                  <a data-dc-tpl="90" href="https://www.google.com/maps/dir/?api=1&amp;destination=Avenida%20Industrial%2C%20830%20%E2%80%94%20Loja%203%2C%20Novo%20Horizonte%2C%20Serra%20-%20ES%2C%2029163-357" aria-label="Como chegar à unidade Novo Horizonte — Av. Industrial" target="_blank" rel="noopener noreferrer" class="scp1" style="display: inline-flex; align-items: center; justify-content: center; min-height: 46px; padding: 12px 14px; color: rgb(197, 194, 187); font-size: 12px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; text-decoration: none;">Como chegar</a>
                 </div>
               </div>
             </article>
@@ -1149,48 +1138,50 @@ html,body{background:#080908}
           <nav data-dc-tpl="11" aria-label="Morenos" style="flex: 1 1 160px; display: flex; flex-direction: column; gap: 12px;">
             <span data-dc-tpl="12" style="font-size: 11px; font-weight: 700; letter-spacing: 0.24em; text-transform: uppercase; color: rgb(183, 154, 106); margin-bottom: 4px;"><span class="sc-interp">Morenos</span></span>
             
-              <a data-dc-tpl="14" href="/cultura/" class="scpb" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Sobre a Morenos</span></a>
+              <a data-dc-tpl="14" href="/cultura/" target="_self" rel="" class="scpb" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Sobre a Morenos</span></a>
             
-              <a data-dc-tpl="14" href="/corporativo/" class="scpb" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Corporativo</span></a>
+              <a data-dc-tpl="14" href="/corporativo/" target="_self" rel="" class="scpb" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Corporativo</span></a>
             
-              <a data-dc-tpl="14" href="/trabalhe-conosco/" class="scpb" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Trabalhe Conosco</span></a>
+              <a data-dc-tpl="14" href="/trabalhe-conosco/" target="_self" rel="" class="scpb" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Trabalhe Conosco</span></a>
             
           </nav>
         
           <nav data-dc-tpl="11" aria-label="Serviços" style="flex: 1 1 160px; display: flex; flex-direction: column; gap: 12px;">
             <span data-dc-tpl="12" style="font-size: 11px; font-weight: 700; letter-spacing: 0.24em; text-transform: uppercase; color: rgb(183, 154, 106); margin-bottom: 4px;"><span class="sc-interp">Serviços</span></span>
             
-              <a data-dc-tpl="14" href="/servicos/corte-masculino/" class="scpb" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Corte Masculino</span></a>
+              <a data-dc-tpl="14" href="/servicos/corte-masculino/" target="_self" rel="" class="scpb" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Corte Masculino</span></a>
             
-              <a data-dc-tpl="14" href="/servicos/barboterapia/" class="scpb" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Barboterapia</span></a>
+              <a data-dc-tpl="14" href="/servicos/barboterapia/" target="_self" rel="" class="scpb" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Barboterapia</span></a>
             
-              <a data-dc-tpl="14" href="/visagismo/" class="scpb" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Visagismo</span></a>
+              <a data-dc-tpl="14" href="/visagismo/" target="_self" rel="" class="scpb" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Visagismo</span></a>
             
-              <a data-dc-tpl="14" href="/dia-do-noivo/" class="scpb" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Dia do Noivo</span></a>
+              <a data-dc-tpl="14" href="/dia-do-noivo/" target="_self" rel="" class="scpb" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Dia do Noivo</span></a>
             
-              <a data-dc-tpl="14" href="/servicos/" class="scpb" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Todos os serviços</span></a>
+              <a data-dc-tpl="14" href="/servicos/" target="_self" rel="" class="scpb" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Todos os serviços</span></a>
             
           </nav>
         
           <nav data-dc-tpl="11" aria-label="Unidades" style="flex: 1 1 160px; display: flex; flex-direction: column; gap: 12px;">
             <span data-dc-tpl="12" style="font-size: 11px; font-weight: 700; letter-spacing: 0.24em; text-transform: uppercase; color: rgb(183, 154, 106); margin-bottom: 4px;"><span class="sc-interp">Unidades</span></span>
             
-              <a data-dc-tpl="14" href="/unidades/cidade-continental/" class="scpb" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Cidade Continental</span></a>
+              <a data-dc-tpl="14" href="/unidades/" target="_self" rel="" class="scpb" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Todas as unidades</span></a>
             
-              <a data-dc-tpl="14" href="/unidades/novo-horizonte-av-brasil/" class="scpb" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Novo Horizonte — Av. Brasil</span></a>
+              <a data-dc-tpl="14" href="/unidades/cidade-continental/" target="_self" rel="" class="scpb" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Cidade Continental</span></a>
             
-              <a data-dc-tpl="14" href="/unidades/novo-horizonte-av-industrial/" class="scpb" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Novo Horizonte — Av. Industrial</span></a>
+              <a data-dc-tpl="14" href="/unidades/novo-horizonte-av-brasil/" target="_self" rel="" class="scpb" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Novo Horizonte — Av. Brasil</span></a>
+            
+              <a data-dc-tpl="14" href="/unidades/novo-horizonte-av-industrial/" target="_self" rel="" class="scpb" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Novo Horizonte — Av. Industrial</span></a>
             
           </nav>
         
           <nav data-dc-tpl="11" aria-label="Clube" style="flex: 1 1 160px; display: flex; flex-direction: column; gap: 12px;">
             <span data-dc-tpl="12" style="font-size: 11px; font-weight: 700; letter-spacing: 0.24em; text-transform: uppercase; color: rgb(183, 154, 106); margin-bottom: 4px;"><span class="sc-interp">Clube</span></span>
             
-              <a data-dc-tpl="14" href="/o-clube/" class="scpb" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Conhecer o Clube</span></a>
+              <a data-dc-tpl="14" href="/o-clube/" target="_self" rel="" class="scpb" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Conhecer o Clube</span></a>
             
-              <a data-dc-tpl="14" href="/o-clube/#planos" class="scpb" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Planos</span></a>
+              <a data-dc-tpl="14" href="/o-clube/#planos" target="_self" rel="" class="scpb" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Planos</span></a>
             
-              <a data-dc-tpl="14" href="https://cashbarber.com.br/salaomorenos" class="scpb" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Assinar</span></a>
+              <a data-dc-tpl="14" href="https://cashbarber.com.br/salaomorenos" target="_blank" rel="noopener noreferrer" class="scpb" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Assinar</span></a>
             
           </nav>
         
@@ -1211,14 +1202,14 @@ html,body{background:#080908}
 <title>Salão Morenos Novo Horizonte — Av. Brasil | Serra</title>
 <meta name="description" content="Salão Morenos em Novo Horizonte, na Avenida Brasil, Serra — ES, CEP 29163-331. Corte, barba e agendamento online.">
 <meta name="theme-color" content="#0B0B0B">
-<link rel="canonical" href="https://salaomorenos.com.br/unidades/novo-horizonte-av-brasil/">
+<link rel="canonical" href="https://novosite.salaomorenos.com.br/unidades/novo-horizonte-av-brasil/">
 <meta property="og:type" content="website">
 <meta property="og:locale" content="pt_BR">
 <meta property="og:site_name" content="Salão Morenos">
 <meta property="og:title" content="Salão Morenos Novo Horizonte — Av. Brasil | Serra">
 <meta property="og:description" content="Salão Morenos em Novo Horizonte, na Avenida Brasil, Serra — ES, CEP 29163-331. Corte, barba e agendamento online.">
-<meta property="og:url" content="https://salaomorenos.com.br/unidades/novo-horizonte-av-brasil/">
-<meta property="og:image" content="https://salaomorenos.com.br/img/foto-salao.webp">
+<meta property="og:url" content="https://novosite.salaomorenos.com.br/unidades/novo-horizonte-av-brasil/">
+<meta property="og:image" content="https://novosite.salaomorenos.com.br/img/foto-salao.webp">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="preload" as="image" href="/img/foto-salao.webp" fetchpriority="high">
 <script src="/smooth-scroll.js" defer></script>
@@ -1303,7 +1294,7 @@ html,body{background:#080908}
   @keyframes metal { 0% { background-position:0% 50%; } 100% { background-position:200% 50%; } }
   @media (prefers-reduced-motion: reduce) { html { scroll-behavior:auto; } * { animation:none !important; transition:none !important; } }
 </style>
-<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Início","item":"https://salaomorenos.com.br/"},{"@type":"ListItem","position":2,"name":"Unidades","item":"https://salaomorenos.com.br/unidades/"},{"@type":"ListItem","position":3,"name":"Novo Horizonte — Av. Brasil","item":"https://salaomorenos.com.br/unidades/novo-horizonte-av-brasil/"}]},{"@type":"HairSalon","@id":"https://salaomorenos.com.br/unidades/novo-horizonte-av-brasil/#unidade","name":"Salão Morenos — Novo Horizonte, Avenida Brasil","url":"https://salaomorenos.com.br/unidades/novo-horizonte-av-brasil/","image":"https://salaomorenos.com.br/img/foto-salao.webp","address":{"@type":"PostalAddress","streetAddress":"Avenida Brasil","addressLocality":"Serra","addressRegion":"ES","postalCode":"29163-331","addressCountry":"BR"},"areaServed":"Serra, ES","parentOrganization":{"@type":"Organization","name":"Salão Morenos","url":"https://salaomorenos.com.br/"}}]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://novosite.salaomorenos.com.br/#organizacao","name":"Salão Morenos","url":"https://novosite.salaomorenos.com.br/","logo":"https://novosite.salaomorenos.com.br/favicon-192.png","areaServed":"Serra, ES","contactPoint":{"@type":"ContactPoint","contactType":"customer service","telephone":"+5527998713993","availableLanguage":"pt-BR"},"subOrganization":[{"@id":"https://novosite.salaomorenos.com.br/unidades/cidade-continental/#unidade"},{"@id":"https://novosite.salaomorenos.com.br/unidades/novo-horizonte-av-brasil/#unidade"},{"@id":"https://novosite.salaomorenos.com.br/unidades/novo-horizonte-av-industrial/#unidade"}]},{"@type":"WebSite","@id":"https://novosite.salaomorenos.com.br/#site","url":"https://novosite.salaomorenos.com.br/","name":"Salão Morenos","inLanguage":"pt-BR","publisher":{"@id":"https://novosite.salaomorenos.com.br/#organizacao"}},{"@type":"BreadcrumbList","@id":"https://novosite.salaomorenos.com.br/unidades/novo-horizonte-av-brasil/#trilha","itemListElement":[{"@type":"ListItem","position":1,"name":"Início","item":"https://novosite.salaomorenos.com.br/"},{"@type":"ListItem","position":2,"name":"Unidades","item":"https://novosite.salaomorenos.com.br/unidades/"},{"@type":"ListItem","position":3,"name":"Novo Horizonte — Av. Brasil","item":"https://novosite.salaomorenos.com.br/unidades/novo-horizonte-av-brasil/"}]},{"@type":"HairSalon","@id":"https://novosite.salaomorenos.com.br/unidades/novo-horizonte-av-brasil/#unidade","name":"Salão Morenos — Novo Horizonte — Avenida Brasil","url":"https://novosite.salaomorenos.com.br/unidades/novo-horizonte-av-brasil/","address":{"@type":"PostalAddress","streetAddress":"Avenida Brasil","addressLocality":"Serra","addressRegion":"ES","postalCode":"29163-331","addressCountry":"BR"},"areaServed":"Serra, ES","parentOrganization":{"@id":"https://novosite.salaomorenos.com.br/#organizacao"}}]}</script>
 </helmet>
 <div style="background:#0B0B0B;min-height:100vh">
   <dc-import name="SiteHeader" ativo="unidades" hint-size="100%,98px" style="position:sticky;top:0;z-index:60;display:block"></dc-import>

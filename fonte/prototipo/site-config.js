@@ -5,7 +5,8 @@
   var C = {};
 
   C.env = {
-    // "homologacao" aplica noindex,nofollow. Mudar para "producao" ao migrar para o domínio principal.
+    // Fixado pelo build. Hoje serve só para o analytics saber de onde vem o evento:
+    // a indexação é decidida no HTML, não aqui.
     stage: /novosite\./.test(location.hostname) ? 'homologacao' : 'producao',
     siteUrl: 'https://salaomorenos.com.br',
   };
@@ -92,7 +93,9 @@
   });
   C.locations.forEach(function (l) {
     l.enderecoLinha = l.logradouro + ', ' + l.bairro + ', ' + l.cidade + ' — ' + l.estado + ', CEP ' + l.cep;
-    l.rota = l.googleProfile || ('https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(l.logradouro + ', ' + l.bairro + ', ' + l.cidade + ' - ' + l.estado + ', ' + l.cep));
+    // "Como chegar" abre a ROTA ate o endereco, nao uma busca por ele: a busca
+    // devolve uma lista e o visitante ainda tem que escolher.
+    l.rota = 'https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(l.logradouro + ', ' + l.bairro + ', ' + l.cidade + ' - ' + l.estado + ', ' + l.cep);
     l.mapaEmbed = 'https://maps.google.com/maps?q=' + encodeURIComponent(l.logradouro + ', ' + l.bairro + ', ' + l.cidade + ' - ' + l.estado + ', ' + l.cep) + '&z=16&output=embed';
     l.agendar = l.bookingUrl || C.links.booking;
     l.pagina = C.routes[l.id];
@@ -135,9 +138,9 @@
       itens: ['Corte personalizado', 'Desconto em serviços da barbearia', 'Desconto em produtos'] },
     { id: 'plano-due', nome: 'Plano Due', tipo: ['custo'], preco: 'R$ 68,99', desc: 'Barba e corte ou 2 cortes.',
       itens: ['Cabelo ou barba', 'Desconto em serviços', 'Desconto em produtos'] },
-    { id: 'familia-8', nome: 'Família Corte e Barba Clássico', tipo: ['familia'], preco: 'R$ 209,90', desc: '8 procedimentos mensais.',
+    { id: 'familia-8', nome: 'Família Corte e Barba Clássico — 8 procedimentos', tipo: ['familia'], preco: 'R$ 209,90', desc: '8 procedimentos mensais, para dividir entre a família.',
       itens: ['Cabelo ou barba', 'Descontos em serviços', 'Descontos em produtos'] },
-    { id: 'familia-6', nome: 'Família Corte e Barba Clássico', tipo: ['familia'], preco: 'R$ 169,90', desc: '6 procedimentos mensais.',
+    { id: 'familia-6', nome: 'Família Corte e Barba Clássico — 6 procedimentos', tipo: ['familia'], preco: 'R$ 169,90', desc: '6 procedimentos mensais, para dividir entre a família.',
       itens: ['Cabelo ou barba', 'Descontos em serviços', 'Descontos em produtos'] },
   ];
   // "Periodicidade" e "Agendamentos simultâneos" aparecem sem valor no site antigo: não exibir.
@@ -170,7 +173,7 @@
     showOncePerSession: false, // true = só na primeira página da sessão
     minimumVisibleTime: 1200,
     maximumVisibleTime: 4500,
-    exitDuration: 560,
+    exitDuration: 420,
     sessionKey: 'morenos_intro_seen',
     logo: 'assets/morenos-loader-outline-white.webp', logoW: 720, logoH: 669,
   };
@@ -179,10 +182,10 @@
   C.getUnit = function () { try { return localStorage.getItem(C.selectedUnitKey); } catch (e) { return null; } };
   C.setUnit = function (id) { try { localStorage.setItem(C.selectedUnitKey, id); } catch (e) {} C.track('unit_select', { unit: id }); };
 
-  // Homologação: noindex,nofollow controlado só por aqui.
-  if (C.env.stage === 'homologacao') {
-    var m = document.createElement('meta'); m.name = 'robots'; m.content = 'noindex, nofollow'; document.head.appendChild(m);
-  }
+  // O noindex de homologação NÃO mora aqui. Ele é escrito no <head> pelo build
+  // (fonte/build.py, --homologacao), porque o robô de busca lê o HTML que o
+  // servidor entrega e não espera o JavaScript da página rodar: um noindex
+  // injetado em tempo de execução pode simplesmente não ser visto.
 
   window.MORENOS = C;
 })();

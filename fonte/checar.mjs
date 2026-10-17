@@ -276,8 +276,13 @@ for (const [nome, perfil, rotas] of [
   await page.goto(base + '/', { waitUntil: 'networkidle' });
   await page.waitForSelector('html.mo-vivo', { timeout: 25000 }).catch(() => {});
   await page.waitForTimeout(1200);
-  const botao = page.getByRole('button', { name: 'Unidades' }).first();
+  // o item "Unidades" do cabecalho virou <a href="/unidades/">: clicar leva ao
+  // indice das unidades, passar o mouse abre o mega menu. Antes era <button>,
+  // e as duas paginas-catalogo nao tinham link nenhum no cabecalho.
+  const botao = page.getByRole('link', { name: 'Unidades', exact: true }).first();
   if (await botao.count()) {
+    checa(await botao.getAttribute('href') === '/unidades/',
+      'desktop: o item Unidades do cabecalho leva a /unidades/');
     await botao.hover();
     await page.waitForTimeout(700);
     const itens = await page.getByRole('link', { name: /Cidade Continental/ }).count();

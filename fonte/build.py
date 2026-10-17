@@ -83,6 +83,53 @@ def troca_links(texto: str) -> str:
 
 
 # pastas copiadas do prototipo para a raiz publicada
+# ------------------------------------------------------------- ambiente ---
+# O site e publicado em dois lugares com regras OPOSTAS de indexacao:
+#
+#   producao      salaomorenos.com.br            entra no indice
+#   homologacao   novosite.salaomorenos.com.br   NAO entra, e serve so para o
+#                                                cliente aprovar
+#
+# Tudo que muda entre os dois sai daqui: endereco de base (canonical, og:url,
+# JSON-LD, sitemap), o noindex, o robots.txt e o cabecalho HTTP. Antes, o
+# noindex era injetado por JavaScript em tempo de execucao — o robo le o HTML,
+# nao espera o JavaScript — e o robots de homologacao trazia "Disallow: /",
+# que impede o robo de abrir a pagina e, com isso, de LER o noindex.
+BASE_PRODUCAO = "https://salaomorenos.com.br"
+BASE_HOMOLOGACAO = "https://novosite.salaomorenos.com.br"
+
+# O prototipo escreve este endereco em canonical, og:url e JSON-LD.
+BASE_NO_PROTOTIPO = BASE_PRODUCAO
+
+NOINDEX = '<meta name="robots" content="noindex, nofollow">'
+
+# Bloco que o build acrescenta ao .htaccess so em homologacao. O noindex ja vai
+# no HTML; o cabecalho cobre o que nao e HTML (PDF, imagem) e vale como segunda
+# tranca caso alguem publique o HTML errado.
+HTACCESS_INICIO = "# >>> homologacao: inserido pelo build, nao editar a mao >>>"
+HTACCESS_FIM = "# <<< homologacao <<<"
+HTACCESS_HOMOLOGACAO = f"""{HTACCESS_INICIO}
+# Ambiente de aprovacao. Nada daqui pode entrar no indice de busca.
+<IfModule mod_headers.c>
+  Header set X-Robots-Tag "noindex, nofollow"
+</IfModule>
+{HTACCESS_FIM}
+"""
+
+
+class Ambiente:
+    """Decide tudo que difere entre homologacao e producao."""
+
+    def __init__(self, homologacao: bool):
+        self.homologacao = homologacao
+        self.base = BASE_HOMOLOGACAO if homologacao else BASE_PRODUCAO
+        self.indexavel = not homologacao
+
+    @property
+    def nome(self) -> str:
+        return "homologacao" if self.homologacao else "producao"
+
+
 ASSETS_PROTO = ("img", "assets")
 # arquivos soltos do prototipo que vao para a raiz publicada
 # Os quatro viram caminho absoluto nas paginas (elas moram em subpastas)...
@@ -164,18 +211,67 @@ def embutir(tag: str, conteudo: str, html: str, nome: str) -> str:
     return html.replace(tag, "<script>/* " + nome + " embutido no build */\n" + conteudo + "</script>", 1)
 
 
+JSONLD_RE = re.compile(r'<script type="application/ld\+json">.*?</script>', re.S)
+
+
 def patch_pagina(html: str, avaliacoes: bool = False, config_js: str = "",
-                 loader_js: str = "", poppins_css: str = "") -> str:
+                 loader_js: str = "", poppins_css: str = "",
+                 ambiente: "Ambiente" = None, jsonld: str = None,
+                 srcsets: dict = None) -> str:
     """Prepara uma pagina do prototipo para virar pagina publicada."""
     falhas = []
+    ambiente = ambiente or Ambiente(False)
 
     if html.count(VIEWPORT) != 1:
         falhas.append("a meta viewport")
-    cabeca = (FAVICONS + "\n" + ALTURA_LIVRE + "\n" + MENOS_MOVIMENTO
+    # O noindex entra no HTML inicial, logo depois da viewport: o robo le a
+    # primeira resposta do servidor e nao executa o JavaScript da pagina.
+    cabeca = (("" if ambiente.indexavel else NOINDEX + "\n")
+              + FAVICONS + "\n" + ALTURA_LIVRE + "\n" + MENOS_MOVIMENTO
               + ("\n" + SCRIPT_AVALIACOES if avaliacoes else ""))
     html = html.replace(VIEWPORT, VIEWPORT + "\n" + cabeca, 1)
 
+    # canonical, og:url e JSON-LD apontam para o ambiente em que a pagina vai
+    # rodar. Em homologacao, apontar para o dominio final seria mandar o robo
+    # para uma URL que ainda nao existe la.
+    # (a pagina de erro nao tem canonical de proposito, e so ela)
+    if '<link rel="canonical"' in html and BASE_NO_PROTOTIPO not in html:
+        falhas.append(f"canonical que nao usa {BASE_NO_PROTOTIPO}")
+    html = html.replace(BASE_NO_PROTOTIPO, ambiente.base)
+
+    # Dados estruturados: o grafo escrito a mao no prototipo sai, o gerado
+    # entra. Quem nao tinha grafo (as paginas juridicas) passa a ter.
+    if jsonld is not None:
+        quantos = len(JSONLD_RE.findall(html))
+        if quantos > 1:
+            falhas.append(f"{quantos} blocos JSON-LD na mesma pagina")
+        elif quantos == 1:
+            html = JSONLD_RE.sub(lambda _: jsonld, html, count=1)
+        elif jsonld:
+            html = html.replace(VIEWPORT, VIEWPORT + "\n" + jsonld, 1)
+
     html = troca_links(RELATIVO_RE.sub(r'\1/\2', html))
+
+    # imagem grande ganha srcset: o celular baixa a versao do tamanho dele.
+    # O <link rel=preload> da mesma imagem tem que combinar, senao o navegador
+    # baixa a original pelo preload e o srcset nao serve para nada.
+    for src, srcset in (srcsets or {}).items():
+        def com_preload(m, _srcset=srcset):
+            tag = m.group(0)
+            if "imagesrcset=" in tag:
+                return tag
+            return tag[:-1].rstrip() + f' imagesrcset="{_srcset}" imagesizes="100vw">'
+        html = re.sub(r'<link\b[^>]*rel="preload"[^>]*href="' + re.escape(src) + r'"[^>]*>',
+                      com_preload, html)
+
+    for src, srcset in (srcsets or {}).items():
+        def com_srcset(m, _srcset=srcset):
+            tag = m.group(0)
+            if "srcset=" in tag:
+                return tag
+            return tag[:-1].rstrip() + f' srcset="{_srcset}" sizes="100vw">'
+        html = re.sub(r'<img\b[^>]*\bsrc="' + re.escape(src) + r'"[^>]*>', com_srcset, html)
+
     for js in JS_PAGINA:
         html = html.replace(f'src="{js}"', f'src="/{js}"').replace(f'src="./{js}"', f'src="/{js}"')
 
@@ -220,9 +316,9 @@ NOTA_JS_LINHA = re.compile(
 RECADOS_TIRADOS: list = []
 
 
-def patch_config(js: str, homologacao: bool) -> str:
+def patch_config(js: str, ambiente: "Ambiente", srcsets: dict = None) -> str:
     """site-config.js: links internos para as URLs finais e caminhos absolutos."""
-    js = troca_links(RELATIVO_RE.sub(r'\1/\2', js))
+    js = troca_links(RELATIVO_RE.sub(r'\1/\2', js)).replace(BASE_NO_PROTOTIPO, ambiente.base)
     antes = len(js)
     js = NOTA_JS_LINHA.sub("", NOTA_JS_BLOCO.sub("", js))
     RECADOS_TIRADOS.append(("site-config.js", 1 if len(js) < antes else 0))
@@ -230,6 +326,10 @@ def patch_config(js: str, homologacao: bool) -> str:
     agulha = "  C.locations = ["
     if js.count(agulha) != 1:
         raise SystemExit("erro: nao achei C.locations no site-config.js")
+    # mapa de imagens responsivas, para o componente que monta o src por
+    # template (o hero do PaginaMorenos) poder usar o mesmo srcset
+    js = js.replace(agulha, "  C.imagens = " + json.dumps(srcsets or {}, ensure_ascii=False)
+                    + ";  // gerado no build\n\n" + agulha, 1)
     ponte = (
         "  // --- aplicado no build (fonte/build.py) ---\n"
         "  // No prototipo, C.routes aponta para arquivos (unidades.dc.html) porque\n"
@@ -250,7 +350,7 @@ def patch_config(js: str, homologacao: bool) -> str:
         raise SystemExit("erro: nao achei C.loader.showOncePerSession no site-config.js")
     js = js.replace(antes, "showOncePerSession: true", 1)
 
-    estagio = "homologacao" if homologacao else "producao"
+    estagio = ambiente.nome
     js, n = re.subn(r"stage: /novosite\\\./\.test\(location\.hostname\) \? 'homologacao' : 'producao',",
                     f"stage: '{estagio}',  // fixado no build", js, count=1)
     if not n:
@@ -301,9 +401,16 @@ LOADER_ESPERA_PARA = """  // A tela só sai com a PÁGINA PRONTA (ajuste do buil
     obs.observe(raiz, { attributes: true, attributeFilter: ['class'] });
     // sem runtime (JS bloqueado, erro de rede) a cópia estática é a página:
     // não faz sentido segurar a tela esperando uma troca que não vem
-    setTimeout(function () { obs.disconnect(); r(); }, 6000);
+    setTimeout(function () { obs.disconnect(); r(); }, 3500);
   });
-  var sinais = [domPronto, logoPronta, fontes, hero, carregou, montado];
+  // window.load espera TODA imagem que a pagina comecou a buscar, inclusive a
+  // que esta a tres rolagens de distancia. Numa rede de celular isso chegou a
+  // 6s com a tela de abertura na frente do conteudo — o preloader deixou de
+  // cobrir o carregamento e virou o carregamento. A espera continua, com
+  // teto: 1,5s depois de o resto estar pronto, a tela sai de qualquer forma.
+  // O que o visitante ve ja esta pintado; o que falta e rodape.
+  var carregouComTeto = Promise.race([carregou, espera(1500)]);
+  var sinais = [domPronto, logoPronta, fontes, hero, carregouComTeto, montado];
   var tudo = Promise.allSettled ? Promise.allSettled(sinais)
     : Promise.all(sinais.map(function (p) { return Promise.resolve(p).catch(function () {}); }));"""
 
@@ -321,7 +428,7 @@ LOADER_CARREGOU_PARA = """  var carregou = document.readyState === 'complete' ? 
 LOADER_TETO_DE = """      minimumVisibleTime: 0,      // sai no instante em que a página fica pronta
       maximumVisibleTime: 1800,   // teto baixo: navegação interna é rápida"""
 LOADER_TETO_PARA = """      minimumVisibleTime: 0,      // sem espera artificial: sai quando ficar pronta
-      maximumVisibleTime: 6000,   // rede de segurança, não alvo"""
+      maximumVisibleTime: 3500,   // rede de segurança, não alvo"""
 
 LOADER_CURTO_DE = """  // Navegação interna: só um fade curto de entrada, sem logo.
   if (C.showOncePerSession && lerVisto()) {
@@ -359,7 +466,7 @@ LOADER_BRILHO_PARA = "animation:slShine 2.2s linear ' + (curto ? '0s' : '.35s') 
 # a pausa de 380ms antes da saida e a parte mais visivel da espera
 LOADER_PAUSA_DE = """    var dur = reduz ? 250 : C.exitDuration;"""
 LOADER_PAUSA_PARA = """    var dur = reduz ? 250 : C.exitDuration;
-    var pausa = reduz ? 0 : (curto ? 120 : 380);   // modo curto quase nao pausa"""
+    var pausa = reduz ? 0 : (curto ? 100 : 240);   // modo curto quase nao pausa"""
 
 PATCHES_LOADER = [
     (LOADER_CURTO_DE, LOADER_CURTO_PARA, "modo curto na navegacao interna"),
@@ -473,26 +580,37 @@ def tira_recados(html: str, onde: str) -> str:
     return RECADO_RE.sub("", html)
 
 
-def monta_palco(palco: pathlib.Path, homologacao: bool, avaliacoes: bool) -> None:
+def monta_palco(palco: pathlib.Path, ambiente: Ambiente, avaliacoes: bool) -> None:
     """Monta a arvore que o Chromium vai enxergar — igual a publicada."""
+    # as imagens entram primeiro: as variantes responsivas precisam existir
+    # antes de as paginas serem escritas (e o srcset delas vai no HTML)
+    for pasta in ASSETS_PROTO:
+        shutil.copytree(PROTO / pasta, palco / pasta)
+    srcsets = gera_variantes(palco)
+
     (palco / "_dc").mkdir(parents=True)
+    # o hero do PaginaMorenos monta o src por template ({{ s.foto }}), entao o
+    # srcset de la e resolvido no proprio componente, em renderVals
     for c in COMPONENTES:
         texto = (PROTO / f"{c}.dc.html").read_text(encoding="utf-8")
         if c == "PaginaMorenos":
             texto = patch_maquete(texto)
+        texto = troca_links(RELATIVO_RE.sub(r'\1/\2', texto)).replace(
+            BASE_NO_PROTOTIPO, ambiente.base)
         (palco / "_dc" / f"{c}.dc.html").write_text(
-            tira_recados(troca_links(RELATIVO_RE.sub(r'\1/\2', texto)), f"{c}.dc.html"),
-            encoding="utf-8")
+            tira_recados(texto, f"{c}.dc.html"), encoding="utf-8")
 
-    config_js = patch_config((PROTO / "site-config.js").read_text(encoding="utf-8"), homologacao)
+    config_js = patch_config((PROTO / "site-config.js").read_text(encoding="utf-8"), ambiente, srcsets)
     loader_js = patch_loader((PROTO / "site-loader.js").read_text(encoding="utf-8"))
     poppins_css = (PUB / "fonts" / "poppins.css").read_text(encoding="utf-8")
 
-    for arquivo, *_ in ROTAS:
+    cfg = le_config_json()
+    for arquivo, saida, *_ in ROTAS:
         alvo = palco / arquivo
         alvo.write_text(
             tira_recados(patch_pagina((PROTO / arquivo).read_text(encoding="utf-8"), avaliacoes,
-                                      config_js, loader_js, poppins_css), arquivo),
+                                      config_js, loader_js, poppins_css, ambiente,
+                                      grafo_da_rota(saida, ambiente, cfg), srcsets), arquivo),
             encoding="utf-8")
 
     shutil.copy2(PROTO / "smooth-scroll.js", palco / "smooth-scroll.js")
@@ -506,8 +624,6 @@ def monta_palco(palco: pathlib.Path, homologacao: bool, avaliacoes: bool) -> Non
         (palco / "avaliacoes-google.js").write_text(
             "/* stub de build: o script real roda so no site publicado */\n", encoding="utf-8")
 
-    for pasta in ASSETS_PROTO:
-        shutil.copytree(PROTO / pasta, palco / pasta)
 
     # A logo da tela de abertura vem com 720px e nunca passa de 200px na tela —
     # e esta no caminho critico, porque a tela espera por ela. Reduzida para
@@ -522,7 +638,7 @@ def monta_palco(palco: pathlib.Path, homologacao: bool, avaliacoes: bool) -> Non
     shutil.copytree(PUB / "vendor", palco / "vendor")
 
 
-def publica_estaticos(palco: pathlib.Path, homologacao: bool, avaliacoes: bool) -> None:
+def publica_estaticos(palco: pathlib.Path, ambiente: Ambiente, avaliacoes: bool, rotas) -> None:
     """Copia para a raiz do repositorio tudo que nao e pagina."""
     for pasta in (*ASSETS_PROTO, "_dc"):
         destino = PUB / pasta
@@ -552,9 +668,315 @@ def publica_estaticos(palco: pathlib.Path, homologacao: bool, avaliacoes: bool) 
     for orfao in ("site-config.js", "site-loader.js"):
         (PUB / orfao).unlink(missing_ok=True)
 
-    robots = "robots-homologacao.txt" if homologacao else "robots.txt"
-    shutil.copy2(PROTO / "seo" / robots, PUB / "robots.txt")
-    shutil.copy2(PROTO / "seo" / "sitemap.xml", PUB / "sitemap.xml")
+    (PUB / "robots.txt").write_text(gera_robots(ambiente), encoding="utf-8")
+
+    # O sitemap provisorio nao existe: em homologacao nao ha sitemap para
+    # ninguem enviar ao Search Console por engano.
+    destino_sitemap = PUB / "sitemap.xml"
+    if ambiente.indexavel:
+        destino_sitemap.write_text(gera_sitemap(ambiente, rotas), encoding="utf-8")
+    else:
+        destino_sitemap.unlink(missing_ok=True)
+
+    ajusta_htaccess(ambiente)
+
+
+# -------------------------------------------------- imagens responsivas ---
+# A foto de abertura tem 1672px de largura e e a maior imagem do site. Num
+# celular de 390px ela nunca precisa de mais que ~800px, e o navegador baixa
+# os 143 KB inteiros assim mesmo — na imagem que decide o LCP. As variantes
+# sao geradas aqui, no build, pelo mesmo reencodador da logo da abertura.
+VARIANTES = {
+    # caminho no palco: largura real do arquivo + larguras a gerar
+    "img/hero-wide.webp": (1672, [900, 1200]),
+}
+
+
+def gera_variantes(palco: pathlib.Path) -> dict:
+    """Reencoda as imagens grandes em larguras menores. Devolve o srcset pronto."""
+    srcsets = {}
+    for caminho, (largura_real, larguras) in VARIANTES.items():
+        origem = palco / caminho
+        if not origem.exists():
+            print(f"  aviso: {caminho} nao existe no palco")
+            continue
+        partes = []
+        for largura in larguras:
+            saida = origem.with_name(f"{origem.stem}-{largura}{origem.suffix}")
+            r = subprocess.run(
+                ["node", str(FONTE / "scripts" / "reduzir-imagem.mjs"),
+                 str(origem), str(saida), str(largura), "0.82"],
+                capture_output=True, text=True, cwd=RAIZ)
+            if r.returncode != 0 or not saida.exists():
+                print(f"  aviso: nao consegui gerar {saida.name}")
+                continue
+            partes.append((f"/{pathlib.PurePosixPath(caminho).parent}/{saida.name}", largura))
+            linha = (r.stdout.strip().splitlines() or [""])[-1]
+            if linha:
+                print("  " + linha)
+        if not partes:
+            continue
+        partes.append((f"/{caminho}", largura_real))
+        srcsets["/" + caminho] = ", ".join(f"{u} {w}w" for u, w in partes)
+    return srcsets
+
+
+def data_da_rota(arquivos: list) -> str:
+    """Data do ultimo commit que mexeu no conteudo desta rota (AAAA-MM-DD).
+
+    lastmod so vale se for verdade. Carimbar a data do build em todas as URLs a
+    cada publicacao e ruido: diz "mudou" para dezesseis paginas quando mudou
+    uma. Aqui a data vem do git, do ultimo commit que tocou os arquivos que
+    compoem aquela rota. Sem git (ou arquivo sem historico), a rota sai sem
+    lastmod — melhor nenhum do que inventado.
+    """
+    existentes = [a for a in arquivos if (RAIZ / a).exists()]
+    if not existentes:
+        return ""
+    try:
+        r = subprocess.run(["git", "-C", str(RAIZ), "log", "-1", "--format=%cs", "--"] + existentes,
+                           capture_output=True, text=True, timeout=20)
+    except Exception:
+        return ""
+    return r.stdout.strip() if r.returncode == 0 else ""
+
+
+def gera_sitemap(ambiente: Ambiente, rotas) -> str:
+    """Sitemap a partir das ROTAS reais, nao de um arquivo escrito a mao.
+
+    So entra URL canonica, indexavel e que existe em disco. Fica de fora: a
+    pagina de erro (noindex), qualquer rota com noindex e qualquer URL que o
+    build nao tenha gerado.
+    """
+    linhas = ['<?xml version="1.0" encoding="UTF-8"?>',
+              '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">']
+    for entrada in rotas:
+        origem, destino = entrada[0], entrada[1]
+        if destino == "404.html":
+            continue
+        caminho = "" if destino == "index.html" else destino[: -len("index.html")]
+        url = f"{ambiente.base}/{caminho}"
+        # o que compoe ESTA rota: o arquivo dela, os dados e os componentes que
+        # ela realmente usa (a Home nao passa pelo PaginaMorenos)
+        arquivos = [f"fonte/prototipo/{origem}", "fonte/prototipo/site-config.js",
+                    "fonte/prototipo/SiteHeader.dc.html", "fonte/prototipo/SiteFooter.dc.html"]
+        if origem != "Home.dc.html":
+            arquivos.append("fonte/prototipo/PaginaMorenos.dc.html")
+        data = data_da_rota(arquivos)
+        linhas.append(f"  <url><loc>{url}</loc>" + (f"<lastmod>{data}</lastmod>" if data else "") + "</url>")
+    linhas.append("</urlset>")
+    return "\n".join(linhas) + "\n"
+
+
+def gera_robots(ambiente: Ambiente) -> str:
+    """robots.txt por ambiente.
+
+    Homologacao LIBERA o rastreio de proposito. "Disallow: /" nao tira nada do
+    indice: ele impede o robo de abrir a pagina e, sem abrir, o robo nunca le o
+    noindex — a URL pode continuar aparecendo na busca, so que sem titulo nem
+    descricao. Para nao aparecer, o robo precisa ENTRAR e LER o noindex.
+    """
+    if ambiente.homologacao:
+        return ("# Ambiente de aprovacao (nao e o site publico).\n"
+                "# O rastreio fica liberado de proposito: e assim que o robo le o\n"
+                "# noindex que cada pagina traz no <head> e no cabecalho HTTP.\n"
+                "# Sem Sitemap: aqui — o sitemap definitivo e o do dominio final.\n"
+                "User-agent: *\n"
+                "Allow: /\n")
+    return ("User-agent: *\n"
+            "Allow: /\n"
+            "\n"
+            f"Sitemap: {ambiente.base}/sitemap.xml\n")
+
+
+def ajusta_htaccess(ambiente: Ambiente) -> None:
+    """Liga/desliga o bloco de homologacao do .htaccess publicado."""
+    arquivo = PUB / ".htaccess"
+    if not arquivo.exists():
+        return
+    texto = arquivo.read_text(encoding="utf-8")
+    inicio = texto.find(HTACCESS_INICIO)
+    if inicio != -1:
+        fim = texto.find(HTACCESS_FIM, inicio)
+        if fim == -1:
+            raise SystemExit("erro: bloco de homologacao do .htaccess sem fim; conserte a mao.")
+        texto = texto[:inicio] + texto[fim + len(HTACCESS_FIM):].lstrip("\n")
+    if ambiente.homologacao:
+        texto = HTACCESS_HOMOLOGACAO + "\n" + texto
+    arquivo.write_text(texto, encoding="utf-8")
+
+
+# --------------------------------------------- dados estruturados (JSON-LD) -
+# Antes, cada pagina trazia o grafo escrito a mao. O mesmo lugar real aparecia
+# com @id diferente em paginas diferentes (a Home chamava a unidade de
+# "/#cidade-continental" e a pagina dela de ".../cidade-continental/#unidade"),
+# e na Home a propriedade url de cada unidade apontava para a home. Para um
+# buscador, isso e um lugar em cada pagina, nenhum deles com endereco proprio.
+#
+# Agora o grafo e gerado aqui, a partir do site-config.js — a mesma fonte dos
+# enderecos que aparecem na tela. Um @id por entidade, igual em todas as rotas.
+#
+# O que NAO entra, de proposito: telefone por unidade (o WhatsApp e central, e
+# dizer que e da unidade seria afirmar o que ninguem confirmou), horario por
+# unidade (vem do site antigo, sem confirmacao), coordenada (ninguem mediu),
+# foto de fachada nao confirmada, preco, nota e avaliacao.
+
+TRILHAS = {
+    "unidades/index.html": [("Unidades", "unidades/")],
+    "unidades/cidade-continental/index.html": [("Unidades", "unidades/"), ("Cidade Continental", "unidades/cidade-continental/")],
+    "unidades/novo-horizonte-av-brasil/index.html": [("Unidades", "unidades/"), ("Novo Horizonte — Av. Brasil", "unidades/novo-horizonte-av-brasil/")],
+    "unidades/novo-horizonte-av-industrial/index.html": [("Unidades", "unidades/"), ("Novo Horizonte — Av. Industrial", "unidades/novo-horizonte-av-industrial/")],
+    "servicos/index.html": [("Serviços", "servicos/")],
+    "servicos/corte-masculino/index.html": [("Serviços", "servicos/"), ("Corte Masculino", "servicos/corte-masculino/")],
+    "servicos/barboterapia/index.html": [("Serviços", "servicos/"), ("Barboterapia", "servicos/barboterapia/")],
+    "visagismo/index.html": [("Serviços", "servicos/"), ("Visagismo", "visagismo/")],
+    "dia-do-noivo/index.html": [("Serviços", "servicos/"), ("Dia do Noivo", "dia-do-noivo/")],
+    "o-clube/index.html": [("O Clube", "o-clube/")],
+    "cultura/index.html": [("Sobre a Morenos", "cultura/")],
+    "corporativo/index.html": [("Corporativo", "corporativo/")],
+    "trabalhe-conosco/index.html": [("Trabalhe Conosco", "trabalhe-conosco/")],
+    "politica-de-privacidade/index.html": [("Política de Privacidade", "politica-de-privacidade/")],
+    "termos-de-uso/index.html": [("Termos de Uso", "termos-de-uso/")],
+}
+
+# Pagina de servico -> como o servico se chama no grafo. So as quatro que tem
+# pagina propria; o catalogo inteiro vive na pagina de servicos, como texto.
+SERVICOS_NO_GRAFO = {
+    "servicos/corte-masculino/index.html": ("Corte masculino", "Corte de cabelo masculino"),
+    "servicos/barboterapia/index.html": ("Barboterapia", "Cuidado completo com a barba"),
+    "visagismo/index.html": ("Visagismo", "Consultoria de visagismo masculino"),
+    "dia-do-noivo/index.html": ("Dia do Noivo", "Atendimento de noivo para casamento"),
+}
+
+UNIDADE_POR_ROTA = {
+    "unidades/cidade-continental/index.html": "cidade-continental",
+    "unidades/novo-horizonte-av-brasil/index.html": "novo-horizonte-av-brasil",
+    "unidades/novo-horizonte-av-industrial/index.html": "novo-horizonte-av-industrial",
+}
+
+
+def le_config_json() -> dict:
+    """Os dados do site-config.js, em Python, pela unica fonte que existe."""
+    r = subprocess.run(["node", str(FONTE / "scripts" / "dump-config.mjs")],
+                       capture_output=True, text=True, cwd=RAIZ)
+    if r.returncode != 0:
+        raise SystemExit("erro: nao consegui ler o site-config.js:\n" + (r.stderr or "").strip())
+    return json.loads(r.stdout)
+
+
+def _id_org(base: str) -> str:
+    return f"{base}/#organizacao"
+
+
+def _unidade_no_grafo(base: str, l: dict) -> dict:
+    endereco = {
+        "@type": "PostalAddress",
+        "streetAddress": l["logradouro"] + (f", {l['numero']}" if l.get("numero") else ""),
+        "addressLocality": l["cidade"],
+        "addressRegion": l["estado"],
+        "postalCode": l["cep"],
+        "addressCountry": "BR",
+    }
+    no = {
+        "@type": "HairSalon",
+        "@id": f"{base}/unidades/{l['id']}/#unidade",
+        "name": l["nome"],
+        "url": f"{base}/unidades/{l['id']}/",
+        "address": endereco,
+        "areaServed": "Serra, ES",
+        "parentOrganization": {"@id": _id_org(base)},
+    }
+    # imagem so quando o cliente confirmou que a foto e daquele endereco
+    if l.get("fotoConfirmada") and l.get("foto"):
+        no["image"] = f"{base}/{l['foto'].lstrip('/')}"
+    if l.get("googleProfile"):
+        no["hasMap"] = l["googleProfile"]
+    return no
+
+
+def grafo_da_rota(saida: str, ambiente: Ambiente, cfg: dict) -> str:
+    """O JSON-LD de uma rota. Vazio quando a rota nao deve declarar nada."""
+    if saida == "404.html":
+        return ""
+    base = ambiente.base
+    unidades = cfg["locations"]
+    org = {
+        "@type": "Organization",
+        "@id": _id_org(base),
+        "name": cfg["brand"]["name"] if isinstance(cfg.get("brand"), dict) and cfg["brand"].get("name") else "Salão Morenos",
+        "url": f"{base}/",
+        "logo": f"{base}/favicon-192.png",
+        "areaServed": "Serra, ES",
+        "contactPoint": {
+            "@type": "ContactPoint",
+            "contactType": "customer service",
+            "telephone": "+" + cfg["whatsapp"]["phone"],
+            "availableLanguage": "pt-BR",
+        },
+        "subOrganization": [{"@id": f"{base}/unidades/{l['id']}/#unidade"} for l in unidades],
+    }
+    site = {
+        "@type": "WebSite",
+        "@id": f"{base}/#site",
+        "url": f"{base}/",
+        "name": "Salão Morenos",
+        "inLanguage": "pt-BR",
+        "publisher": {"@id": _id_org(base)},
+    }
+    grafo = [org, site]
+
+    if saida == "index.html":
+        grafo += [_unidade_no_grafo(base, l) for l in unidades]
+
+    trilha = TRILHAS.get(saida)
+    if trilha:
+        caminho = "" if saida == "index.html" else saida[: -len("index.html")]
+        itens = [{"@type": "ListItem", "position": 1, "name": "Início", "item": f"{base}/"}]
+        for i, (nome, c) in enumerate(trilha, start=2):
+            itens.append({"@type": "ListItem", "position": i, "name": nome, "item": f"{base}/{c}"})
+        grafo.append({
+            "@type": "BreadcrumbList",
+            "@id": f"{base}/{caminho}#trilha",
+            "itemListElement": itens,
+        })
+
+    # /unidades/ e o indice das tres: a lista liga o hub as paginas por @id,
+    # em vez de descrever as unidades de novo.
+    if saida == "unidades/index.html":
+        grafo.append({
+            "@type": "ItemList",
+            "@id": f"{base}/unidades/#lista",
+            "name": "Unidades do Salão Morenos em Serra",
+            "itemListElement": [
+                {"@type": "ListItem", "position": i,
+                 "item": {"@id": f"{base}/unidades/{l['id']}/#unidade"}}
+                for i, l in enumerate(unidades, start=1)
+            ],
+        })
+
+    unidade = UNIDADE_POR_ROTA.get(saida)
+    if unidade:
+        grafo.append(_unidade_no_grafo(base, next(l for l in unidades if l["id"] == unidade)))
+
+    servico = SERVICOS_NO_GRAFO.get(saida)
+    if servico:
+        caminho = saida[: -len("index.html")]
+        nome, tipo = servico
+        # sem availableAtOrFrom: nem todo servico esta em todas as unidades, e
+        # a lista por unidade ainda nao foi confirmada pelo cliente.
+        grafo.append({
+            "@type": "Service",
+            "@id": f"{base}/{caminho}#servico",
+            "name": nome,
+            "serviceType": tipo,
+            "url": f"{base}/{caminho}",
+            "provider": {"@id": _id_org(base)},
+            "areaServed": "Serra, ES",
+        })
+
+    corpo = json.dumps({"@context": "https://schema.org", "@graph": grafo},
+                       ensure_ascii=False, separators=(",", ":"))
+    return '<script type="application/ld+json">' + corpo + '</script>'
 
 
 # Arquivos que o .htaccess bloqueia de proposito.
@@ -608,6 +1030,94 @@ def confere_htaccess() -> None:
         print(f"  recados internos retirados do HTML publicado: {total} — {onde}")
 
 
+def confere_indexacao(ambiente: Ambiente, rotas) -> None:
+    """Trava final: o ambiente que saiu tem que ser o ambiente que foi pedido.
+
+    O erro que isto existe para impedir e publicar producao com o noindex de
+    homologacao esquecido no HTML — o site inteiro sai do indice e ninguem
+    percebe por semanas. O contrario tambem e erro: homologacao sem noindex
+    coloca o subdominio para competir com o dominio principal.
+    """
+    problemas = []
+    paginas = [PUB / r[1] for r in rotas]
+    com_noindex = []
+    for pagina in paginas:
+        if not pagina.exists():
+            continue
+        texto = pagina.read_text(encoding="utf-8")
+        tem = re.search(r'<meta[^>]+name=["\']robots["\'][^>]+content=["\'][^"\']*noindex', texto, re.I)
+        if tem:
+            com_noindex.append(pagina.relative_to(PUB).as_posix())
+
+    # a pagina de erro e noindex nos dois ambientes, de proposito
+    com_noindex = [c for c in com_noindex if c != "404.html"]
+    esperadas = [r[1] for r in rotas if r[1] != "404.html"]
+
+    if ambiente.indexavel and com_noindex:
+        problemas.append("producao com noindex em: " + ", ".join(com_noindex[:6]))
+    if not ambiente.indexavel:
+        faltando = [e for e in esperadas if e not in com_noindex]
+        if faltando:
+            problemas.append("homologacao SEM noindex em: " + ", ".join(faltando[:6]))
+
+    for r in rotas:
+        destino = r[1]
+        pagina = PUB / destino
+        if not pagina.exists():
+            continue
+        texto = pagina.read_text(encoding="utf-8")
+        achados = re.findall(r'<link[^>]+rel=["\']canonical["\'][^>]+href=["\']([^"\']+)["\']', texto, re.I)
+        achados = list(dict.fromkeys(achados))   # as duas camadas repetem o mesmo
+        if destino == "404.html":
+            if achados:
+                problemas.append("a pagina de erro nao deve ter canonical")
+            continue
+        caminho = "" if destino == "index.html" else destino[: -len("index.html")]
+        esperado = f"{ambiente.base}/{caminho}"
+        if not achados:
+            problemas.append(f"{destino}: sem canonical")
+        elif len(achados) > 1:
+            problemas.append(f"{destino}: {len(achados)} canonicals diferentes ({', '.join(achados[:3])})")
+        elif achados[0] != esperado:
+            problemas.append(f"{destino}: canonical {achados[0]} em vez de {esperado}")
+
+    robots = (PUB / "robots.txt").read_text(encoding="utf-8") if (PUB / "robots.txt").exists() else ""
+    if re.search(r"^\s*Disallow:\s*/\s*$", robots, re.M):
+        problemas.append("robots.txt com 'Disallow: /' — impede o robo de LER o noindex")
+    if ambiente.indexavel and f"Sitemap: {ambiente.base}/sitemap.xml" not in robots:
+        problemas.append("robots.txt de producao sem a linha Sitemap do dominio final")
+
+    htaccess = (PUB / ".htaccess").read_text(encoding="utf-8") if (PUB / ".htaccess").exists() else ""
+    if ambiente.indexavel and HTACCESS_INICIO in htaccess:
+        problemas.append("producao com o bloco X-Robots-Tag de homologacao no .htaccess")
+    if not ambiente.indexavel and HTACCESS_INICIO not in htaccess:
+        problemas.append("homologacao sem o bloco X-Robots-Tag no .htaccess")
+
+    sitemap = PUB / "sitemap.xml"
+    if ambiente.indexavel:
+        if not sitemap.exists():
+            problemas.append("producao sem sitemap.xml")
+        else:
+            texto = sitemap.read_text(encoding="utf-8")
+            locs = re.findall(r"<loc>([^<]+)</loc>", texto)
+            fora = [l for l in locs if not l.startswith(ambiente.base + "/")]
+            if fora:
+                problemas.append("sitemap com URL de outro dominio: " + ", ".join(fora[:3]))
+            for loc in locs:
+                caminho = loc[len(ambiente.base):].strip("/")
+                alvo = PUB / (caminho + "/index.html" if caminho else "index.html")
+                if not alvo.exists():
+                    problemas.append(f"sitemap aponta para {loc}, que nao existe em disco")
+    elif sitemap.exists():
+        problemas.append("homologacao publicando sitemap.xml (nao deve existir)")
+
+    if problemas:
+        raise SystemExit("erro de indexacao — o build parou antes de publicar errado:\n"
+                         + "\n".join(f"       - {p}" for p in problemas))
+    marca = "noindex em todas as rotas" if not ambiente.indexavel else "indexavel, sem noindex"
+    print(f"  indexacao conferida: {ambiente.nome} — {marca}")
+
+
 def main() -> int:
     homologacao = "--homologacao" in sys.argv
     avaliacoes = "--avaliacoes-google" in sys.argv
@@ -622,14 +1132,16 @@ def main() -> int:
         if not rotas:
             raise SystemExit(f"erro: rota desconhecida: {so_rota}")
 
-    print(f"ambiente: {'HOMOLOGACAO (noindex)' if homologacao else 'producao'}")
+    ambiente = Ambiente(homologacao)
+    print(f"ambiente: {ambiente.nome.upper()} — base {ambiente.base}"
+          + ("  (noindex em tudo)" if not ambiente.indexavel else ""))
     print(f"avaliacoes do Google: {'LIGADAS' if avaliacoes else 'desligadas (depoimentos como no design)'}")
     print(f"rotas: {len(rotas)}")
 
     with tempfile.TemporaryDirectory() as tmp:
         palco = pathlib.Path(tmp) / "palco"
         palco.mkdir()
-        monta_palco(palco, homologacao, avaliacoes)
+        monta_palco(palco, ambiente, avaliacoes)
 
         plano = [{"arquivo": r[0], "saida": r[1], "minTexto": r[2] if len(r) > 2 else 1200}
                  for r in rotas]
@@ -645,9 +1157,11 @@ def main() -> int:
                 "       disco para inspecao, mas os estaticos (img/, _dc/, js) nao foram\n"
                 "       republicados — conserte a rota e rode o build de novo.")
 
-        publica_estaticos(palco, homologacao, avaliacoes)
+        publica_estaticos(palco, ambiente, avaliacoes, ROTAS)
 
     confere_htaccess()
+    if not so_rota:
+        confere_indexacao(ambiente, ROTAS)
     print("estaticos publicados: img/ assets/ _dc/ fonts/ vendor/ + js do site + robots/sitemap")
     return 0
 

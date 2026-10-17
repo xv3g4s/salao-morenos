@@ -7,10 +7,12 @@ Site da barbearia Salão Morenos: três unidades em Serra, Espírito Santo.
 - Origem do design: projeto Claude Design (handoff em `fonte/HANDOFF.md`)
 
 ```bash
-python3 fonte/build.py                  # gera as 17 rotas em public/
-node fonte/checar.mjs public            # 71 verificações sobre o site gerado
-node fonte/testes/arquitetura.mjs public  # 222 verificações de arquitetura de conteúdo
-node fonte/testes/avaliacoes.mjs        # 53 verificações da integração com o Google (build --avaliacoes-google)
+python3 fonte/build.py                     # produção: as 17 rotas em public/
+python3 fonte/build.py --homologacao       # aprovação: o mesmo site, com noindex
+node fonte/checar.mjs public               # 71 verificações sobre o site gerado
+node fonte/testes/arquitetura.mjs public   # 222 verificações de arquitetura de conteúdo
+node fonte/testes/seo.mjs public           # 370 verificações de SEO e dados estruturados
+node fonte/testes/avaliacoes.mjs           # 53 verificações da integração com o Google (build --avaliacoes-google)
 ```
 
 `node fonte/testes/arquitetura.mjs public --mapa` imprime o mapa de seções de
@@ -38,8 +40,9 @@ fonte/             nunca publicado
   checar.mjs         confere o site gerado
   avaliacoes/        integração opcional do Google (script + rota PHP)
   scripts/           utilitários (descobrir Place IDs)
-  testes/            testes de arquitetura de conteúdo e de avaliações
-  HANDOFF.md  MIGRATION-CHECKLIST.md  ARQUITETURA.md
+  testes/            arquitetura de conteúdo, SEO e avaliações
+  HANDOFF.md  ARQUITETURA.md  AUDITORIA-SEO.md  DESEMPENHO.md
+  MIGRACAO.md  MIGRATION-CHECKLIST.md  PERFIS-GOOGLE.md  PAUTA-CONTEUDO.md
 ```
 
 Nada fora de `public/` chega ao servidor.
@@ -99,6 +102,52 @@ se o design mudar, o build para e avisa em vez de publicar errado:
 `python3 fonte/build.py --homologacao` fixa `noindex` e usa o robots de
 homologação.
 
+## Dois ambientes, um comando de diferença
+
+O site vive em dois endereços com regras **opostas** de indexação:
+
+| | homologação | produção |
+| --- | --- | --- |
+| endereço | `novosite.salaomorenos.com.br` | `salaomorenos.com.br` |
+| build | `python3 fonte/build.py --homologacao` | `python3 fonte/build.py` |
+| indexação | `noindex, nofollow` no `<head>` **e** em `X-Robots-Tag` | sem noindex |
+| canonical e og:url | apontam para o subdomínio | apontam para o domínio final |
+| robots.txt | libera o rastreio, sem linha `Sitemap:` | libera o rastreio e declara o sitemap |
+| sitemap.xml | **não é publicado** | gerado a partir das rotas reais |
+
+Três decisões que parecem detalhe:
+
+- **O noindex é escrito no HTML pelo build**, não injetado por JavaScript. O
+  robô lê a resposta do servidor; ele não espera o script da página rodar.
+- **A homologação libera o rastreio de propósito.** `Disallow: /` não tira
+  nada do índice: impede o robô de abrir a página e, sem abrir, ele nunca lê o
+  `noindex` — a URL pode continuar aparecendo na busca, só que sem título nem
+  descrição. Para não aparecer, o robô precisa entrar e ler.
+- **Em homologação não existe sitemap.xml.** Sitemap provisório é o que acaba
+  enviado ao Search Console como se fosse o definitivo.
+
+O build **recusa** publicar os ambientes misturados (`confere_indexacao` em
+`fonte/build.py`): produção com noindex esquecido, homologação sem noindex,
+`Disallow: /` junto do noindex, canonical apontando para o domínio errado,
+sitemap com URL que não existe em disco — qualquer um desses para o build.
+
+O `.htaccess` também muda por ambiente: o build liga e desliga um bloco
+marcado, que entrega `X-Robots-Tag: noindex` na homologação.
+
+## Dados estruturados
+
+O JSON-LD de cada rota é **gerado no build** a partir do `site-config.js` — a
+mesma fonte dos endereços que aparecem na tela. Antes era escrito à mão em cada
+página, e o mesmo lugar real aparecia com `@id` diferente em páginas
+diferentes. Hoje: uma `Organization`, um `WebSite`, um `HairSalon` por unidade
+(sempre o mesmo `@id`, com `url` para a página da unidade), `BreadcrumbList`
+nas internas e `Service` nas quatro páginas de serviço.
+
+Fica de fora de propósito, porque ninguém confirmou: telefone por unidade
+(o WhatsApp é central), horário por unidade, coordenada, foto de fachada não
+identificada, preço, nota e avaliação. `fonte/testes/seo.mjs` falha se algum
+deles aparecer.
+
 ## Arquitetura de conteúdo
 
 Cada rota tem uma função e não repete o que a outra já diz. O que foi tirado,
@@ -123,7 +172,22 @@ de ambiente, limites e checklist do Google Cloud:
 ## Publicação
 
 cPanel > Git Version Control: **Update from Remote** e depois **Deploy HEAD
-Commit**. O `.cpanel.yml` copia `public/.` para `$HOME/public_html/`.
+Commit**. O `.cpanel.yml` sincroniza `public/` com `$HOME/public_html/` usando
+`rsync --delete` — o que sai do repositório sai também do servidor, para não
+deixar URL fantasma respondendo 200 depois de uma remoção.
+
+> **O ambiente é decidido no build, não no deploy.** O que vai para o ar é o
+> `public/` commitado. Para o subdomínio de aprovação, construa com
+> `--homologacao` antes de commitar; para o domínio final, sem a flag.
+>
+> **Hoje o `public/` commitado é o de HOMOLOGAÇÃO** (`noindex` em todas as
+> rotas), porque o site está em fase de aprovação no subdomínio. Um deploy
+> acidental publica um site que não entra no índice — que é o erro barato.
+> No dia da publicação definitiva: `python3 fonte/build.py`, conferir, commitar
+> e só então publicar.
+
+A migração do WordPress antigo para o domínio final está roteirizada em
+**`fonte/MIGRACAO.md`**.
 
 > Confirme antes o Document Root de `salaomorenos.com.br` em cPanel > Domínios.
 > `public_html` só é o lugar certo se ele for o domínio principal da conta.

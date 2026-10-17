@@ -21,7 +21,7 @@
           <nav aria-label="{{ col.titulo }}" style="flex:1 1 160px;display:flex;flex-direction:column;gap:12px">
             <span style="font-size:11px;font-weight:700;letter-spacing:.24em;text-transform:uppercase;color:#B79A6A;margin-bottom:4px">{{ col.titulo }}</span>
             <sc-for list="{{ col.links }}" as="l" hint-placeholder-count="4">
-              <a href="{{ l.href }}" style="font-size:14px;line-height:1.4;color:#C5C2BB;text-decoration:none;transition:color .3s ease" style-hover="color:#F6F4EF">{{ l.label }}</a>
+              <a href="{{ l.href }}" target="{{ l.target }}" rel="{{ l.rel }}" style="font-size:14px;line-height:1.4;color:#C5C2BB;text-decoration:none;transition:color .3s ease" style-hover="color:#F6F4EF">{{ l.label }}</a>
             </sc-for>
           </nav>
         </sc-for>
@@ -50,7 +50,19 @@ class Component extends DCLogic {
       ano: new Date().getFullYear(),
       wa: window.MORENOS ? window.MORENOS.waLink() : 'Home.dc.html',
       waDisplay: window.MORENOS ? window.MORENOS.whatsapp.display : '',
-      cols: [
+      cols: this.colunas().map(function (c) {
+        return { titulo: c.titulo, links: c.links.map(function (l) {
+          return { label: l.label, href: l.href,
+            target: l.externo ? '_blank' : '_self',
+            rel: l.externo ? 'noopener noreferrer' : '' };
+        }) };
+      }),
+    };
+  }
+
+  // link de fora do site leva externo: true (abre em aba nova, com rel)
+  colunas() {
+    return [
         { titulo: 'Morenos', links: [
           { label: 'Sobre a Morenos', href: 'cultura.dc.html' },
           { label: 'Corporativo', href: 'corporativo.dc.html' },
@@ -62,15 +74,15 @@ class Component extends DCLogic {
           { label: 'Dia do Noivo', href: 'dia-do-noivo.dc.html' },
           { label: 'Todos os serviços', href: 'servicos.dc.html' } ] },
         { titulo: 'Unidades', links: [
+          { label: 'Todas as unidades', href: 'unidades.dc.html' },
           { label: 'Cidade Continental', href: 'cidade-continental.dc.html' },
           { label: 'Novo Horizonte — Av. Brasil', href: 'novo-horizonte-av-brasil.dc.html' },
           { label: 'Novo Horizonte — Av. Industrial', href: 'novo-horizonte-av-industrial.dc.html' } ] },
         { titulo: 'Clube', links: [
           { label: 'Conhecer o Clube', href: 'o-clube.dc.html' },
           { label: 'Planos', href: 'o-clube.dc.html#planos' },
-          { label: 'Assinar', href: (window.MORENOS && window.MORENOS.links.membership) || 'o-clube.dc.html#planos' } ] },
-      ],
-    };
+          { label: 'Assinar', href: (window.MORENOS && window.MORENOS.links.membership) || 'o-clube.dc.html#planos', externo: true } ] },
+    ];
   }
 }
 </script>

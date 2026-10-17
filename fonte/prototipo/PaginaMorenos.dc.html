@@ -24,7 +24,7 @@
 
   <sc-if value="{{ s.isHero }}" hint-placeholder-val="{{ true }}">
     <section aria-label="{{ s.h1 }}" style="position:relative;min-height:clamp(560px,82vh,820px);display:flex;flex-direction:column;justify-content:flex-end;overflow:hidden;background:#0B0B0B">
-      <img src="{{ s.foto }}" alt="{{ s.alt }}" width="1600" height="1000" fetchpriority="high" decoding="async" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:{{ s.posicao }}">
+      <img src="{{ s.foto }}" srcset="{{ s.srcset }}" sizes="100vw" alt="{{ s.alt }}" width="1600" height="1000" fetchpriority="high" decoding="async" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:{{ s.posicao }}">
       <div aria-hidden="true" style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(11,11,11,.82) 0%,rgba(11,11,11,.42) 34%,rgba(11,11,11,.9) 80%,#0B0B0B 100%)"></div>
       <div style="position:relative;max-width:1480px;width:100%;margin:0 auto;padding:clamp(28px,4vw,48px) clamp(16px,3vw,36px) clamp(44px,6vw,84px);display:flex;flex-direction:column;gap:22px">
         <nav aria-label="Você está em" style="font-size:12px;color:#C5C2BB">
@@ -122,9 +122,9 @@
                 <h3 style="margin:0;font-size:clamp(24px,2.4vw,32px);font-weight:700;line-height:1.06;letter-spacing:-.02em">{{ u.logradouro }}</h3>
                 <p style="margin:0;font-size:14px;line-height:1.6;color:#D6D3CC">{{ u.bairro }} · {{ u.cidade }} — {{ u.estado }} · CEP {{ u.cep }}</p>
                 <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:6px">
-                  <a href="{{ u.pagina }}" style="display:inline-flex;align-items:center;justify-content:center;min-height:46px;padding:12px 18px;border-radius:100px;background:#F6F4EF;color:#0B0B0B;font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;text-decoration:none;transition:background .35s ease" style-hover="background:#B79A6A;color:#0B0B0B">Conhecer unidade</a>
-                  <a href="{{ u.agendar }}" target="_blank" rel="noopener noreferrer" onClick="{{ u.onAgendar }}" style="display:inline-flex;align-items:center;justify-content:center;min-height:46px;padding:12px 18px;border-radius:100px;border:1px solid rgba(246,244,239,.42);color:#F6F4EF;font-size:12px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;text-decoration:none;transition:border-color .35s ease,color .35s ease" style-hover="border-color:#B79A6A;color:#B79A6A">Agendar</a>
-                  <a href="{{ u.rota }}" target="_blank" rel="noopener noreferrer" onClick="{{ u.onRota }}" style="display:inline-flex;align-items:center;justify-content:center;min-height:46px;padding:12px 14px;color:#C5C2BB;font-size:12px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;text-decoration:none" style-hover="color:#B79A6A">Como chegar</a>
+                  <a href="{{ u.pagina }}" aria-label="Conhecer a unidade {{ u.curto }}" style="display:inline-flex;align-items:center;justify-content:center;min-height:46px;padding:12px 18px;border-radius:100px;background:#F6F4EF;color:#0B0B0B;font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;text-decoration:none;transition:background .35s ease" style-hover="background:#B79A6A;color:#0B0B0B">Conhecer unidade</a>
+                  <a href="{{ u.agendar }}" aria-label="Agendar na unidade {{ u.curto }}" target="_blank" rel="noopener noreferrer" onClick="{{ u.onAgendar }}" style="display:inline-flex;align-items:center;justify-content:center;min-height:46px;padding:12px 18px;border-radius:100px;border:1px solid rgba(246,244,239,.42);color:#F6F4EF;font-size:12px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;text-decoration:none;transition:border-color .35s ease,color .35s ease" style-hover="border-color:#B79A6A;color:#B79A6A">Agendar</a>
+                  <a href="{{ u.rota }}" aria-label="Como chegar à unidade {{ u.curto }}" target="_blank" rel="noopener noreferrer" onClick="{{ u.onRota }}" style="display:inline-flex;align-items:center;justify-content:center;min-height:46px;padding:12px 14px;color:#C5C2BB;font-size:12px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;text-decoration:none" style-hover="color:#B79A6A">Como chegar</a>
                 </div>
               </div>
             </article>
@@ -470,6 +470,10 @@ class Component extends DCLogic {
   componentDidUpdate() { this.revelar(); }
 
   componentDidMount() {
+    // Quem esta na pagina de uma unidade ja escolheu o endereco: o "Agendar"
+    // do cabecalho nao deve perguntar de novo.
+    const Mx = this.M();
+    if (Mx) Mx.unidadeDaPagina = Mx.locations.some(l => l.id === this.props.slug) ? this.props.slug : null;
     this.onResize = () => this.setState({ w: window.innerWidth });
     this.onResize();
     window.addEventListener('resize', this.onResize);
@@ -580,8 +584,6 @@ class Component extends DCLogic {
     ];
     const faqUnidade = (l) => [
       { q: 'Como agendo nesta unidade?', a: 'Toque em Agendar nesta unidade. Você segue para a agenda online da Morenos e escolhe o horário.' },
-      { q: 'Qual o horário de funcionamento?', a: horarios.join('. ') + '.' },
-      { q: 'Como chego?', a: 'O endereço é ' + l.enderecoLinha + '. Use o botão Como chegar para abrir a rota no Google Maps.' },
       { q: 'Posso ir sem agendar?', a: 'O mais seguro é agendar antes, para garantir o horário. Se preferir, fale pelo WhatsApp.' },
     ];
     const paginaUnidade = (id, o) => {
@@ -594,9 +596,9 @@ class Component extends DCLogic {
           ctas: [this.cta('Agendar nesta unidade', l.agendar, true, true, () => { M.setUnit(id); M.track('booking_click', { unit: id, destino: 'cashbarber' }); }), this.cta('Como chegar', l.rota, false, true, () => M.track('route_click', { unit: id }))] }),
         { tipo: 'info', h2: 'Informações da unidade', linhas: [
           { k: 'Endereço', vs: [l.logradouro, l.bairro, l.cidade + ' — ' + l.estado, 'CEP ' + l.cep] },
-          { k: 'Horário', vs: horarios },
+          { k: 'Horário', vs: horarios.concat(['O mesmo nas três unidades.']) },
           { k: 'Agendamento', vs: ['Online, pela agenda da Morenos.'], link: { label: 'Agendar', href: l.agendar, target: '_blank', onClick: () => { M.setUnit(id); M.track('booking_click', { unit: id }); } } },
-          { k: 'WhatsApp', vs: [M.whatsapp.display], link: { label: 'Conversar', href: M.waLink(), target: '_blank', onClick: () => M.track('whatsapp_click', { unit: id }) } },
+          { k: 'WhatsApp', vs: [M.whatsapp.display, 'Canal único para as três unidades.'], link: { label: 'Conversar', href: M.waLink(this.mensagemWa(id)), target: '_blank', onClick: () => M.track('whatsapp_click', { unit: id }) } },
         ] },
         this.texto({ id: 'servicos', label: 'Serviços', h2: o.servicosTitulo, paragrafos: ['Corte, barba, estética e tratamentos. Escolha o serviço na agenda, ao marcar o horário.'], links: servicoLinks, foto: o.foto2, alt: o.alt2, ordemFoto: o.inverter ? 0 : 2 }),
         { tipo: 'mapa', h2: l.curto, texto: l.enderecoLinha + '. ' + o.referencia, mapa: l.mapaEmbed, mapaTitulo: 'Mapa da unidade ' + l.curto, rota: l.rota, onRota: () => M.track('route_click', { unit: id }) },
@@ -668,8 +670,8 @@ class Component extends DCLogic {
       ],
 
       'corte-masculino': () => [
-        this.hero({ migalhas: this.migalhas([{ label: 'Serviços', href: R.servicos }, { label: 'Corte Masculino' }]), label: 'Serviço · Cabelo', h1: 'Corte masculino no Salão Morenos em Serra', texto: 'Corte masculino personalizado de acordo com referências, estilo e preferência do cliente, com atenção ao acabamento.', foto: 'img/foto-corte.webp', alt: 'Corte masculino em andamento com pente e máquina', ctas: [this.ctaEscolher('Agendar corte', true), this.cta('Ver unidades', R.unidades, false)] }),
-        this.texto({ label: 'O serviço', h2: 'Um corte que combina com você e com a sua rotina.', paragrafos: ['Você chega com uma referência ou só com uma ideia. O barbeiro ajuda a traduzir isso em um corte que funciona no seu tipo de cabelo e no tempo que você tem para arrumar.', 'O atendimento leva cerca de 30 minutos.'], foto: 'img/foto-atendimento.webp', alt: 'Barbeiro cortando o cabelo de um cliente', ordemFoto: 2 }),
+        this.hero({ migalhas: this.migalhas([{ label: 'Serviços', href: R.servicos }, { label: 'Corte Masculino' }]), label: 'Serviço · Cabelo', h1: 'Corte masculino no Salão Morenos', texto: 'O corte é combinado antes de a máquina ligar: a referência, o que manter, o que mudar e quanto tempo você tem para arrumar o cabelo de manhã.', foto: 'img/foto-corte.webp', alt: 'Corte masculino em andamento com pente e máquina', ctas: [this.ctaEscolher('Agendar corte', true), this.cta('Ver unidades', R.unidades, false)] }),
+        this.texto({ label: 'O serviço', h2: 'Um corte que combina com você e com a sua rotina.', paragrafos: ['Você chega com uma referência ou só com uma ideia. O barbeiro ajuda a traduzir isso em um corte que funciona no seu tipo de cabelo e no tempo que você tem para arrumar.', 'O atendimento leva cerca de 30 minutos.'], links: [{ label: 'Barboterapia em Serra', href: R.barboterapia }, { label: 'Consultoria de visagismo', href: R.visagismo }], foto: 'img/foto-atendimento.webp', alt: 'Barbeiro cortando o cabelo de um cliente', ordemFoto: 2 }),
         { tipo: 'passos', label: 'Como funciona', h2: 'Do primeiro papo ao acabamento.', claro: true, passos: [
           { n: '01', t: 'Conversa', d: 'Você mostra a referência e conta o que quer manter e o que quer mudar.' },
           { n: '02', t: 'Estilo', d: 'O barbeiro sugere ajustes de altura, volume e contorno para o seu cabelo.' },
@@ -678,7 +680,6 @@ class Component extends DCLogic {
         { tipo: 'galeria', h2: 'Cortes feitos na Morenos.', fotos: galeriaBase },
         { tipo: 'unidades', id: 'onde', label: 'Onde fazer', h2: 'Escolha a unidade.', texto: 'O corte masculino é o serviço principal da Morenos.', lista: this.unidades() },
         { tipo: 'faq', id: 'duvidas', h2: 'Dúvidas sobre o corte.', perguntas: [
-          { q: 'Quanto tempo leva?', a: 'Cerca de 30 minutos.' },
           { q: 'Preciso levar uma referência?', a: 'Não é obrigatório, mas ajuda. Uma foto no celular já é suficiente.' },
           { q: 'Vocês fazem corte infantil?', a: 'Sim, o Corte Kids faz parte do catálogo de serviços.' },
           { q: 'Dá para fazer corte e barba no mesmo horário?', a: 'Sim. Escolha os dois serviços ao agendar.' } ] },
@@ -686,33 +687,30 @@ class Component extends DCLogic {
       ],
 
       barboterapia: () => [
-        this.hero({ migalhas: this.migalhas([{ label: 'Serviços', href: R.servicos }, { label: 'Barboterapia' }]), label: 'Serviço · Barba', h1: 'Barboterapia no Salão Morenos em Serra', texto: 'Um cuidado completo com a barba, com mais tempo e atenção do que o alinhamento do dia a dia.', foto: 'img/foto-barba.webp', alt: 'Acabamento de barba com máquina', ctas: [this.ctaEscolher('Agendar barboterapia', true), this.cta('Ver todos os serviços', R.servicos, false)] }),
-        this.texto({ label: 'O que é', h2: 'Mais do que tirar o excesso.', paragrafos: ['A barboterapia cuida da pele e dos fios da barba ao mesmo tempo. O objetivo é deixar a barba alinhada, macia e com acabamento limpo.', 'O atendimento leva cerca de 40 minutos. Para um ajuste rápido de contorno, existe também a Barba Alinhada, em cerca de 20 minutos.'], foto: 'img/foto-atendimento-2.webp', alt: 'Barbeiro atendendo um cliente', ordemFoto: 0 }),
+        this.hero({ migalhas: this.migalhas([{ label: 'Serviços', href: R.servicos }, { label: 'Barboterapia' }]), label: 'Serviço · Barba', h1: 'Barboterapia no Salão Morenos', texto: 'Um cuidado completo com a barba, com mais tempo e atenção do que o alinhamento do dia a dia.', foto: 'img/foto-barba.webp', alt: 'Acabamento de barba com máquina', ctas: [this.ctaEscolher('Agendar barboterapia', true), this.cta('Ver todos os serviços', R.servicos, false)] }),
+        this.texto({ label: 'O que é', h2: 'Mais do que tirar o excesso.', paragrafos: ['A barboterapia cuida da pele e dos fios da barba ao mesmo tempo. O objetivo é deixar a barba alinhada, macia e com acabamento limpo.', 'A diferença para a Barba Alinhada é o que entra antes e depois do desenho: na barboterapia a pele é preparada e a barba é finalizada, e o atendimento leva cerca de 40 minutos. A Barba Alinhada é só o ajuste de contorno, em cerca de 20 minutos.'], foto: 'img/foto-atendimento-2.webp', alt: 'Barbeiro atendendo um cliente', ordemFoto: 0 }),
         { tipo: 'passos', label: 'Etapas', h2: 'Como é o atendimento.', claro: true, passos: [
           { n: '01', t: 'Preparo', d: 'Preparo da pele e dos fios antes de começar.' },
           { n: '02', t: 'Desenho', d: 'Definição do formato e dos contornos com você.' },
           { n: '03', t: 'Alinhamento', d: 'Acerto do comprimento e do volume.' },
           { n: '04', t: 'Finalização', d: 'Cuidado com a pele e acabamento.' } ] },
-        this.texto({ claro: false, label: 'Para quem', h2: 'Para quem usa barba e quer cuidar dela.', paragrafos: ['Faz sentido para quem está deixando a barba crescer, para quem sente a pele irritada depois de fazer em casa ou para quem quer chegar arrumado a uma ocasião.'], foto: null }),
-        { tipo: 'unidades', id: 'onde', label: 'Onde fazer', h2: 'Escolha a unidade.', texto: 'A barboterapia é oferecida nas três unidades; confira a disponibilidade na agenda.', lista: this.unidades() },
+        this.texto({ claro: false, label: 'Para quem', h2: 'Para quem usa barba e quer cuidar dela.', paragrafos: ['Faz sentido para quem está deixando a barba crescer, para quem sente a pele irritada depois de fazer em casa ou para quem quer chegar arrumado a uma ocasião.'], links: [{ label: 'Corte masculino em Serra', href: R['corte-masculino'] }, { label: 'Consultoria de visagismo', href: R.visagismo }], foto: null }),
+        { tipo: 'unidades', id: 'onde', label: 'Onde fazer', h2: 'Escolha a unidade.', texto: 'Confira a disponibilidade da barboterapia na agenda, ao escolher a unidade.', lista: this.unidades() },
         { tipo: 'faq', id: 'duvidas', h2: 'Dúvidas sobre barboterapia.', perguntas: [
-          { q: 'Quanto tempo leva?', a: 'Cerca de 40 minutos.' },
-          { q: 'Qual a diferença para a Barba Alinhada?', a: 'A Barba Alinhada é um ajuste de contorno, em cerca de 20 minutos. A barboterapia inclui preparo e finalização da pele.' },
           { q: 'Está nos planos do Clube?', a: 'Os planos com barba, como o Combo Supremo e o Barba Premium, incluem barba. Confira os itens de cada plano na página do Clube.' } ] },
         this.ctaFinal({ h2: 'Marque sua barboterapia.', texto: 'Escolha a unidade mais perto do seu caminho e continue para a agenda.' }),
       ],
 
       visagismo: () => [
         this.hero({ migalhas: this.migalhas([{ label: 'Serviços', href: R.servicos }, { label: 'Visagismo' }]), label: 'Consultoria', h1: 'Visagismo masculino no Salão Morenos', texto: 'Um atendimento pensado para entender suas referências, características e estilo antes de definir o visual.', foto: 'img/foto-visagismo.webp', alt: 'Barbeiro avaliando o corte de um cliente', ctas: [this.ctaEscolher('Agendar visagismo', true), this.cta('Ver todos os serviços', R.servicos, false)] }),
-        this.texto({ label: 'O que é', h2: 'O visual pensado a partir de você.', paragrafos: ['O visagismo leva em conta o formato do rosto, o tipo de cabelo, a barba e a sua rotina para chegar a um corte que faça sentido para você.', 'É uma consultoria com tempo: cerca de 2 horas, da conversa ao corte e à barba.'], foto: 'img/foto-atendimento.webp', alt: 'Barbeiro conversando com um cliente na cadeira', ordemFoto: 2 }),
+        this.texto({ label: 'O que é', h2: 'O visual pensado a partir de você.', paragrafos: ['O visagismo leva em conta o formato do rosto, o tipo de cabelo, a barba e a sua rotina para chegar a um corte que faça sentido para você.', 'É uma consultoria com tempo: cerca de 2 horas, da conversa ao corte e à barba.'], links: [{ label: 'Corte masculino em Serra', href: R['corte-masculino'] }, { label: 'Barboterapia em Serra', href: R.barboterapia }], foto: 'img/foto-atendimento.webp', alt: 'Barbeiro conversando com um cliente na cadeira', ordemFoto: 2 }),
         { tipo: 'passos', label: 'Como funciona', h2: 'Quatro etapas, sem pressa.', claro: true, passos: [
           { n: '01', t: 'Conversa e referências', d: 'Você conta sua rotina, o que gosta e o que não gosta, e mostra referências.' },
           { n: '02', t: 'Análise visual', d: 'Observação do formato do rosto, do cabelo e da barba.' },
           { n: '03', t: 'Definição', d: 'Proposta de corte e barba, combinada com você antes de começar.' },
           { n: '04', t: 'Resultado', d: 'Corte e barba personalizados, com orientação de manutenção.' } ] },
-        { tipo: 'unidades', id: 'onde', label: 'Onde fazer', h2: 'Escolha a unidade.', texto: 'Por durar cerca de 2 horas, o visagismo precisa ser agendado com antecedência.', lista: this.unidades() },
+        { tipo: 'unidades', id: 'onde', label: 'Onde fazer', h2: 'Escolha a unidade.', texto: 'Por durar cerca de 2 horas, o visagismo pede agendamento com antecedência. Confira a disponibilidade na agenda, ao escolher a unidade.', lista: this.unidades() },
         { tipo: 'faq', id: 'duvidas', h2: 'Dúvidas sobre visagismo.', perguntas: [
-          { q: 'Quanto tempo leva?', a: 'Cerca de 2 horas.' },
           { q: 'O corte e a barba estão incluídos?', a: 'Sim. A consultoria termina com corte e barba personalizados.' },
           { q: 'Preciso levar referências?', a: 'Ajuda bastante. Fotos de cortes que você gosta e de cortes que você não quer.' } ] },
         this.ctaFinal({ h2: 'Agende seu visagismo.', texto: 'Escolha a unidade e reserve o horário da consultoria.' }),
@@ -720,7 +718,7 @@ class Component extends DCLogic {
 
       'dia-do-noivo': () => [
         this.hero({ migalhas: this.migalhas([{ label: 'Serviços', href: R.servicos }, { label: 'Dia do Noivo' }]), label: 'Dia do Noivo', h1: 'Dia do Noivo no Salão Morenos', texto: 'Cabelo e barba em dia para o casamento, com horário reservado para você e, se quiser, para os padrinhos.', foto: 'img/foto-salao.webp', alt: 'Ambiente interno do Salão Morenos', posicao: '50% 50%', ctas: [this.cta('Consultar Dia do Noivo', '#consulta', true), this.ctaWa('Falar pelo WhatsApp', false, M.contactFlows.noivo)] }),
-        this.texto({ label: 'A proposta', h2: 'Um dia a menos para se preocupar.', paragrafos: ['No Dia do Noivo, o atendimento é combinado com antecedência para encaixar no cronograma do casamento.', 'Conte a data e quantas pessoas vão junto. A equipe responde com as possibilidades de atendimento.'], foto: 'img/foto-atendimento-2.webp', alt: 'Barbeiro atendendo um cliente', ordemFoto: 2 }),
+        this.texto({ label: 'A proposta', h2: 'Um dia a menos para se preocupar.', paragrafos: ['No Dia do Noivo, o atendimento é combinado com antecedência para encaixar no cronograma do casamento.', 'Conte a data e quantas pessoas vão junto. A equipe responde com as possibilidades de atendimento.'], links: [{ label: 'Corte masculino em Serra', href: R['corte-masculino'] }, { label: 'Barboterapia em Serra', href: R.barboterapia }], foto: 'img/foto-atendimento-2.webp', alt: 'Barbeiro atendendo um cliente', ordemFoto: 2 }),
         { tipo: 'passos', label: 'Como solicitar', h2: 'Três passos até o horário reservado.', claro: true, passos: [
           { n: '01', t: 'Envie os dados', d: 'Preencha o formulário com a data do casamento e o número de pessoas.' },
           { n: '02', t: 'Converse', d: 'A conversa continua pelo WhatsApp da Morenos.' },
@@ -731,6 +729,7 @@ class Component extends DCLogic {
           { nome: 'data', label: 'Data do casamento', tipo: 'date', obrigatorio: true },
           { nome: 'pessoas', label: 'Número aproximado de pessoas', tipo: 'number', modo: 'numeric' },
           { nome: 'mensagem', label: 'Mensagem', tipo: 'area', inteira: true } ] },
+        { tipo: 'unidades', id: 'onde', label: 'Onde acontece', h2: 'O atendimento é em uma das três unidades.', texto: 'A unidade é combinada na conversa, de acordo com a data e o número de pessoas.', lista: this.unidades() },
         { tipo: 'faq', id: 'duvidas', h2: 'Dúvidas sobre o Dia do Noivo.', perguntas: [
           { q: 'Com quanto tempo de antecedência devo consultar?', a: 'Quanto antes, melhor, para garantir o horário no dia do casamento.' },
           { q: 'Os padrinhos podem ir junto?', a: 'Sim. Informe o número aproximado de pessoas no formulário.' },
@@ -740,7 +739,7 @@ class Component extends DCLogic {
       ],
 
       'o-clube': () => [
-        this.hero({ migalhas: this.migalhas([{ label: 'O Clube' }]), label: 'O Clube', h1: 'Morenos faz parte da sua rotina? Conheça o Clube.', texto: 'A assinatura mensal da Morenos. Você escolhe um plano e mantém corte e barba em dia sem pagar a cada visita.', foto: 'img/foto-atendimento.webp', alt: 'Barbeiro cortando o cabelo de um cliente', ctas: [this.cta('Ver planos', '#planos', true), this.ctaWa('Agendar como visitante', false)] }),
+        this.hero({ migalhas: this.migalhas([{ label: 'O Clube' }]), label: 'O Clube', h1: 'Clube Morenos: a assinatura mensal da barbearia', texto: 'Você escolhe um plano, paga uma mensalidade e agenda quando precisar, em qualquer uma das três unidades.', foto: 'img/foto-atendimento.webp', alt: 'Barbeiro cortando o cabelo de um cliente', ctas: [this.cta('Ver planos', '#planos', true), this.ctaWa('Agendar como visitante', false)] }),
         { tipo: 'passos', id: 'como-funciona', label: 'Como funciona', h2: 'Assinar é simples.', claro: true, passos: [
           { n: '01', t: 'Escolha o plano', d: 'Ilimitados, custo-benefício ou família. Cada plano tem seus itens.' },
           { n: '02', t: 'Assine', d: 'Pela plataforma da Morenos, com cartão de crédito recorrente.' },
@@ -748,13 +747,16 @@ class Component extends DCLogic {
         this.texto({ label: 'Para quem é', h2: 'Para quem não quer deixar o corte passar do ponto.', paragrafos: ['Se você corta o cabelo ou faz a barba com frequência, o plano mensal sai mais em conta e tira a decisão do caminho.'], itens: ['Praticidade: a mensalidade já está paga.', 'Recorrência: o cuidado entra na rotina.', 'Descontos em serviços e produtos, conforme o plano.'], foto: 'img/foto-barba.webp', alt: 'Acabamento de barba', ordemFoto: 2 }),
         { tipo: 'planos', id: 'planos', label: 'Planos', h2: 'Escolha o seu plano.', nota: 'Valores mensais. A assinatura é feita na plataforma da Morenos, em nova aba.' },
         { tipo: 'faq', id: 'duvidas', h2: 'Dúvidas sobre o Clube.', perguntas: faqClube },
-        { tipo: 'texto', label: 'Assinar', h2: 'Pronto para entrar no Clube?', paragrafos: ['Assine online ou conheça a Morenos antes, como visitante.'], ctas: [this.ctaClube('Assinar agora', true), this.ctaWa('Agendar como visitante', false)], foto: 'img/foto-salao.webp', alt: 'Ambiente interno do Salão Morenos', ordemFoto: 2, claro: false },
+        { tipo: 'texto', label: 'Assinar', h2: 'Pronto para entrar no Clube?', paragrafos: ['Assine online ou conheça a Morenos antes, como visitante.'], links: [{ label: 'Ver as três unidades', href: R.unidades }, { label: 'Conhecer os serviços', href: R.servicos }], ctas: [this.ctaClube('Assinar agora', true), this.ctaWa('Agendar como visitante', false)], foto: 'img/foto-salao.webp', alt: 'Ambiente interno do Salão Morenos', ordemFoto: 2, claro: false },
       ],
 
       cultura: () => [
         this.hero({ migalhas: this.migalhas([{ label: 'Sobre a Morenos' }]), label: 'Sobre a Morenos', h1: 'Uma marca que faz parte de Serra.', texto: 'Três endereços em Serra para quem já conhece a marca e para quem está chegando pela primeira vez.', foto: 'img/foto-salao.webp', alt: 'Ambiente interno do Salão Morenos', posicao: '50% 50%', ctas: [this.cta('Ver unidades', R.unidades, true), this.cta('Conhecer serviços', R.servicos, false)] }),
         this.texto({ label: 'Nossa maneira de atender', h2: 'Ouvir primeiro. Cortar depois.', paragrafos: ['Na Morenos, o atendimento começa por uma conversa. O que você quer, como é a sua rotina, quanto tempo você tem para arrumar o cabelo de manhã.', 'Daí sai um corte que funciona na vida real, e não só na saída da cadeira.'], foto: 'img/foto-atendimento.webp', alt: 'Barbeiro conversando com um cliente', ordemFoto: 2 }),
         this.texto({ claro: true, label: 'Cuidado com pessoas', h2: 'Cuidado masculino sem cerimônia.', paragrafos: ['Corte, barba e estética para quem quer se sentir bem, do corte de rotina a uma ocasião especial. Atendimento próximo, sem pose.'], foto: 'img/foto-crianca.webp', alt: 'Criança cortando o cabelo no Salão Morenos', ordemFoto: 0 }),
+        // /corporativo/ e /trabalhe-conosco/ so eram alcancaveis pelo rodape:
+        // a pagina que conta quem e a marca e o lugar certo para elas.
+        this.texto({ label: 'Além da cadeira', h2: 'Empresas e quem quer trabalhar com a gente.', paragrafos: ['A Morenos também atende empresas que querem oferecer corte e barba como benefício, e recebe o interesse de barbeiros que querem fazer parte do time.'], links: [{ label: 'Morenos para empresas', href: R.corporativo }, { label: 'Trabalhe conosco', href: R['trabalhe-conosco'] }], foto: null }),
         { tipo: 'galeria', h2: 'O dia a dia na Morenos.', fotos: galeriaBase },
         { tipo: 'unidades', id: 'unidades', label: 'Onde estamos', h2: 'Três endereços em Serra.', texto: 'Cidade Continental e duas unidades em Novo Horizonte.', lista: this.unidades() },
         this.ctaFinal({ h2: 'Conheceu a Morenos. Agora escolha a sua.', texto: 'Agende em uma das três unidades de Serra.' }),
@@ -762,7 +764,7 @@ class Component extends DCLogic {
 
       corporativo: () => [
         this.hero({ migalhas: this.migalhas([{ label: 'Corporativo' }]), label: 'Corporativo', h1: 'Morenos para empresas.', texto: 'Planos de corte e barba para colaboradores e atendimento para eventos da sua empresa.', foto: 'img/foto-atendimento-2.webp', alt: 'Barbeiro atendendo um cliente', ctas: [this.cta('Solicitar proposta', '#proposta', true), this.ctaWa('Falar pelo WhatsApp', false, M.contactFlows.corporativo)] }),
-        this.texto({ label: 'Para quem é', h2: 'Para empresas que querem cuidar do time.', paragrafos: ['Um benefício que o colaborador usa todo mês. A empresa contrata o plano e o time agenda nas unidades da Morenos em Serra.'], itens: ['Benefício simples de explicar e de usar.', 'Atendimento nas três unidades da Morenos.', 'Opção de atendimento em grupo para eventos.'], foto: 'img/foto-corte.webp', alt: 'Corte em andamento', ordemFoto: 2 }),
+        this.texto({ label: 'Para quem é', h2: 'Para empresas que querem cuidar do time.', paragrafos: ['Um benefício que o colaborador usa todo mês. A empresa contrata o plano e o time agenda nas unidades da Morenos em Serra.'], itens: ['Benefício simples de explicar e de usar.', 'Atendimento nas três unidades da Morenos.', 'Opção de atendimento em grupo para eventos.'], links: [{ label: 'Ver as três unidades', href: R.unidades }], foto: 'img/foto-corte.webp', alt: 'Corte em andamento', ordemFoto: 2 }),
         { tipo: 'ofertas', id: 'planos', label: 'Planos', h2: 'Formatos para cada empresa.', ofertas: M.corporatePlans },
         { tipo: 'passos', label: 'Como funciona', h2: 'Da proposta ao primeiro corte.', claro: true, passos: [
           { n: '01', t: 'Contato', d: 'Envie os dados da empresa e o número aproximado de colaboradores.' },
@@ -855,7 +857,10 @@ class Component extends DCLogic {
         // Fotos do acervo têm 720–1000 px: no hero dividido a foto nunca passa da largura original.
         const dims = { 'img/unidade-cidade-continental.webp': [1000, 667, '3 / 2', '640px'] };
         const d = dims[s.foto] || [800, 1000, '4 / 5', '520px'];
-        Object.assign(base, { fotoW: d[0], fotoH: d[1], aspect: d[2], fotoMax: d[3] });
+        // srcset das imagens grandes (M.imagens vem do build); vazio = o
+        // navegador usa o src, como antes
+        Object.assign(base, { fotoW: d[0], fotoH: d[1], aspect: d[2], fotoMax: d[3],
+          srcset: ((M && M.imagens) || {})[s.foto] || '' });
       }
       if (t === 'cta') { base.mostraWa = !(s.ctas || []).some(c => /wa\.me/.test(c.href || '')); base.wa = M.waLink(this.mensagemWa()); base.onWa = () => M.track('whatsapp_click', { origem: this.props.slug + '-cta' }); }
       if (t === 'faq') {

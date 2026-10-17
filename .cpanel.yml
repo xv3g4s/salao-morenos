@@ -3,9 +3,29 @@ deployment:
   tasks:
     # Publica APENAS o conteudo de public/ em public_html.
     # Tudo que nao deve ir para o ar simplesmente nao vive dentro de public/.
+    #
+    # ATENCAO AO AMBIENTE: o que vai para o ar e o public/ que estiver
+    # commitado, e ele e construido para UM ambiente:
+    #   python3 fonte/build.py                -> producao (salaomorenos.com.br)
+    #   python3 fonte/build.py --homologacao  -> aprovacao (novosite....)
+    # Publicar no subdominio um public/ de producao coloca o provisorio para
+    # competir na busca com o dominio principal. O build recusa misturar os
+    # dois (confere_indexacao em fonte/build.py), mas quem escolhe o ambiente
+    # ao construir e quem publica.
     - export DEPLOYPATH=$HOME/public_html/
     - /bin/mkdir -p $DEPLOYPATH
-    # "public/." inclui os arquivos ocultos, como o .htaccess
-    - /bin/cp -R public/. $DEPLOYPATH
+    # Com "cp -R" puro, uma pagina removida do public/ continuava respondendo
+    # 200 no servidor para sempre — URL fantasma e exatamente o que uma
+    # migracao nao pode deixar para tras. Com rsync --delete, o servidor fica
+    # igual ao public/. O --exclude protege o que nao vem do repositorio
+    # (.well-known do certificado, cgi-bin da hospedagem).
+    # Se a conta nao tiver rsync, cai no cp e a publicacao continua
+    # funcionando: so nao remove o que saiu (conferir a mao nesse caso).
+    - >-
+      /bin/sh -c 'if command -v rsync >/dev/null 2>&1; then
+      rsync -a --delete --exclude=".well-known/" --exclude="cgi-bin/" --exclude=".htpasswd"
+      public/ "$DEPLOYPATH";
+      else echo "rsync ausente: publicando com cp (sem remover arquivos antigos)";
+      cp -R public/. "$DEPLOYPATH"; fi'
     # Garante que arquivos internos nunca fiquem servidos, mesmo se sobrarem de um deploy antigo
     - /bin/rm -f $DEPLOYPATH/.cpanel.yml $DEPLOYPATH/.gitignore $DEPLOYPATH/README.md

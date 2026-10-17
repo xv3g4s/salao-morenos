@@ -49,6 +49,8 @@
       }
     }
   </style>
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://novosite.salaomorenos.com.br/#organizacao","name":"Salão Morenos","url":"https://novosite.salaomorenos.com.br/","logo":"https://novosite.salaomorenos.com.br/favicon-192.png","areaServed":"Serra, ES","contactPoint":{"@type":"ContactPoint","contactType":"customer service","telephone":"+5527998713993","availableLanguage":"pt-BR"},"subOrganization":[{"@id":"https://novosite.salaomorenos.com.br/unidades/cidade-continental/#unidade"},{"@id":"https://novosite.salaomorenos.com.br/unidades/novo-horizonte-av-brasil/#unidade"},{"@id":"https://novosite.salaomorenos.com.br/unidades/novo-horizonte-av-industrial/#unidade"}]},{"@type":"WebSite","@id":"https://novosite.salaomorenos.com.br/#site","url":"https://novosite.salaomorenos.com.br/","name":"Salão Morenos","inLanguage":"pt-BR","publisher":{"@id":"https://novosite.salaomorenos.com.br/#organizacao"}},{"@type":"BreadcrumbList","@id":"https://novosite.salaomorenos.com.br/politica-de-privacidade/#trilha","itemListElement":[{"@type":"ListItem","position":1,"name":"Início","item":"https://novosite.salaomorenos.com.br/"},{"@type":"ListItem","position":2,"name":"Política de Privacidade","item":"https://novosite.salaomorenos.com.br/politica-de-privacidade/"}]}]}</script>
+<meta name="robots" content="noindex, nofollow">
 <link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="icon" href="/favicon-192.png" sizes="192x192" type="image/png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
@@ -63,9 +65,10 @@ transition-duration:.01ms !important;scroll-behavior:auto !important}}</style>
   var C = {};
 
   C.env = {
-    // "homologacao" aplica noindex,nofollow. Mudar para "producao" ao migrar para o domínio principal.
-    stage: 'producao',  // fixado no build
-    siteUrl: 'https://salaomorenos.com.br',
+    // Fixado pelo build. Hoje serve só para o analytics saber de onde vem o evento:
+    // a indexação é decidida no HTML, não aqui.
+    stage: 'homologacao',  // fixado no build
+    siteUrl: 'https://novosite.salaomorenos.com.br',
   };
 
   C.brand = { name: 'Salão Morenos', city: 'Serra', state: 'ES', region: 'Serra — Espírito Santo' };
@@ -113,6 +116,8 @@ transition-duration:.01ms !important;scroll-behavior:auto !important}}</style>
     privacidade: '/politica-de-privacidade/', termos: '/termos-de-uso/',
   };
 
+  C.imagens = {"/img/hero-wide.webp": "/img/hero-wide-900.webp 900w, /img/hero-wide-1200.webp 1200w, /img/hero-wide.webp 1672w"};  // gerado no build
+
   // --- aplicado no build (fonte/build.py) ---
   // No prototipo, C.routes aponta para arquivos (unidades.dc.html) porque
   // e assim que ele e aberto. No site publicado, link interno tem que ser
@@ -155,7 +160,9 @@ transition-duration:.01ms !important;scroll-behavior:auto !important}}</style>
   });
   C.locations.forEach(function (l) {
     l.enderecoLinha = l.logradouro + ', ' + l.bairro + ', ' + l.cidade + ' — ' + l.estado + ', CEP ' + l.cep;
-    l.rota = l.googleProfile || ('https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(l.logradouro + ', ' + l.bairro + ', ' + l.cidade + ' - ' + l.estado + ', ' + l.cep));
+    // "Como chegar" abre a ROTA ate o endereco, nao uma busca por ele: a busca
+    // devolve uma lista e o visitante ainda tem que escolher.
+    l.rota = 'https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(l.logradouro + ', ' + l.bairro + ', ' + l.cidade + ' - ' + l.estado + ', ' + l.cep);
     l.mapaEmbed = 'https://maps.google.com/maps?q=' + encodeURIComponent(l.logradouro + ', ' + l.bairro + ', ' + l.cidade + ' - ' + l.estado + ', ' + l.cep) + '&z=16&output=embed';
     l.agendar = l.bookingUrl || C.links.booking;
     l.pagina = C.routes[l.id];
@@ -197,9 +204,9 @@ transition-duration:.01ms !important;scroll-behavior:auto !important}}</style>
       itens: ['Corte personalizado', 'Desconto em serviços da barbearia', 'Desconto em produtos'] },
     { id: 'plano-due', nome: 'Plano Due', tipo: ['custo'], preco: 'R$ 68,99', desc: 'Barba e corte ou 2 cortes.',
       itens: ['Cabelo ou barba', 'Desconto em serviços', 'Desconto em produtos'] },
-    { id: 'familia-8', nome: 'Família Corte e Barba Clássico', tipo: ['familia'], preco: 'R$ 209,90', desc: '8 procedimentos mensais.',
+    { id: 'familia-8', nome: 'Família Corte e Barba Clássico — 8 procedimentos', tipo: ['familia'], preco: 'R$ 209,90', desc: '8 procedimentos mensais, para dividir entre a família.',
       itens: ['Cabelo ou barba', 'Descontos em serviços', 'Descontos em produtos'] },
-    { id: 'familia-6', nome: 'Família Corte e Barba Clássico', tipo: ['familia'], preco: 'R$ 169,90', desc: '6 procedimentos mensais.',
+    { id: 'familia-6', nome: 'Família Corte e Barba Clássico — 6 procedimentos', tipo: ['familia'], preco: 'R$ 169,90', desc: '6 procedimentos mensais, para dividir entre a família.',
       itens: ['Cabelo ou barba', 'Descontos em serviços', 'Descontos em produtos'] },
   ];
   C.clubPlans.forEach(function (p) { p.source = 'legacy-site'; p.needsConfirmation = true; p.periodo = '/mês'; });
@@ -231,7 +238,7 @@ transition-duration:.01ms !important;scroll-behavior:auto !important}}</style>
     showOncePerSession: true, // true = só na primeira página da sessão
     minimumVisibleTime: 1200,
     maximumVisibleTime: 9000,
-    exitDuration: 560,
+    exitDuration: 420,
     sessionKey: 'morenos_intro_seen',
     logo: '/assets/morenos-loader-outline-white.webp', logoW: 720, logoH: 669,
   };
@@ -240,10 +247,10 @@ transition-duration:.01ms !important;scroll-behavior:auto !important}}</style>
   C.getUnit = function () { try { return localStorage.getItem(C.selectedUnitKey); } catch (e) { return null; } };
   C.setUnit = function (id) { try { localStorage.setItem(C.selectedUnitKey, id); } catch (e) {} C.track('unit_select', { unit: id }); };
 
-  // Homologação: noindex,nofollow controlado só por aqui.
-  if (C.env.stage === 'homologacao') {
-    var m = document.createElement('meta'); m.name = 'robots'; m.content = 'noindex, nofollow'; document.head.appendChild(m);
-  }
+  // O noindex de homologação NÃO mora aqui. Ele é escrito no <head> pelo build
+  // (fonte/build.py, --homologacao), porque o robô de busca lê o HTML que o
+  // servidor entrega e não espera o JavaScript da página rodar: um noindex
+  // injetado em tempo de execução pode simplesmente não ser visto.
 
   window.MORENOS = C;
 })();
@@ -277,7 +284,7 @@ transition-duration:.01ms !important;scroll-behavior:auto !important}}</style>
       showOncePerSession: C.showOncePerSession, sessionKey: C.sessionKey,
       logo: C.logo, logoW: C.logoW, logoH: C.logoH,
       minimumVisibleTime: 0,      // sem espera artificial: sai quando ficar pronta
-      maximumVisibleTime: 6000,   // rede de segurança, não alvo
+      maximumVisibleTime: 3500,   // rede de segurança, não alvo
       exitDuration: 260,
     };
   }
@@ -376,9 +383,16 @@ transition-duration:.01ms !important;scroll-behavior:auto !important}}</style>
     obs.observe(raiz, { attributes: true, attributeFilter: ['class'] });
     // sem runtime (JS bloqueado, erro de rede) a cópia estática é a página:
     // não faz sentido segurar a tela esperando uma troca que não vem
-    setTimeout(function () { obs.disconnect(); r(); }, 6000);
+    setTimeout(function () { obs.disconnect(); r(); }, 3500);
   });
-  var sinais = [domPronto, logoPronta, fontes, hero, carregou, montado];
+  // window.load espera TODA imagem que a pagina comecou a buscar, inclusive a
+  // que esta a tres rolagens de distancia. Numa rede de celular isso chegou a
+  // 6s com a tela de abertura na frente do conteudo — o preloader deixou de
+  // cobrir o carregamento e virou o carregamento. A espera continua, com
+  // teto: 1,5s depois de o resto estar pronto, a tela sai de qualquer forma.
+  // O que o visitante ve ja esta pintado; o que falta e rodape.
+  var carregouComTeto = Promise.race([carregou, espera(1500)]);
+  var sinais = [domPronto, logoPronta, fontes, hero, carregouComTeto, montado];
   var tudo = Promise.allSettled ? Promise.allSettled(sinais)
     : Promise.all(sinais.map(function (p) { return Promise.resolve(p).catch(function () {}); }));
   var minimo = reduz ? 0 : C.minimumVisibleTime;
@@ -388,7 +402,7 @@ transition-duration:.01ms !important;scroll-behavior:auto !important}}</style>
     if (saiu) return; saiu = true;
     marcarVisto();
     var dur = reduz ? 250 : C.exitDuration;
-    var pausa = reduz ? 0 : (curto ? 120 : 380);   // modo curto quase nao pausa
+    var pausa = reduz ? 0 : (curto ? 100 : 240);   // modo curto quase nao pausa
     el.classList.add('site-loader--ready');
     setTimeout(function () {
       var w = el.querySelector('.site-loader__logo-wrap');
@@ -447,10 +461,16 @@ html,body{background:#080908}
 <style>html,body{height:100%;margin:0}#dc-root,#dc-root>.sc-host{height:100%}</style>
 <title data-dc-tpl="1">Política de Privacidade | Salão Morenos</title>
 <meta name="description" content="Como o Salão Morenos trata dados pessoais no site, conforme a LGPD: formulários, agendamento, WhatsApp e serviços de terceiros." data-dc-tpl="2">
-<link rel="canonical" href="https://salaomorenos.com.br/politica-de-privacidade/" data-dc-tpl="3">
-<meta name="theme-color" content="#0B0B0B" data-dc-tpl="4">
-<script src="/smooth-scroll.js" defer="" data-dc-tpl="5"></script>
-<style data-dc-tpl="6">/* Poppins local, embutida no build */
+<link rel="canonical" href="https://novosite.salaomorenos.com.br/politica-de-privacidade/" data-dc-tpl="3">
+<meta property="og:type" content="website" data-dc-tpl="4">
+<meta property="og:locale" content="pt_BR" data-dc-tpl="5">
+<meta property="og:site_name" content="Salão Morenos" data-dc-tpl="6">
+<meta property="og:title" content="Política de Privacidade | Salão Morenos" data-dc-tpl="7">
+<meta property="og:description" content="Como o Salão Morenos trata dados pessoais no site, conforme a LGPD: formulários, agendamento, WhatsApp e serviços de terceiros." data-dc-tpl="8">
+<meta property="og:url" content="https://novosite.salaomorenos.com.br/politica-de-privacidade/" data-dc-tpl="9">
+<meta name="theme-color" content="#0B0B0B" data-dc-tpl="10">
+<script src="/smooth-scroll.js" defer="" data-dc-tpl="11"></script>
+<style data-dc-tpl="12">/* Poppins local, embutida no build */
 /* Poppins auto-hospedada. Os arquivos ja estavam no repositorio;
    este CSS substitui o <link> do Google Fonts que o prototipo usa.
    Pesos: 400 (corpo), 500, 600 e 700 (titulos e botoes). */
@@ -519,7 +539,7 @@ html,body{background:#080908}
   unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 </style>
-<style data-dc-tpl="7">
+<style data-dc-tpl="13">
   html { scroll-padding-top:104px; overflow-x:hidden; max-width:100%; }
   @media (max-width:1119px) { html { scroll-padding-top:84px; } }
   body { margin:0; font-family:Poppins, system-ui, sans-serif; background:#0B0B0B; color:#F6F4EF; -webkit-font-smoothing:antialiased; text-wrap:pretty; overflow-x:hidden; }
@@ -561,8 +581,8 @@ html,body{background:#080908}
 </head>
 <body>
 <div id="mo-estatico">
-<div class="sc-host" data-sc-name="politica-de-privacidade"><div data-dc-tpl="8" style="background: rgb(11, 11, 11); min-height: 100vh;">
-  <div class="sc-host" data-sc-name="SiteHeader" data-dc-tpl="9" style="position: sticky; top: 0px; z-index: 60;"><a data-dc-tpl="2" href="#conteudo" class="scp0" style="position: absolute; left: -9999px; top: 0px; z-index: 100; background: rgb(246, 244, 239); color: rgb(11, 11, 11); padding: 14px 20px; font-size: 14px; font-weight: 700;">Pular para o conteúdo</a><header data-dc-tpl="3" style="position: sticky; top: 0px; z-index: 60; background: rgba(11, 11, 11, 0.94); backdrop-filter: blur(8px); border-bottom: 1px solid rgba(246, 244, 239, 0.1); font-family: Poppins, system-ui, sans-serif; color: rgb(246, 244, 239);">
+<div class="sc-host" data-sc-name="politica-de-privacidade"><div data-dc-tpl="14" style="background: rgb(11, 11, 11); min-height: 100vh;">
+  <div class="sc-host" data-sc-name="SiteHeader" data-dc-tpl="15" style="position: sticky; top: 0px; z-index: 60;"><a data-dc-tpl="2" href="#conteudo" class="scp0" style="position: absolute; left: -9999px; top: 0px; z-index: 100; background: rgb(246, 244, 239); color: rgb(11, 11, 11); padding: 14px 20px; font-size: 14px; font-weight: 700;">Pular para o conteúdo</a><header data-dc-tpl="3" style="position: sticky; top: 0px; z-index: 60; background: rgba(11, 11, 11, 0.94); backdrop-filter: blur(8px); border-bottom: 1px solid rgba(246, 244, 239, 0.1); font-family: Poppins, system-ui, sans-serif; color: rgb(246, 244, 239);">
   <div data-dc-tpl="4" style="max-width: 1480px; margin: 0px auto; padding: clamp(6px, 1.4vw, 10px) clamp(12px, 3vw, 36px); display: flex; align-items: center; justify-content: space-between; gap: clamp(10px, 2vw, 24px);">
     <a data-dc-tpl="5" href="/" aria-label="Salão Morenos, página inicial" style="display: flex; align-items: center; flex-shrink: 0;">
       <img data-dc-tpl="6" decoding="async" src="/img/logo.webp" alt="Salão Morenos" width="624" height="624" style="height: clamp(54px, 13vw, 82px); width: auto;" fetchpriority="high">
@@ -581,94 +601,93 @@ html,body{background:#080908}
   
 
   </header></div>
-  <main data-dc-tpl="10" id="conteudo" style="background: rgb(246, 244, 239); color: rgb(11, 11, 11); font-family: Poppins, system-ui, sans-serif;">
-    <div data-dc-tpl="11" style="background: rgb(11, 11, 11); color: rgb(246, 244, 239); padding: clamp(40px, 6vw, 88px) clamp(16px, 3vw, 36px) clamp(36px, 5vw, 64px);">
-      <div data-dc-tpl="12" style="max-width: 860px; margin: 0px auto; display: flex; flex-direction: column; gap: 18px;">
-        <nav data-dc-tpl="13" aria-label="Você está em" style="font-size: 12px; color: rgb(197, 194, 187);"><ol data-dc-tpl="14" style="list-style: none; margin: 0px; padding: 0px; display: flex; gap: 8px;"><li data-dc-tpl="15"><a data-dc-tpl="16" href="/" style="color: rgb(197, 194, 187);">Início</a></li><li data-dc-tpl="17" aria-hidden="true" style="color: rgb(124, 121, 117);">/</li><li data-dc-tpl="18" aria-current="page" style="color: rgb(246, 244, 239); font-weight: 600;">Política de Privacidade</li></ol></nav>
-        <span data-dc-tpl="19" style="font-size: 12px; font-weight: 700; letter-spacing: 0.3em; text-transform: uppercase; color: rgb(183, 154, 106);">Institucional</span>
-        <h1 data-dc-tpl="20" style="margin: 0px; font-size: clamp(36px, 5vw, 64px); line-height: 1; font-weight: 700; letter-spacing: -0.035em;">Política de Privacidade</h1>
-        <p data-dc-tpl="21" style="margin: 0px; font-size: 17px; line-height: 1.65; color: rgb(197, 194, 187); max-width: 56ch;">Como o Salão Morenos trata os dados pessoais de quem usa este site, de acordo com a Lei Geral de Proteção de Dados (Lei nº 13.709/2018).</p>
-        <span data-dc-tpl="22" style="font-size: 13px; color: rgb(169, 166, 159);">Última atualização: 10 de outubro de 2026</span>
+  <main data-dc-tpl="16" id="conteudo" style="background: rgb(246, 244, 239); color: rgb(11, 11, 11); font-family: Poppins, system-ui, sans-serif;">
+    <div data-dc-tpl="17" style="background: rgb(11, 11, 11); color: rgb(246, 244, 239); padding: clamp(40px, 6vw, 88px) clamp(16px, 3vw, 36px) clamp(36px, 5vw, 64px);">
+      <div data-dc-tpl="18" style="max-width: 860px; margin: 0px auto; display: flex; flex-direction: column; gap: 18px;">
+        <nav data-dc-tpl="19" aria-label="Você está em" style="font-size: 12px; color: rgb(197, 194, 187);"><ol data-dc-tpl="20" style="list-style: none; margin: 0px; padding: 0px; display: flex; gap: 8px;"><li data-dc-tpl="21"><a data-dc-tpl="22" href="/" style="color: rgb(197, 194, 187);">Início</a></li><li data-dc-tpl="23" aria-hidden="true" style="color: rgb(124, 121, 117);">/</li><li data-dc-tpl="24" aria-current="page" style="color: rgb(246, 244, 239); font-weight: 600;">Política de Privacidade</li></ol></nav>
+        <span data-dc-tpl="25" style="font-size: 12px; font-weight: 700; letter-spacing: 0.3em; text-transform: uppercase; color: rgb(183, 154, 106);">Institucional</span>
+        <h1 data-dc-tpl="26" style="margin: 0px; font-size: clamp(36px, 5vw, 64px); line-height: 1; font-weight: 700; letter-spacing: -0.035em;">Política de Privacidade</h1>
+        <p data-dc-tpl="27" style="margin: 0px; font-size: 17px; line-height: 1.65; color: rgb(197, 194, 187); max-width: 56ch;">Como o Salão Morenos trata os dados pessoais de quem usa este site, de acordo com a Lei Geral de Proteção de Dados (Lei nº 13.709/2018).</p>
+        <span data-dc-tpl="28" style="font-size: 13px; color: rgb(169, 166, 159);">Última atualização: 10 de outubro de 2026</span>
       </div>
     </div>
-    <article data-dc-tpl="23" style="max-width: 860px; margin: 0px auto; padding: clamp(40px, 5vw, 72px) clamp(16px, 3vw, 36px) clamp(56px, 7vw, 104px); display: flex; flex-direction: column; gap: 32px;">
-      <section data-dc-tpl="24" style="display: flex; flex-direction: column; gap: 14px; padding-top: 32px; border-top: 1px solid rgba(11, 11, 11, 0.12);">
-        <h2 data-dc-tpl="25" style="margin: 0px; font-size: clamp(22px, 2.2vw, 28px); font-weight: 700; letter-spacing: -0.02em; line-height: 1.2;">1. Quem somos</h2>
-        <p data-dc-tpl="26" style="margin: 0px; font-size: 17px; line-height: 1.75; color: rgb(62, 60, 56);">Este site pertence ao Salão Morenos, barbearia com três unidades em Serra — ES. Nesta política, “nós” é o Salão Morenos, controlador dos dados pessoais tratados por meio do site.</p>
+    <article data-dc-tpl="29" style="max-width: 860px; margin: 0px auto; padding: clamp(40px, 5vw, 72px) clamp(16px, 3vw, 36px) clamp(56px, 7vw, 104px); display: flex; flex-direction: column; gap: 32px;">
+      <section data-dc-tpl="30" style="display: flex; flex-direction: column; gap: 14px; padding-top: 32px; border-top: 1px solid rgba(11, 11, 11, 0.12);">
+        <h2 data-dc-tpl="31" style="margin: 0px; font-size: clamp(22px, 2.2vw, 28px); font-weight: 700; letter-spacing: -0.02em; line-height: 1.2;">1. Quem somos</h2>
+        <p data-dc-tpl="32" style="margin: 0px; font-size: 17px; line-height: 1.75; color: rgb(62, 60, 56);">Este site pertence ao Salão Morenos, barbearia com três unidades em Serra — ES. Nesta política, “nós” é o Salão Morenos, controlador dos dados pessoais tratados por meio do site.</p>
       </section>
-      <section data-dc-tpl="27" style="display: flex; flex-direction: column; gap: 14px; padding-top: 32px; border-top: 1px solid rgba(11, 11, 11, 0.12);">
-        <h2 data-dc-tpl="28" style="margin: 0px; font-size: clamp(22px, 2.2vw, 28px); font-weight: 700; letter-spacing: -0.02em; line-height: 1.2;">2. Quais dados tratamos</h2>
-        <p data-dc-tpl="29" style="margin: 0px; font-size: 17px; line-height: 1.75; color: rgb(62, 60, 56);">Tratamos apenas o necessário para você agendar, assinar o Clube ou falar com a gente:</p>
-        <ul data-dc-tpl="30" style="margin: 0px; padding-left: 22px; display: flex; flex-direction: column; gap: 10px; font-size: 17px; line-height: 1.7; color: rgb(62, 60, 56);">
-          <li data-dc-tpl="31"><strong data-dc-tpl="32">Dados que você digita nos formulários</strong> (Dia do Noivo, Corporativo e Trabalhe Conosco): nome, telefone ou WhatsApp, empresa, cidade, data do casamento, número de pessoas, tempo de experiência, Instagram profissional e mensagem.</li>
-          <li data-dc-tpl="33"><strong data-dc-tpl="34">Unidade escolhida</strong>: guardada no seu próprio navegador (localStorage, chave <code data-dc-tpl="35">morenos_selected_unit</code>) para facilitar o próximo agendamento.</li>
-          <li data-dc-tpl="36"><strong data-dc-tpl="37">Abertura do site</strong>: um registro no navegador (sessionStorage, chave <code data-dc-tpl="38">morenos_intro_seen</code>) para controlar a tela de abertura.</li>
-          <li data-dc-tpl="39"><strong data-dc-tpl="40">Dados de navegação</strong>: quando houver ferramenta de estatística ativa, cliques em botões como Agendar, WhatsApp e Assinar, sem dados que identifiquem você diretamente.</li>
+      <section data-dc-tpl="33" style="display: flex; flex-direction: column; gap: 14px; padding-top: 32px; border-top: 1px solid rgba(11, 11, 11, 0.12);">
+        <h2 data-dc-tpl="34" style="margin: 0px; font-size: clamp(22px, 2.2vw, 28px); font-weight: 700; letter-spacing: -0.02em; line-height: 1.2;">2. Quais dados tratamos</h2>
+        <p data-dc-tpl="35" style="margin: 0px; font-size: 17px; line-height: 1.75; color: rgb(62, 60, 56);">Tratamos apenas o necessário para você agendar, assinar o Clube ou falar com a gente:</p>
+        <ul data-dc-tpl="36" style="margin: 0px; padding-left: 22px; display: flex; flex-direction: column; gap: 10px; font-size: 17px; line-height: 1.7; color: rgb(62, 60, 56);">
+          <li data-dc-tpl="37"><strong data-dc-tpl="38">Dados que você digita nos formulários</strong> (Dia do Noivo, Corporativo e Trabalhe Conosco): nome, telefone ou WhatsApp, empresa, cidade, data do casamento, número de pessoas, tempo de experiência, Instagram profissional e mensagem.</li>
+          <li data-dc-tpl="39"><strong data-dc-tpl="40">Unidade escolhida</strong>: guardada no seu próprio navegador (localStorage, chave <code data-dc-tpl="41">morenos_selected_unit</code>) para facilitar o próximo agendamento.</li>
+          <li data-dc-tpl="42"><strong data-dc-tpl="43">Abertura do site</strong>: um registro no navegador (sessionStorage, chave <code data-dc-tpl="44">morenos_intro_seen</code>) para controlar a tela de abertura.</li>
+          <li data-dc-tpl="45"><strong data-dc-tpl="46">Dados de navegação</strong>: quando houver ferramenta de estatística ativa, cliques em botões como Agendar, WhatsApp e Assinar, sem dados que identifiquem você diretamente.</li>
         </ul>
       </section>
-      <section data-dc-tpl="41" style="display: flex; flex-direction: column; gap: 14px; padding-top: 32px; border-top: 1px solid rgba(11, 11, 11, 0.12);">
-        <h2 data-dc-tpl="42" style="margin: 0px; font-size: clamp(22px, 2.2vw, 28px); font-weight: 700; letter-spacing: -0.02em; line-height: 1.2;">3. Como os formulários funcionam</h2>
-        <p data-dc-tpl="43" style="margin: 0px; font-size: 17px; line-height: 1.75; color: rgb(62, 60, 56);">Os formulários do site não guardam seus dados em um servidor nosso. Ao enviar, o site monta uma mensagem com o que você preencheu e abre o WhatsApp do Salão Morenos. A mensagem só é enviada se você confirmar o envio no próprio WhatsApp.</p>
+      <section data-dc-tpl="47" style="display: flex; flex-direction: column; gap: 14px; padding-top: 32px; border-top: 1px solid rgba(11, 11, 11, 0.12);">
+        <h2 data-dc-tpl="48" style="margin: 0px; font-size: clamp(22px, 2.2vw, 28px); font-weight: 700; letter-spacing: -0.02em; line-height: 1.2;">3. Como os formulários funcionam</h2>
+        <p data-dc-tpl="49" style="margin: 0px; font-size: 17px; line-height: 1.75; color: rgb(62, 60, 56);">Os formulários do site não guardam seus dados em um servidor nosso. Ao enviar, o site monta uma mensagem com o que você preencheu e abre o WhatsApp do Salão Morenos. A mensagem só é enviada se você confirmar o envio no próprio WhatsApp.</p>
       </section>
-      <section data-dc-tpl="44" style="display: flex; flex-direction: column; gap: 14px; padding-top: 32px; border-top: 1px solid rgba(11, 11, 11, 0.12);">
-        <h2 data-dc-tpl="45" style="margin: 0px; font-size: clamp(22px, 2.2vw, 28px); font-weight: 700; letter-spacing: -0.02em; line-height: 1.2;">4. Para que usamos</h2>
-        <ul data-dc-tpl="46" style="margin: 0px; padding-left: 22px; display: flex; flex-direction: column; gap: 10px; font-size: 17px; line-height: 1.7; color: rgb(62, 60, 56);">
-          <li data-dc-tpl="47">Responder pedidos de Dia do Noivo, propostas corporativas e candidaturas.</li>
-          <li data-dc-tpl="48">Facilitar o agendamento na unidade escolhida.</li>
-          <li data-dc-tpl="49">Entender quais páginas e botões são mais usados, para melhorar o site.</li>
-          <li data-dc-tpl="50">Cumprir obrigações legais.</li>
+      <section data-dc-tpl="50" style="display: flex; flex-direction: column; gap: 14px; padding-top: 32px; border-top: 1px solid rgba(11, 11, 11, 0.12);">
+        <h2 data-dc-tpl="51" style="margin: 0px; font-size: clamp(22px, 2.2vw, 28px); font-weight: 700; letter-spacing: -0.02em; line-height: 1.2;">4. Para que usamos</h2>
+        <ul data-dc-tpl="52" style="margin: 0px; padding-left: 22px; display: flex; flex-direction: column; gap: 10px; font-size: 17px; line-height: 1.7; color: rgb(62, 60, 56);">
+          <li data-dc-tpl="53">Responder pedidos de Dia do Noivo, propostas corporativas e candidaturas.</li>
+          <li data-dc-tpl="54">Facilitar o agendamento na unidade escolhida.</li>
+          <li data-dc-tpl="55">Entender quais páginas e botões são mais usados, para melhorar o site.</li>
+          <li data-dc-tpl="56">Cumprir obrigações legais.</li>
         </ul>
       </section>
-      <section data-dc-tpl="51" style="display: flex; flex-direction: column; gap: 14px; padding-top: 32px; border-top: 1px solid rgba(11, 11, 11, 0.12);">
-        <h2 data-dc-tpl="52" style="margin: 0px; font-size: clamp(22px, 2.2vw, 28px); font-weight: 700; letter-spacing: -0.02em; line-height: 1.2;">5. Bases legais</h2>
-        <p data-dc-tpl="53" style="margin: 0px; font-size: 17px; line-height: 1.75; color: rgb(62, 60, 56);">Tratamos dados com base na execução de procedimentos preliminares a pedido do titular, no legítimo interesse (melhoria do site e atendimento) e no cumprimento de obrigação legal, conforme o art. 7º da Lei nº 13.709/2018 (LGPD). Quando a lei exigir, pediremos seu consentimento.</p>
+      <section data-dc-tpl="57" style="display: flex; flex-direction: column; gap: 14px; padding-top: 32px; border-top: 1px solid rgba(11, 11, 11, 0.12);">
+        <h2 data-dc-tpl="58" style="margin: 0px; font-size: clamp(22px, 2.2vw, 28px); font-weight: 700; letter-spacing: -0.02em; line-height: 1.2;">5. Bases legais</h2>
+        <p data-dc-tpl="59" style="margin: 0px; font-size: 17px; line-height: 1.75; color: rgb(62, 60, 56);">Tratamos dados com base na execução de procedimentos preliminares a pedido do titular, no legítimo interesse (melhoria do site e atendimento) e no cumprimento de obrigação legal, conforme o art. 7º da Lei nº 13.709/2018 (LGPD). Quando a lei exigir, pediremos seu consentimento.</p>
       </section>
-      <section data-dc-tpl="54" style="display: flex; flex-direction: column; gap: 14px; padding-top: 32px; border-top: 1px solid rgba(11, 11, 11, 0.12);">
-        <h2 data-dc-tpl="55" style="margin: 0px; font-size: clamp(22px, 2.2vw, 28px); font-weight: 700; letter-spacing: -0.02em; line-height: 1.2;">6. Serviços de terceiros</h2>
-        <p data-dc-tpl="56" style="margin: 0px; font-size: 17px; line-height: 1.75; color: rgb(62, 60, 56);">Algumas funções do site levam você a serviços de outras empresas, que têm políticas próprias:</p>
-        <ul data-dc-tpl="57" style="margin: 0px; padding-left: 22px; display: flex; flex-direction: column; gap: 10px; font-size: 17px; line-height: 1.7; color: rgb(62, 60, 56);">
-          <li data-dc-tpl="58"><strong data-dc-tpl="59">Cashbarber</strong>: agenda online e assinatura do Clube.</li>
-          <li data-dc-tpl="60"><strong data-dc-tpl="61">WhatsApp</strong> (Meta): conversas e envio dos formulários.</li>
-          <li data-dc-tpl="62"><strong data-dc-tpl="63">Google Maps</strong>: mapas e rotas das unidades.</li>
-          <li data-dc-tpl="64"><strong data-dc-tpl="65">Google Fonts</strong>: fontes usadas no site.</li>
+      <section data-dc-tpl="60" style="display: flex; flex-direction: column; gap: 14px; padding-top: 32px; border-top: 1px solid rgba(11, 11, 11, 0.12);">
+        <h2 data-dc-tpl="61" style="margin: 0px; font-size: clamp(22px, 2.2vw, 28px); font-weight: 700; letter-spacing: -0.02em; line-height: 1.2;">6. Serviços de terceiros</h2>
+        <p data-dc-tpl="62" style="margin: 0px; font-size: 17px; line-height: 1.75; color: rgb(62, 60, 56);">Algumas funções do site levam você a serviços de outras empresas, que têm políticas próprias:</p>
+        <ul data-dc-tpl="63" style="margin: 0px; padding-left: 22px; display: flex; flex-direction: column; gap: 10px; font-size: 17px; line-height: 1.7; color: rgb(62, 60, 56);">
+          <li data-dc-tpl="64"><strong data-dc-tpl="65">Cashbarber</strong>: agenda online e assinatura do Clube.</li>
+          <li data-dc-tpl="66"><strong data-dc-tpl="67">WhatsApp</strong> (Meta): conversas e envio dos formulários.</li>
+          <li data-dc-tpl="68"><strong data-dc-tpl="69">Google Maps</strong>: mapas e rotas das unidades.</li>
         </ul>
-        <p data-dc-tpl="66" style="margin: 0px; font-size: 17px; line-height: 1.75; color: rgb(62, 60, 56);">Ao usar esses serviços, o tratamento dos seus dados segue a política de cada empresa.</p>
+        <p data-dc-tpl="70" style="margin: 0px; font-size: 17px; line-height: 1.75; color: rgb(62, 60, 56);">Ao usar esses serviços, o tratamento dos seus dados segue a política de cada empresa.</p>
       </section>
-      <section data-dc-tpl="67" style="display: flex; flex-direction: column; gap: 14px; padding-top: 32px; border-top: 1px solid rgba(11, 11, 11, 0.12);">
-        <h2 data-dc-tpl="68" style="margin: 0px; font-size: clamp(22px, 2.2vw, 28px); font-weight: 700; letter-spacing: -0.02em; line-height: 1.2;">7. Compartilhamento</h2>
-        <p data-dc-tpl="69" style="margin: 0px; font-size: 17px; line-height: 1.75; color: rgb(62, 60, 56);">Não vendemos dados pessoais. Compartilhamos apenas com os serviços listados acima, quando você os usa, e com autoridades quando a lei exigir.</p>
+      <section data-dc-tpl="71" style="display: flex; flex-direction: column; gap: 14px; padding-top: 32px; border-top: 1px solid rgba(11, 11, 11, 0.12);">
+        <h2 data-dc-tpl="72" style="margin: 0px; font-size: clamp(22px, 2.2vw, 28px); font-weight: 700; letter-spacing: -0.02em; line-height: 1.2;">7. Compartilhamento</h2>
+        <p data-dc-tpl="73" style="margin: 0px; font-size: 17px; line-height: 1.75; color: rgb(62, 60, 56);">Não vendemos dados pessoais. Compartilhamos apenas com os serviços listados acima, quando você os usa, e com autoridades quando a lei exigir.</p>
       </section>
-      <section data-dc-tpl="70" style="display: flex; flex-direction: column; gap: 14px; padding-top: 32px; border-top: 1px solid rgba(11, 11, 11, 0.12);">
-        <h2 data-dc-tpl="71" style="margin: 0px; font-size: clamp(22px, 2.2vw, 28px); font-weight: 700; letter-spacing: -0.02em; line-height: 1.2;">8. Por quanto tempo guardamos</h2>
-        <p data-dc-tpl="72" style="margin: 0px; font-size: 17px; line-height: 1.75; color: rgb(62, 60, 56);">As conversas pelo WhatsApp ficam guardadas pelo tempo necessário para atender o seu pedido e cumprir obrigações legais. Os registros no seu navegador podem ser apagados por você a qualquer momento nas configurações do navegador.</p>
+      <section data-dc-tpl="74" style="display: flex; flex-direction: column; gap: 14px; padding-top: 32px; border-top: 1px solid rgba(11, 11, 11, 0.12);">
+        <h2 data-dc-tpl="75" style="margin: 0px; font-size: clamp(22px, 2.2vw, 28px); font-weight: 700; letter-spacing: -0.02em; line-height: 1.2;">8. Por quanto tempo guardamos</h2>
+        <p data-dc-tpl="76" style="margin: 0px; font-size: 17px; line-height: 1.75; color: rgb(62, 60, 56);">As conversas pelo WhatsApp ficam guardadas pelo tempo necessário para atender o seu pedido e cumprir obrigações legais. Os registros no seu navegador podem ser apagados por você a qualquer momento nas configurações do navegador.</p>
       </section>
-      <section data-dc-tpl="73" style="display: flex; flex-direction: column; gap: 14px; padding-top: 32px; border-top: 1px solid rgba(11, 11, 11, 0.12);">
-        <h2 data-dc-tpl="74" style="margin: 0px; font-size: clamp(22px, 2.2vw, 28px); font-weight: 700; letter-spacing: -0.02em; line-height: 1.2;">9. Seus direitos</h2>
-        <p data-dc-tpl="75" style="margin: 0px; font-size: 17px; line-height: 1.75; color: rgb(62, 60, 56);">Pela LGPD, você pode pedir a qualquer momento:</p>
-        <ul data-dc-tpl="76" style="margin: 0px; padding-left: 22px; display: flex; flex-direction: column; gap: 10px; font-size: 17px; line-height: 1.7; color: rgb(62, 60, 56);">
-          <li data-dc-tpl="77">confirmação de que tratamos seus dados e acesso a eles;</li>
-          <li data-dc-tpl="78">correção de dados incompletos ou desatualizados;</li>
-          <li data-dc-tpl="79">anonimização, bloqueio ou eliminação de dados desnecessários;</li>
-          <li data-dc-tpl="80">portabilidade e informação sobre com quem compartilhamos;</li>
-          <li data-dc-tpl="81">revogação do consentimento, quando ele for a base do tratamento.</li>
+      <section data-dc-tpl="77" style="display: flex; flex-direction: column; gap: 14px; padding-top: 32px; border-top: 1px solid rgba(11, 11, 11, 0.12);">
+        <h2 data-dc-tpl="78" style="margin: 0px; font-size: clamp(22px, 2.2vw, 28px); font-weight: 700; letter-spacing: -0.02em; line-height: 1.2;">9. Seus direitos</h2>
+        <p data-dc-tpl="79" style="margin: 0px; font-size: 17px; line-height: 1.75; color: rgb(62, 60, 56);">Pela LGPD, você pode pedir a qualquer momento:</p>
+        <ul data-dc-tpl="80" style="margin: 0px; padding-left: 22px; display: flex; flex-direction: column; gap: 10px; font-size: 17px; line-height: 1.7; color: rgb(62, 60, 56);">
+          <li data-dc-tpl="81">confirmação de que tratamos seus dados e acesso a eles;</li>
+          <li data-dc-tpl="82">correção de dados incompletos ou desatualizados;</li>
+          <li data-dc-tpl="83">anonimização, bloqueio ou eliminação de dados desnecessários;</li>
+          <li data-dc-tpl="84">portabilidade e informação sobre com quem compartilhamos;</li>
+          <li data-dc-tpl="85">revogação do consentimento, quando ele for a base do tratamento.</li>
         </ul>
-        <p data-dc-tpl="82" style="margin: 0px; font-size: 17px; line-height: 1.75; color: rgb(62, 60, 56);">Para exercer esses direitos, fale com a gente pelo WhatsApp informado no rodapé do site.</p>
+        <p data-dc-tpl="86" style="margin: 0px; font-size: 17px; line-height: 1.75; color: rgb(62, 60, 56);">Para exercer esses direitos, fale com a gente pelo WhatsApp informado no rodapé do site.</p>
       </section>
-      <section data-dc-tpl="83" style="display: flex; flex-direction: column; gap: 14px; padding-top: 32px; border-top: 1px solid rgba(11, 11, 11, 0.12);">
-        <h2 data-dc-tpl="84" style="margin: 0px; font-size: clamp(22px, 2.2vw, 28px); font-weight: 700; letter-spacing: -0.02em; line-height: 1.2;">10. Segurança</h2>
-        <p data-dc-tpl="85" style="margin: 0px; font-size: 17px; line-height: 1.75; color: rgb(62, 60, 56);">Usamos conexão segura (HTTPS) e limitamos o acesso aos dados às pessoas que precisam deles para atender você.</p>
+      <section data-dc-tpl="87" style="display: flex; flex-direction: column; gap: 14px; padding-top: 32px; border-top: 1px solid rgba(11, 11, 11, 0.12);">
+        <h2 data-dc-tpl="88" style="margin: 0px; font-size: clamp(22px, 2.2vw, 28px); font-weight: 700; letter-spacing: -0.02em; line-height: 1.2;">10. Segurança</h2>
+        <p data-dc-tpl="89" style="margin: 0px; font-size: 17px; line-height: 1.75; color: rgb(62, 60, 56);">Usamos conexão segura (HTTPS) e limitamos o acesso aos dados às pessoas que precisam deles para atender você.</p>
       </section>
-      <section data-dc-tpl="86" style="display: flex; flex-direction: column; gap: 14px; padding-top: 32px; border-top: 1px solid rgba(11, 11, 11, 0.12);">
-        <h2 data-dc-tpl="87" style="margin: 0px; font-size: clamp(22px, 2.2vw, 28px); font-weight: 700; letter-spacing: -0.02em; line-height: 1.2;">11. Crianças e adolescentes</h2>
-        <p data-dc-tpl="88" style="margin: 0px; font-size: 17px; line-height: 1.75; color: rgb(62, 60, 56);">Dados de menores de 18 anos, como no Corte Kids, devem ser informados pelo responsável legal.</p>
+      <section data-dc-tpl="90" style="display: flex; flex-direction: column; gap: 14px; padding-top: 32px; border-top: 1px solid rgba(11, 11, 11, 0.12);">
+        <h2 data-dc-tpl="91" style="margin: 0px; font-size: clamp(22px, 2.2vw, 28px); font-weight: 700; letter-spacing: -0.02em; line-height: 1.2;">11. Crianças e adolescentes</h2>
+        <p data-dc-tpl="92" style="margin: 0px; font-size: 17px; line-height: 1.75; color: rgb(62, 60, 56);">Dados de menores de 18 anos, como no Corte Kids, devem ser informados pelo responsável legal.</p>
       </section>
-      <section data-dc-tpl="89" style="display: flex; flex-direction: column; gap: 14px; padding-top: 32px; border-top: 1px solid rgba(11, 11, 11, 0.12);">
-        <h2 data-dc-tpl="90" style="margin: 0px; font-size: clamp(22px, 2.2vw, 28px); font-weight: 700; letter-spacing: -0.02em; line-height: 1.2;">12. Mudanças nesta política</h2>
-        <p data-dc-tpl="91" style="margin: 0px; font-size: 17px; line-height: 1.75; color: rgb(62, 60, 56);">Podemos atualizar esta política. A data da última atualização fica no topo da página.</p>
+      <section data-dc-tpl="93" style="display: flex; flex-direction: column; gap: 14px; padding-top: 32px; border-top: 1px solid rgba(11, 11, 11, 0.12);">
+        <h2 data-dc-tpl="94" style="margin: 0px; font-size: clamp(22px, 2.2vw, 28px); font-weight: 700; letter-spacing: -0.02em; line-height: 1.2;">12. Mudanças nesta política</h2>
+        <p data-dc-tpl="95" style="margin: 0px; font-size: 17px; line-height: 1.75; color: rgb(62, 60, 56);">Podemos atualizar esta política. A data da última atualização fica no topo da página.</p>
       </section>
     </article>
   </main>
-  <div class="sc-host" data-sc-name="SiteFooter" data-dc-tpl="92"><div data-dc-tpl="0" style="background: rgb(11, 11, 11); padding: clamp(40px, 5vw, 72px) clamp(12px, 2vw, 28px) 0px; font-family: Poppins, system-ui, sans-serif; color: rgb(246, 244, 239);">
+  <div class="sc-host" data-sc-name="SiteFooter" data-dc-tpl="96"><div data-dc-tpl="0" style="background: rgb(11, 11, 11); padding: clamp(40px, 5vw, 72px) clamp(12px, 2vw, 28px) 0px; font-family: Poppins, system-ui, sans-serif; color: rgb(246, 244, 239);">
   <footer data-dc-tpl="1" style="position: relative; max-width: 1480px; margin: 0px auto; border-width: 1px 1px 0px; border-top-style: solid; border-right-style: solid; border-bottom-style: initial; border-left-style: solid; border-top-color: rgba(246, 244, 239, 0.14); border-right-color: rgba(246, 244, 239, 0.14); border-bottom-color: initial; border-left-color: rgba(246, 244, 239, 0.14); border-image: initial; border-radius: clamp(24px, 3vw, 42px) clamp(24px, 3vw, 42px) 0px 0px; background: radial-gradient(46% 180px at 50% 0%, rgba(183, 154, 106, 0.16), transparent), rgb(11, 11, 11); padding: clamp(48px, 6vw, 84px) clamp(20px, 3vw, 52px) 48px; overflow: hidden;">
     <div data-dc-tpl="2" aria-hidden="true" style="position: absolute; top: 0px; left: 50%; transform: translate(-50%, -50%); width: 34%; height: 2px; border-radius: 999px; background: rgba(246, 244, 239, 0.5); filter: blur(2px);"></div>
     <div data-dc-tpl="3" style="display: flex; flex-wrap: wrap; gap: clamp(28px, 4vw, 56px);">
@@ -682,48 +701,50 @@ html,body{background:#080908}
           <nav data-dc-tpl="11" aria-label="Morenos" style="flex: 1 1 160px; display: flex; flex-direction: column; gap: 12px;">
             <span data-dc-tpl="12" style="font-size: 11px; font-weight: 700; letter-spacing: 0.24em; text-transform: uppercase; color: rgb(183, 154, 106); margin-bottom: 4px;"><span class="sc-interp">Morenos</span></span>
             
-              <a data-dc-tpl="14" href="/cultura/" class="scp8" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Sobre a Morenos</span></a>
+              <a data-dc-tpl="14" href="/cultura/" target="_self" rel="" class="scp8" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Sobre a Morenos</span></a>
             
-              <a data-dc-tpl="14" href="/corporativo/" class="scp8" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Corporativo</span></a>
+              <a data-dc-tpl="14" href="/corporativo/" target="_self" rel="" class="scp8" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Corporativo</span></a>
             
-              <a data-dc-tpl="14" href="/trabalhe-conosco/" class="scp8" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Trabalhe Conosco</span></a>
+              <a data-dc-tpl="14" href="/trabalhe-conosco/" target="_self" rel="" class="scp8" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Trabalhe Conosco</span></a>
             
           </nav>
         
           <nav data-dc-tpl="11" aria-label="Serviços" style="flex: 1 1 160px; display: flex; flex-direction: column; gap: 12px;">
             <span data-dc-tpl="12" style="font-size: 11px; font-weight: 700; letter-spacing: 0.24em; text-transform: uppercase; color: rgb(183, 154, 106); margin-bottom: 4px;"><span class="sc-interp">Serviços</span></span>
             
-              <a data-dc-tpl="14" href="/servicos/corte-masculino/" class="scp8" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Corte Masculino</span></a>
+              <a data-dc-tpl="14" href="/servicos/corte-masculino/" target="_self" rel="" class="scp8" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Corte Masculino</span></a>
             
-              <a data-dc-tpl="14" href="/servicos/barboterapia/" class="scp8" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Barboterapia</span></a>
+              <a data-dc-tpl="14" href="/servicos/barboterapia/" target="_self" rel="" class="scp8" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Barboterapia</span></a>
             
-              <a data-dc-tpl="14" href="/visagismo/" class="scp8" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Visagismo</span></a>
+              <a data-dc-tpl="14" href="/visagismo/" target="_self" rel="" class="scp8" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Visagismo</span></a>
             
-              <a data-dc-tpl="14" href="/dia-do-noivo/" class="scp8" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Dia do Noivo</span></a>
+              <a data-dc-tpl="14" href="/dia-do-noivo/" target="_self" rel="" class="scp8" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Dia do Noivo</span></a>
             
-              <a data-dc-tpl="14" href="/servicos/" class="scp8" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Todos os serviços</span></a>
+              <a data-dc-tpl="14" href="/servicos/" target="_self" rel="" class="scp8" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Todos os serviços</span></a>
             
           </nav>
         
           <nav data-dc-tpl="11" aria-label="Unidades" style="flex: 1 1 160px; display: flex; flex-direction: column; gap: 12px;">
             <span data-dc-tpl="12" style="font-size: 11px; font-weight: 700; letter-spacing: 0.24em; text-transform: uppercase; color: rgb(183, 154, 106); margin-bottom: 4px;"><span class="sc-interp">Unidades</span></span>
             
-              <a data-dc-tpl="14" href="/unidades/cidade-continental/" class="scp8" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Cidade Continental</span></a>
+              <a data-dc-tpl="14" href="/unidades/" target="_self" rel="" class="scp8" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Todas as unidades</span></a>
             
-              <a data-dc-tpl="14" href="/unidades/novo-horizonte-av-brasil/" class="scp8" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Novo Horizonte — Av. Brasil</span></a>
+              <a data-dc-tpl="14" href="/unidades/cidade-continental/" target="_self" rel="" class="scp8" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Cidade Continental</span></a>
             
-              <a data-dc-tpl="14" href="/unidades/novo-horizonte-av-industrial/" class="scp8" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Novo Horizonte — Av. Industrial</span></a>
+              <a data-dc-tpl="14" href="/unidades/novo-horizonte-av-brasil/" target="_self" rel="" class="scp8" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Novo Horizonte — Av. Brasil</span></a>
+            
+              <a data-dc-tpl="14" href="/unidades/novo-horizonte-av-industrial/" target="_self" rel="" class="scp8" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Novo Horizonte — Av. Industrial</span></a>
             
           </nav>
         
           <nav data-dc-tpl="11" aria-label="Clube" style="flex: 1 1 160px; display: flex; flex-direction: column; gap: 12px;">
             <span data-dc-tpl="12" style="font-size: 11px; font-weight: 700; letter-spacing: 0.24em; text-transform: uppercase; color: rgb(183, 154, 106); margin-bottom: 4px;"><span class="sc-interp">Clube</span></span>
             
-              <a data-dc-tpl="14" href="/o-clube/" class="scp8" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Conhecer o Clube</span></a>
+              <a data-dc-tpl="14" href="/o-clube/" target="_self" rel="" class="scp8" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Conhecer o Clube</span></a>
             
-              <a data-dc-tpl="14" href="/o-clube/#planos" class="scp8" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Planos</span></a>
+              <a data-dc-tpl="14" href="/o-clube/#planos" target="_self" rel="" class="scp8" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Planos</span></a>
             
-              <a data-dc-tpl="14" href="https://cashbarber.com.br/salaomorenos" class="scp8" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Assinar</span></a>
+              <a data-dc-tpl="14" href="https://cashbarber.com.br/salaomorenos" target="_blank" rel="noopener noreferrer" class="scp8" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Assinar</span></a>
             
           </nav>
         
@@ -743,7 +764,13 @@ html,body{background:#080908}
 <helmet>
 <title>Política de Privacidade | Salão Morenos</title>
 <meta name="description" content="Como o Salão Morenos trata dados pessoais no site, conforme a LGPD: formulários, agendamento, WhatsApp e serviços de terceiros.">
-<link rel="canonical" href="https://salaomorenos.com.br/politica-de-privacidade/">
+<link rel="canonical" href="https://novosite.salaomorenos.com.br/politica-de-privacidade/">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="pt_BR">
+<meta property="og:site_name" content="Salão Morenos">
+<meta property="og:title" content="Política de Privacidade | Salão Morenos">
+<meta property="og:description" content="Como o Salão Morenos trata dados pessoais no site, conforme a LGPD: formulários, agendamento, WhatsApp e serviços de terceiros.">
+<meta property="og:url" content="https://novosite.salaomorenos.com.br/politica-de-privacidade/">
 <meta name="theme-color" content="#0B0B0B">
 <script src="/smooth-scroll.js" defer></script>
 <style>/* Poppins local, embutida no build */
@@ -879,7 +906,6 @@ html,body{background:#080908}
           <li><strong>Cashbarber</strong>: agenda online e assinatura do Clube.</li>
           <li><strong>WhatsApp</strong> (Meta): conversas e envio dos formulários.</li>
           <li><strong>Google Maps</strong>: mapas e rotas das unidades.</li>
-          <li><strong>Google Fonts</strong>: fontes usadas no site.</li>
         </ul>
         <p style="margin:0;font-size:17px;line-height:1.75;color:#3E3C38">Ao usar esses serviços, o tratamento dos seus dados segue a política de cada empresa.</p>
       </section>

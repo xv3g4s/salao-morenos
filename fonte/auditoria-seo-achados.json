@@ -1,0 +1,1513 @@
+[
+ {
+  "prioridade": "P0",
+  "tipo": "problema_comprovado",
+  "titulo": "O .htaccess serve a HOME como documento de erro: o public/404.html nunca é entregue em produção, e nenhum teste cobre isso",
+  "rotas": [
+   "/404.html",
+   "todas as URLs inexistentes",
+   "/"
+  ],
+  "arquivos": [
+   "/home/user/salao-morenos/public/.htaccess:104",
+   "/home/user/salao-morenos/fonte/checar.mjs:3",
+   "/home/user/salao-morenos/fonte/checar.mjs:79-85",
+   "/home/user/salao-morenos/fonte/HANDOFF.md:48",
+   "/home/user/salao-morenos/fonte/MIGRATION-CHECKLIST.md:52"
+  ],
+  "evidencia": "public/.htaccess, última linha (104): `ErrorDocument 404 /index.html`. Subi public/ em dois servidores locais e pedi as mesmas URLs. Com a semântica do Apache (lendo o ErrorDocument do próprio .htaccess):\n  /pagina-que-nao-existe/   -> 404 | <title>Salão Morenos | Barbearia em Serra, ES</title>\n  /servicos/visagismo/      -> 404 | <title>Salão Morenos | Barbearia em Serra, ES</title>\n  /Visagismo/               -> 404 | <title>Salão Morenos | Barbearia em Serra, ES</title>\nCom o servidor que fonte/checar.mjs usa:\n  /pagina-que-nao-existe/   -> 404 | <title>Página não encontrada | Salão Morenos</title>\nOu seja: o status 404 está certo, mas o CORPO é a home de 219 KB; o public/404.html (60.681 bytes, com <meta name=\"robots\" content=\"noindex\">, reconstruído a cada build — o log mostra `ok 404.html 59 KB`) só é alcançável digitando /404.html, que responde 200.\nE a suíte não vê o problema por dois motivos somados: (1) o servidor de teste em fonte/checar.mjs:79-85 entrega 404.html por conta própria, ignorando o ErrorDocument do .htaccess — apesar do cabeçalho do arquivo (linha 3) afirmar que ele serve \"como um host faria (index.html por pasta, 404.html em pagina inexistente)\"; (2) `grep -n 'goto\\|fetch(' fonte/checar.mjs` devolve só 4 navegações, todas para rotas existentes — nenhuma verificação chega a pedir uma URL inexistente. `node fonte/checar.mjs public` deu 71 ok, 0 falhas com o ErrorDocument errado no lugar. Os dois documentos do projeto pedem o contrário: HANDOFF.md:48 (\"404 | 404.dc.html | Página não encontrada (status HTTP 404, noindex)\") e MIGRATION-CHECKLIST.md:52 (\"[ ] 404 servido com status HTTP 404 (`404.dc.html`)\").",
+  "impacto": "Quem clica num link velho, num resultado antigo do Google ou numa URL do WordPress que não sobreviveu à migração cai na home sem nenhuma mensagem dizendo que a página não existe — fica procurando um conteúdo que não está ali. A página de erro desenhada, gerada em todo build, é código morto. E, como o ErrorDocument vale para qualquer recurso, uma imagem ou um .js com caminho errado passa a devolver 219 KB de HTML no lugar de um erro curto. Na virada para o domínio principal isso vira o comportamento padrão de centenas de URLs antigas de uma vez.",
+  "correcao": "1) Trocar a linha 104 do public/.htaccess por `ErrorDocument 404 /404.html`. 2) Fazer o servidor de fonte/checar.mjs ler o `ErrorDocument 404` do .htaccess em vez de entregar 404.html por conta própria (ele já lê as regras <Files>/<FilesMatch> do mesmo arquivo em checar.mjs:50-64 — é o mesmo padrão), e corrigir o comentário da linha 3. 3) Acrescentar duas verificações: uma em `confere_htaccess()` (fonte/build.py:564) exigindo que exista `ErrorDocument 404` e que o alvo seja um arquivo publicado diferente de /index.html; outra em checar.mjs pedindo de fato uma URL inexistente e cobrando status 404 + o <title> da página de erro."
+ },
+ {
+  "prioridade": "P1",
+  "tipo": "melhoria_recomendada",
+  "titulo": "O sitemap é um arquivo escrito à mão copiado pelo build: três listas independentes das mesmas rotas, sem nada que force a sincronia",
+  "rotas": [
+   "/sitemap.xml",
+   "todas as 17 rotas"
+  ],
+  "arquivos": [
+   "/home/user/salao-morenos/fonte/build.py:557",
+   "/home/user/salao-morenos/fonte/build.py:49",
+   "/home/user/salao-morenos/fonte/prototipo/site-config.js:48",
+   "/home/user/salao-morenos/fonte/prototipo/seo/sitemap.xml"
+  ],
+  "evidencia": "Confirmado: o build apenas copia o arquivo, não o gera. fonte/build.py:557 → `shutil.copy2(PROTO / \"seo\" / \"sitemap.xml\", PUB / \"sitemap.xml\")`. Um `grep -rn -i 'sitemap' fonte/` devolve só essa cópia, a linha de log (651) e menções em .md — não existe nenhum código que escreva <urlset>. O mesmo conjunto de rotas está escrito três vezes, em três lugares que ninguém cruza: fonte/build.py:49 (`ROTAS`, 17 entradas, pares arquivo→caminho publicado), fonte/prototipo/site-config.js:48 (`C.paths`, 16 entradas) e fonte/prototipo/seo/sitemap.xml (16 <loc>, 1229 bytes).\nHoje as três estão em dia — meu cruzamento não achou divergência alguma: 17 rotas em disco, 16 <loc>, `rotas geradas FORA do sitemap: [\"/404.html\"]`, `urls do sitemap SEM arquivo em disco: []`, `urls duplicadas no sitemap: []`, e os 16 `<link rel=\"canonical\">` extraídos das páginas construídas batem um a um com os 16 <loc>. Mas nem fonte/checar.mjs nem fonte/testes/arquitetura.mjs abrem o sitemap: `grep -n -i sitemap` nos dois arquivos não devolve nenhuma linha. Acrescentar uma rota em ROTAS e esquecer o sitemap passa nas 71 + 222 verificações.",
+  "impacto": "A próxima rota criada (ou renomeada) sai do ar sincronizada por sorte, não por construção. Rota nova fora do sitemap demora a ser descoberta; URL antiga que ficou no sitemap depois de um rename vira erro no relatório de cobertura do Search Console. E, como são três arquivos em três linguagens, o erro é silencioso: o build termina com exit 0 e os 293 testes passam.",
+  "correcao": "Gerar public/sitemap.xml dentro do fonte/build.py, a partir da mesma lista `ROTAS` que já define o que é construído, descartando a entrada do 404.html (`saida == \"404.html\"`) — é a única fonte que sabe, por construção, quais arquivos foram escritos. Aposentar fonte/prototipo/seo/sitemap.xml ou mantê-lo só como referência de design, nunca como o que vai ao ar. Em seguida acrescentar em fonte/checar.mjs uma verificação de três vias: o conjunto de <loc> do sitemap publicado == conjunto de rotas em disco menos /404.html == conjunto dos `<link rel=\"canonical\">` lidos das páginas depois da troca das camadas. Enquanto o sitemap continuar escrito à mão, essa verificação sozinha já transforma a dessincronia num build vermelho."
+ },
+ {
+  "prioridade": "P1",
+  "tipo": "problema_comprovado",
+  "titulo": "O deploy é cópia aditiva (cp -R, sem remoção): URL removida do public/ continua respondendo 200 no servidor para sempre",
+  "rotas": [
+   "todas"
+  ],
+  "arquivos": [
+   "/home/user/salao-morenos/.cpanel.yml:9"
+  ],
+  "evidencia": ".cpanel.yml, tarefa de deploy inteira:\n    - export DEPLOYPATH=$HOME/public_html/\n    - /bin/mkdir -p $DEPLOYPATH\n    - /bin/cp -R public/. $DEPLOYPATH\n    - /bin/rm -f $DEPLOYPATH/.cpanel.yml $DEPLOYPATH/.gitignore $DEPLOYPATH/README.md\nNão há `rsync --delete`, não há limpeza do destino, não há lista de arquivos esperados. `cp -R` sobrescreve o que coincide e deixa intocado tudo o que não coincide. Os três `rm -f` finais removem três nomes fixos e nada mais. Logo, o inventário real de URLs no servidor é a UNIÃO de todos os deploys já feitos, não o conteúdo de public/ — e nada no repositório mede essa diferença (o build só confere o que está em public/, fonte/build.py:564-604).",
+  "impacto": "Renomear ou apagar uma rota deixa a versão antiga viva, respondendo 200, sem 301 e com o mesmo conteúdo da nova: duas URLs concorrentes para a mesma página, exatamente o que a regra de preservação de URLs quer evitar. Na virada para salaomorenos.com.br o efeito é maior: o `cp -R` deposita o site novo POR CIMA da instalação WordPress que já está em public_html sem remover nada dela. O `DirectoryIndex index.html` (public/.htaccess:4) faz a home nova ganhar do index.php, mas /wp-admin/, /wp-content/, /wp-json/, feeds e qualquer arquivo .php antigo continuam acessíveis ao lado do site novo — dois sites no mesmo diretório, com superfície de ataque e URLs duplicadas.",
+  "correcao": "Trocar a cópia por uma sincronização com remoção (`rsync -a --delete public/ $DEPLOYPATH`), preservando explicitamente o que não vem do repositório e o host precisa (ex.: `--exclude cgi-bin --exclude .well-known`, e o que mais a conta da HostGator tiver). Para a virada do domínio principal, tratar como etapa separada e anterior ao deploy: fazer backup completo do public_html atual, esvaziá-lo e só então publicar — nunca sobrepor. Se o cPanel não permitir rsync na conta, a alternativa é um passo de limpeza explícito no .cpanel.yml que apague os caminhos do site anterior listados um a um (lista que só pode ser montada depois da auditoria do WordPress, ver o achado de auditoria das URLs antigas)."
+ },
+ {
+  "prioridade": "P1",
+  "tipo": "problema_comprovado",
+  "titulo": "O public/ versionado é um build de produção e o deploy não tem seletor de ambiente: no subdomínio provisório o robots.txt convida indexação e o sitemap aponta para outro domínio",
+  "rotas": [
+   "/robots.txt",
+   "/sitemap.xml",
+   "todas"
+  ],
+  "arquivos": [
+   "/home/user/salao-morenos/public/robots.txt",
+   "/home/user/salao-morenos/fonte/prototipo/seo/robots-homologacao.txt",
+   "/home/user/salao-morenos/fonte/build.py:555-557",
+   "/home/user/salao-morenos/fonte/build.py:253-255",
+   "/home/user/salao-morenos/.cpanel.yml:9"
+  ],
+  "evidencia": "`md5sum` antes de eu reconstruir qualquer coisa: public/robots.txt == fonte/prototipo/seo/robots.txt (352a3175bf17277b2a6141bccff22b3e), que é o de PRODUÇÃO — `User-agent: *` / `Allow: /` / `Sitemap: https://salaomorenos.com.br/sitemap.xml`. O de homologação existe e é diferente (040a1ac3566776cfde06294a8fe757d8): `# Usar somente em novosite.salaomorenos.com.br` / `User-agent: *` / `Disallow: /`, mas só é copiado com a flag `--homologacao` (fonte/build.py:555-556).\nNo mesmo sentido: `grep -o \"stage: *'[a-z]*'\" public/index.html` devolve `stage: 'producao'` — fonte/build.py:253-255 substitui o teste de hostname (`/novosite\\./.test(location.hostname)`) por um literal fixado no build, então o `noindex,nofollow` que site-config.js:183-184 injetaria em novosite.* não dispara nessas páginas.\nE o .cpanel.yml:9 é um `cp -R public/. $DEPLOYPATH` puro: não roda build, não escolhe ambiente, não tem variável de stage. O que está versionado é literalmente o que vai ao ar.\nO sitemap agrava: os 16 <loc> têm host único `salaomorenos.com.br` (conferi no parse), então servido a partir de novosite.* ele é um sitemap cross-host — e o robots.txt do subdomínio aponta o robô para o sitemap do domínio principal, que hoje é o WordPress antigo.",
+  "impacto": "Se o conteúdo desta branch for o que está no subdomínio de aprovação, o ambiente provisório está aberto a indexação (`Allow: /`, sem noindex no HTML), publicando 16 URLs do domínio final a partir de um host que não é ele. O risco concreto é o Google indexar o subdomínio de homologação e, por um tempo, mostrar novosite.salaomorenos.com.br nos resultados concorrendo com o site do cliente; e o sitemap cross-host é descartado pelo Google a menos que haja submissão cruzada verificada, então nem serve ao propósito de sitemap. Não consigo confirmar o estado ao vivo daqui (DNS bloqueado para os domínios do cliente).",
+  "correcao": "1) O deploy de homologação tem que sair de um build `--homologacao`: ou o .cpanel.yml roda `python3 fonte/build.py --homologacao` antes de copiar quando o destino é o subdomínio, ou a branch/artefato publicado em novosite.* é gerado separadamente — hoje não existe nenhuma das duas coisas. 2) Travar o engano: acrescentar em `confere_htaccess()`/checar.mjs uma verificação que recuse publicar um build com `stage: 'producao'` junto de um robots.txt de homologação e vice-versa (os dois têm que concordar), já que os dois saem da mesma flag. 3) Enquanto o sitemap for servido no subdomínio, gerá-lo com o host do ambiente — ou, mais simples, não publicar sitemap.xml em homologação, já que o robots é `Disallow: /`. 4) Na publicação, conferir pelo navegador: `https://novosite.salaomorenos.com.br/robots.txt` tem que trazer `Disallow: /`, e o HTML das páginas, `<meta name=\"robots\" content=\"noindex, nofollow\">`."
+ },
+ {
+  "prioridade": "P1",
+  "tipo": "melhoria_recomendada",
+  "titulo": "Sitemap sem lastmod — e o build não é determinístico, então lastmod por hash do HTML gerado daria mudança falsa em todo build",
+  "rotas": [
+   "/sitemap.xml"
+  ],
+  "arquivos": [
+   "/home/user/salao-morenos/public/sitemap.xml",
+   "/home/user/salao-morenos/fonte/build.py:557"
+  ],
+  "evidencia": "O parse do public/sitemap.xml devolve `16 urls, 0 lastmod` — o arquivo tem só <loc>, sem <lastmod>, <changefreq> ou <priority> (1229 bytes, todas as 16 linhas no formato `<url><loc>…</loc></url>`).\nSobre COMO gerar isso de forma honesta, medi o caminho mais óbvio e ele não serve: rodei `python3 fonte/build.py` (exit 0, 17 rotas) sem tocar em nenhum arquivo de fonte e depois `git diff --stat public/` acusou 5 páginas alteradas — public/cultura/index.html, public/o-clube/index.html, public/unidades/index.html, public/unidades/novo-horizonte-av-industrial/index.html e public/visagismo/index.html, 241 inserções / 241 remoções. Olhando o diff, a diferença é só a numeração das classes geradas na pré-renderização (`.scp0:hover`, `.scp1:hover`, `.scp2:hover`… trocam de ordem entre execuções). Ou seja: o HTML publicado muda de bytes sem que o conteúdo mude, então hash ou mtime do arquivo de saída reportaria \"mudou\" em cerca de um terço das rotas a cada build — exatamente o carimbo em massa que o cliente não quer.",
+  "impacto": "Sem lastmod o sitemap não dá nenhum sinal de frescor ao rastreador — numa migração, é justamente o sinal que acelera o recrawl das páginas que de fato mudaram. E o caminho que alguém tentaria primeiro (hash/mtime do HTML gerado) produziria o pior dos dois mundos: lastmod novo em páginas intocadas, que é o carimbo mentiroso, e perda de credibilidade do campo inteiro.",
+  "correcao": "Derivar o lastmod de cada rota da data do último commit que tocou as FONTES daquela rota, não da saída. Ao gerar o sitemap dentro do fonte/build.py, para cada entrada de `ROTAS` rodar `git log -1 --format=%cI -- <fonte/prototipo/X.dc.html> <fonte/prototipo/site-config.js> <fonte/prototipo/SiteHeader.dc.html> <SiteFooter.dc.html> <PaginaMorenos.dc.html>` e usar a data mais recente. Fica honesto: muda só quando alguém de fato mudou o que compõe a página, e a data é verificável no histórico. Duas ressalvas para decidir junto: (a) um commit num componente compartilhado move o lastmod das 17 rotas — o que é verdade, a página mudou mesmo, mas se preferirem granularidade maior basta restringir à fonte própria da rota + site-config.js; (b) o deploy da HostGator copia arquivos versionados e pode não ter git no momento do build, então o sitemap precisa ser gerado e COMITADO junto com a mudança (ou seja: passa a ser artefato de build versionado, o que hoje não é). Em paralelo, vale corrigir a não-determinismo da numeração `.scpN` no fonte/prerender.mjs: com build determinístico o diff de public/ volta a significar \"o conteúdo mudou\", o que ajuda muito além do sitemap."
+ },
+ {
+  "prioridade": "P2",
+  "tipo": "melhoria_recomendada",
+  "titulo": "Toda rota responde 200 em duas URLs: /pasta/ e /pasta/index.html, sem 301 entre elas",
+  "rotas": [
+   "/",
+   "/index.html",
+   "/o-clube/",
+   "/o-clube/index.html",
+   "todas as 16 rotas"
+  ],
+  "arquivos": [
+   "/home/user/salao-morenos/public/.htaccess:4"
+  ],
+  "evidencia": "Medido no servidor local com a semântica do Apache lida do próprio .htaccess:\n  /                    -> 200 | <title>Salão Morenos | Barbearia em Serra, ES</title>\n  /index.html          -> 200 | <title>Salão Morenos | Barbearia em Serra, ES</title>\n  /o-clube/            -> 200 | <title>Clube Salão Morenos | Planos e Assinatura</title>\n  /o-clube/index.html  -> 200 | <title>Clube Salão Morenos | Planos e Assinatura</title>\nNenhum redirecionamento: as duas formas entregam o mesmo documento com status 200. O .htaccess tem `DirectoryIndex index.html` (linha 4) mas nenhuma regra que redirecione a forma .html para a forma com barra.\nAtenuante medido: o canonical de cada página aponta sempre para a forma com barra (conferi os 16 `<link rel=\"canonical\">`, todos no formato `https://salaomorenos.com.br/<rota>/`), e nenhum link interno do site usa a forma .html — o rastreamento das 16 rotas depois da hidratação devolveu 16 destinos internos distintos, todos terminados em barra.",
+  "impacto": "Não é um problema de indexação hoje: o canonical consolida e o site não se autolinka na forma errada. Mas são duas URLs vivas por página. Qualquer link externo, QR code, campanha ou importação do site antigo que aponte para /pagina/index.html entra sem consolidação por redirecionamento — fica dependendo só do canonical, que é uma dica, não uma regra. E é a porta de entrada clássica para relatório de duplicata no Search Console depois da virada.",
+  "correcao": "Acrescentar no public/.htaccess, junto do `DirectoryIndex index.html`, um redirecionamento permanente da forma explícita para a forma canônica — na prática uma `RewriteRule` que capture `^(.*/)?index\\.html$` e mande para `/$1` com `[R=301,L]`, dentro do bloco `<IfModule mod_rewrite.c>` que já existe (e depois das regras de HTTPS/www, para não encadear dois saltos). Cobrir com uma verificação em fonte/checar.mjs que peça /index.html e /o-clube/index.html e cobre 301 para a forma com barra."
+ },
+ {
+  "prioridade": "P2",
+  "tipo": "melhoria_recomendada",
+  "titulo": "Barra final: o Apache resolve com 301, mas o servidor dos testes devolve 200 — o comportamento não está coberto e o .htaccess depende de um padrão implícito",
+  "rotas": [
+   "/visagismo",
+   "/unidades/cidade-continental",
+   "todas as 16 rotas sem barra"
+  ],
+  "arquivos": [
+   "/home/user/salao-morenos/public/.htaccess:4",
+   "/home/user/salao-morenos/fonte/checar.mjs:68-74",
+   "/home/user/salao-morenos/fonte/testes/arquitetura.mjs:43-48"
+  ],
+  "evidencia": "Não há duplicata 200 hoje. Com a semântica do Apache (DirectorySlash do mod_dir, ligado por padrão quando não declarado):\n  /visagismo                      -> 301 -> /visagismo/\n  /unidades/cidade-continental    -> 301 -> /unidades/cidade-continental/\n  /visagismo/                     -> 200\nMas o servidor usado pelos testes entrega as mesmas URLs sem barra com 200:\n  /visagismo                      -> 200 | Visagismo Masculino em Serra | …\n  /unidades/cidade-continental    -> 200 | Salão Morenos Cidade Continent…\nA causa está em fonte/checar.mjs:68-74 (`arquivoDe`), que depois de falhar em achar o arquivo tenta `f + '/index.html'` e serve 200 — e em fonte/testes/arquitetura.mjs:43-48, que resolve o diretório direto para index.html sem redirecionar. O public/.htaccess declara `DirectoryIndex index.html` (linha 4) mas nunca declara `DirectorySlash`: o 301 depende do padrão do mod_dir na conta da HostGator.\nTambém medi que o site nunca gera a forma sem barra por conta própria: `links internos sem barra final: []` no rastreamento das 16 rotas depois da troca das camadas.",
+  "impacto": "O comportamento certo existe, mas por padrão de servidor e sem teste. Se a conta mudar (DirectorySlash Off, ou um .htaccess de nível acima), /visagismo passa a 404 ou a servir 200 duplicado e as 71 + 222 verificações continuam verdes, porque o servidor dos testes faz outra coisa. A divergência entre o servidor de teste e o host é a mesma raiz do problema do 404 — vale consertar as duas de uma vez.",
+  "correcao": "1) Declarar `DirectorySlash On` explicitamente no public/.htaccess, ao lado do `DirectoryIndex index.html`, para a regra não depender do padrão da hospedagem. 2) Fazer o servidor de fonte/checar.mjs responder 301 para a forma com barra quando a URL aponta para um diretório sem barra final (em vez do `f + '/index.html'` de checar.mjs:72-73), e acrescentar uma verificação que peça /visagismo e /unidades/cidade-continental cobrando 301 com o Location correto."
+ },
+ {
+  "prioridade": "P2",
+  "tipo": "melhoria_recomendada",
+  "titulo": "Os três componentes em /_dc/ são documentos HTML completos, respondem 200 e não têm noindex — três URLs indexáveis fora do inventário",
+  "rotas": [
+   "/_dc/PaginaMorenos.dc.html",
+   "/_dc/SiteHeader.dc.html",
+   "/_dc/SiteFooter.dc.html"
+  ],
+  "arquivos": [
+   "/home/user/salao-morenos/public/_dc/PaginaMorenos.dc.html",
+   "/home/user/salao-morenos/public/_dc/SiteHeader.dc.html",
+   "/home/user/salao-morenos/public/_dc/SiteFooter.dc.html",
+   "/home/user/salao-morenos/public/.htaccess:84-97"
+  ],
+  "evidencia": "`head -c 400 public/_dc/SiteHeader.dc.html` mostra que não é fragmento, é documento inteiro: `<!DOCTYPE html>` / `<html>` / `<head>` / `<meta charset=\"utf-8\">` / `<meta name=\"viewport\" …>` / `<script src=\"./support.js\"></script>` / `<body>`. Tamanhos: PaginaMorenos.dc.html 113.899 bytes, SiteHeader.dc.html 23.237, SiteFooter.dc.html 5.128.\n`grep -c noindex public/_dc/*.dc.html` devolve 0 nos três. Não têm canonical. Não estão no sitemap (o cruzamento confirma: os 16 <loc> são as 16 rotas). O public/robots.txt publicado é `Allow: /`, então nada os barra. No servidor local respondem 200 como text/html.\nO navegador busca os três em tempo de execução (é o mecanismo descrito no próprio .htaccess, linhas 84-91, que proíbe — com razão — bloquear *.dc.html, porque bloqueá-los derruba cabeçalho, rodapé e corpo das páginas internas).",
+  "impacto": "São três URLs HTML de 200 que ninguém declarou e que um rastreador que executa JavaScript enxerga como recurso buscado. Indexadas, mostram pedaços soltos do layout (o menu, o rodapé, o esqueleto de página) como se fossem páginas do site — resultado sem cabeçalho, sem conteúdo e sem destino, no nome do cliente. É baixo risco, mas o custo de fechar é uma linha.",
+  "correcao": "Não bloquear (isso quebra o site, como o próprio .htaccess avisa) e não usar Disallow no robots.txt (isso também impediria a busca em tempo de execução). O caminho é um cabeçalho de resposta: acrescentar no bloco `<IfModule mod_headers.c>` que já existe no public/.htaccess um `<FilesMatch \"\\.dc\\.html$\">` com `Header set X-Robots-Tag \"noindex\"`. Os arquivos continuam sendo servidos normalmente ao navegador e saem do índice. Cobrir com uma verificação em fonte/checar.mjs que peça /_dc/SiteHeader.dc.html e cobre 200 + o cabeçalho X-Robots-Tag (o servidor de teste precisa passar a aplicar as regras de <Headers> do .htaccess, assim como já aplica as de bloqueio)."
+ },
+ {
+  "prioridade": "P2",
+  "tipo": "melhoria_recomendada",
+  "titulo": "As cinco pastas de assets respondem 403 (não 404) e com a página de erro padrão do Apache",
+  "rotas": [
+   "/img/",
+   "/assets/",
+   "/fonts/",
+   "/vendor/",
+   "/_dc/"
+  ],
+  "arquivos": [
+   "/home/user/salao-morenos/public/.htaccess:102",
+   "/home/user/salao-morenos/public/.htaccess:104"
+  ],
+  "evidencia": "Nenhuma das cinco pastas publicadas tem index.html — conferido arquivo por arquivo: /img/, /assets/, /fonts/, /vendor/ e /_dc/ só contêm assets. O public/.htaccess:102 traz `Options -Indexes`, que desliga a listagem. A consequência documentada do Apache nessa combinação (diretório existente, sem DirectoryIndex, sem autoindex) é 403 Forbidden, não 404. E o .htaccess declara ErrorDocument só para 404 (linha 104), não para 403 — então o corpo do 403 é a página de erro padrão do servidor, fora da identidade do site. Não consegui comprovar o status contra um Apache real (não há Apache neste ambiente e os domínios do cliente estão com DNS bloqueado); o que comprovei é a condição que o produz: as cinco pastas sem index.html mais o `Options -Indexes`.",
+  "impacto": "Cinco URLs que, do ponto de vista do visitante e do rastreador, simplesmente não existem respondem com \"proibido\" em vez de \"não encontrado\" — sinal errado — e mostram uma página de erro genérica do servidor, com a marca da hospedagem em vez da do cliente. É o caso mais provável de alguém digitar salaomorenos.com.br/img/ por curiosidade ou um rastreador subir um nível a partir de uma imagem.",
+  "correcao": "Depois de corrigir o ErrorDocument 404 (ver o achado P0), acrescentar `ErrorDocument 403 /404.html` no public/.htaccess, para que esses caminhos também devolvam a página de erro desenhada. Conferir na publicação, pelo navegador, o status real de /img/ e /vendor/ na HostGator — se vier 404 em vez de 403, não há o que fazer; se vier 403, a linha resolve a aparência e o ErrorDocument cobre os dois casos."
+ },
+ {
+  "prioridade": "P1",
+  "tipo": "so_na_publicacao",
+  "titulo": "As 9 URLs do site antigo estão preservadas, mas não existe mapa de 301 para o resto do WordPress — a auditoria só pode ser feita no domínio do cliente",
+  "rotas": [
+   "/",
+   "/unidades/",
+   "/servicos/",
+   "/visagismo/",
+   "/dia-do-noivo/",
+   "/o-clube/",
+   "/cultura/",
+   "/corporativo/",
+   "/trabalhe-conosco/"
+  ],
+  "arquivos": [
+   "/home/user/salao-morenos/fonte/MIGRATION-CHECKLIST.md:53",
+   "/home/user/salao-morenos/public/sitemap.xml",
+   "/home/user/salao-morenos/.cpanel.yml:9"
+  ],
+  "evidencia": "A parte que dá para comprovar daqui está comprovada: as 9 rotas do site antigo existem em disco E estão no sitemap, uma a uma —\n  /                      disco=SIM sitemap=1\n  /trabalhe-conosco/     disco=SIM sitemap=1\n  /corporativo/          disco=SIM sitemap=1\n  /visagismo/            disco=SIM sitemap=1\n  /o-clube/              disco=SIM sitemap=1\n  /cultura/              disco=SIM sitemap=1\n  /unidades/             disco=SIM sitemap=1\n  /servicos/             disco=SIM sitemap=1\n  /dia-do-noivo/         disco=SIM sitemap=1\nCada uma também tem canonical próprio idêntico ao <loc>. Nenhuma URL aparece em duas formas: o rastreamento das 16 rotas depois da hidratação devolveu exatamente 16 destinos internos distintos, todos com barra final, e /servicos/visagismo/ não existe nem como arquivo nem como link (responde 404) — visagismo é serviço em site-config.js:120 (`pagina: 'visagismo'`) mas resolve para a forma única /visagismo/ via C.paths:54.\nO que NÃO existe no repositório: qualquer mapa de redirecionamento. `grep -rn -i 'redirect\\|301' fonte/*.md` devolve só a linha 53 do MIGRATION-CHECKLIST, ainda desmarcada: \"[ ] redirects do WordPress antigo (as 9 URLs atuais foram mantidas)\". E o .htaccess não tem nenhuma RewriteRule de redirecionamento de conteúdo — só HTTPS, www e a rota interna do endpoint PHP. Não consultei salaomorenos.com.br (DNS bloqueado) e não estou afirmando nada sobre o que existe lá.",
+  "impacto": "As 9 páginas principais sobrevivem à virada. Tudo o que o WordPress publicava fora dessas 9 — posts, páginas, categorias, tags, páginas de anexo, feeds, URLs de mídia e os caminhos de asset do ElementsKit — passa a cair no ErrorDocument. Com o ErrorDocument como está hoje, cai na home; mesmo depois de corrigido, cai num 404 sem destino. Toda autoridade de link externo apontando para essas URLs se perde na virada, e é o tipo de perda que não se recupera depois.",
+  "correcao": "Antes de apontar o DNS, levantar o inventário real do WordPress — nada disso é inventável daqui, todos os passos são verificáveis pelo cliente ou por quem tiver acesso ao domínio: (1) baixar https://salaomorenos.com.br/sitemap.xml e, se for Yoast/RankMath, o índice e os sub-sitemaps (sitemap_index.xml, post-sitemap.xml, page-sitemap.xml, category-sitemap.xml e demais) e extrair todas as <loc>; (2) exportar do Search Console a aba Páginas e o relatório de Desempenho nos 16 meses, listando toda URL com ao menos uma impressão ou clique; (3) rastrear o site ao vivo para pegar o que nenhum sitemap lista — /?p=N, /feed/, /wp-json/, páginas de anexo, arquivos de tag e autor, e os caminhos sob /wp-content/uploads/ e /wp-content/plugins/ do ElementsKit; (4) exportar o relatório de links externos do Search Console, para que nenhuma URL com backlink fique sem destino; (5) cruzar os quatro conjuntos e montar o mapa 301 um a um, cada URL antiga para a rota nova mais próxima em assunto — nunca um 301 geral para a home, que vira 404 suave em escala; (6) decidir o que fazer com /wp-content/uploads/: se alguma imagem estiver ranqueando ou hotlinkada, manter o caminho vivo (cópia ou 301) em vez de apagar junto com o WordPress. Com o mapa em mãos, publicar os 301 no public/.htaccess versionado (nunca editado direto no servidor) e acrescentar em fonte/checar.mjs uma verificação que percorra o mapa cobrando 301 e destino existente — assim o mapa não se perde no próximo deploy, que hoje é uma cópia aditiva (.cpanel.yml:9)."
+ },
+ {
+  "prioridade": "P0",
+  "tipo": "problema_comprovado",
+  "titulo": "O artefato em public/ — o build que foi para o subdominio provisorio — e o de producao: indexavel, sem noindex, e a protecao automatica por hostname nao existe mais no site publicado",
+  "rotas": [
+   "/",
+   "/unidades/",
+   "/unidades/cidade-continental/",
+   "/unidades/novo-horizonte-av-brasil/",
+   "/unidades/novo-horizonte-av-industrial/",
+   "/servicos/",
+   "/servicos/corte-masculino/",
+   "/servicos/barboterapia/",
+   "/visagismo/",
+   "/dia-do-noivo/",
+   "/o-clube/",
+   "/cultura/",
+   "/corporativo/",
+   "/trabalhe-conosco/",
+   "/politica-de-privacidade/",
+   "/termos-de-uso/"
+  ],
+  "arquivos": [
+   "/home/user/salao-morenos/public/robots.txt",
+   "/home/user/salao-morenos/fonte/build.py:253",
+   "/home/user/salao-morenos/fonte/prototipo/site-config.js:9",
+   "/home/user/salao-morenos/fonte/MIGRATION-CHECKLIST.md:48",
+   "/home/user/salao-morenos/fonte/HANDOFF.md:16"
+  ],
+  "evidencia": "1) `cat public/robots.txt` -> \"User-agent: *\\nAllow: /\\nSitemap: https://salaomorenos.com.br/sitemap.xml\". 2) Auditei o DOM final das 17 rotas de public/ num Chromium (script em /tmp/claude-0/-home-user-vegas-site/84202d3b-f43d-5cbd-bf88-0e8d03fe632d/scratchpad/audita_dom.mjs, esperando html.mo-vivo): nas 16 rotas indexaveis `document.querySelectorAll('meta[name=\"robots\"]').length` = 0; so /404.html tem [\"noindex\"]. 3) `grep -o \"stage: '[a-z]*',\" public/index.html` -> `stage: 'producao',  // fixado no build`; `grep -o novosite public/index.html` -> ZERO ocorrencias. Ou seja: build.py:254-257 substitui `stage: /novosite\\./.test(location.hostname) ? 'homologacao' : 'producao'` por um literal, e a deteccao por hostname que fonte/MIGRATION-CHECKLIST.md:48 (\"C.env.stage aplica noindex,nofollow automaticamente em novosite.*\") e fonte/HANDOFF.md:16 prometem simplesmente nao existe no site publicado. 4) `git log --oneline -- public/robots.txt` -> um unico commit, \"Prepara o site para producao na HostGator\": o robots de producao e o que esta versionado. 5) `.cpanel.yml` so faz `cp -R public/. $DEPLOYPATH` — o deploy nao roda build, publica o que estiver commitado.",
+  "impacto": "O site de aprovacao fica totalmente rastreavel e indexavel. Enquanto o WordPress antigo continua no dominio principal, o Google pode indexar as 16 rotas do novosite como um segundo site com o mesmo conteudo, e o robots.txt do novosite ainda aponta `Sitemap: https://salaomorenos.com.br/sitemap.xml`. Na hora da migracao real as URLs do subdominio ja indexadas competem com as definitivas e precisam ser removidas uma a uma.",
+  "correcao": "Imediato: reconstruir o artefato do subdominio com `python3 fonte/build.py --homologacao` e republicar (isso troca o robots.txt e injeta o noindex). Estrutural: como a protecao por hostname foi removida pelo build, ela nao pode continuar sendo citada como salvaguarda — corrigir fonte/MIGRATION-CHECKLIST.md:48 e fonte/HANDOFF.md:16, e passar a travar o ambiente por verificacao (ver achados sobre checar.mjs e sobre o .htaccess por ambiente), nao por um flag que alguem precisa lembrar de digitar."
+ },
+ {
+  "prioridade": "P0",
+  "tipo": "problema_comprovado",
+  "titulo": "O robots de homologacao usa `Disallow: /` junto com o noindex — o robo nunca chega a ler o noindex",
+  "rotas": [
+   "/",
+   "/unidades/",
+   "/unidades/cidade-continental/",
+   "/unidades/novo-horizonte-av-brasil/",
+   "/unidades/novo-horizonte-av-industrial/",
+   "/servicos/",
+   "/servicos/corte-masculino/",
+   "/servicos/barboterapia/",
+   "/visagismo/",
+   "/dia-do-noivo/",
+   "/o-clube/",
+   "/cultura/",
+   "/corporativo/",
+   "/trabalhe-conosco/",
+   "/politica-de-privacidade/",
+   "/termos-de-uso/",
+   "/404.html"
+  ],
+  "arquivos": [
+   "/home/user/salao-morenos/fonte/prototipo/seo/robots-homologacao.txt",
+   "/home/user/salao-morenos/fonte/build.py:555"
+  ],
+  "evidencia": "`cat fonte/prototipo/seo/robots-homologacao.txt` -> \"# Usar somente em novosite.salaomorenos.com.br\\nUser-agent: *\\nDisallow: /\". build.py:555-556 copia exatamente esse arquivo para public/robots.txt quando `--homologacao` (confirmei rodando `python3 fonte/build.py --homologacao --so-rota /o-clube/` e lendo public/robots.txt depois). Ao mesmo tempo, montei a arvore de homologacao completa e auditei no navegador: as 17 rotas entregam `meta[name=robots]` = \"noindex, nofollow\". Entao as duas instrucoes convivem: o Disallow impede o rastreamento, e o noindex — que so existe dentro da pagina — fica inalcancavel.",
+  "impacto": "E exatamente o erro classico que o cliente pediu para evitar. Uma URL de homologacao que for descoberta por link, por um print no WhatsApp, pela barra do Chrome ou pelo proprio cliente compartilhando pode entrar no indice como resultado sem titulo nem descricao (\"indexada, porem bloqueada pelo robots.txt\"), e o noindex nunca sera lido para tira-la de la. Pior: depois de publicada no dominio principal, remover essas URLs do indice exige liberar o rastreamento primeiro.",
+  "correcao": "Trocar o conteudo de fonte/prototipo/seo/robots-homologacao.txt por um robots que PERMITE o rastreamento, sem linha Sitemap: \"# Usar somente em novosite.salaomorenos.com.br\\nUser-agent: *\\nAllow: /\". Assim o robo busca a pagina e le o noindex. A exclusao do indice passa a se apoiar no `<meta name=\"robots\">` servido no HTML inicial (ver achado seguinte) e no cabecalho `X-Robots-Tag`. Se o cliente quiser o subdominio realmente invisivel, a ferramenta certa e autenticacao HTTP no host, nao Disallow — isso depende de o cliente/hospedagem criar a credencial."
+ },
+ {
+  "prioridade": "P0",
+  "tipo": "problema_comprovado",
+  "titulo": "Nenhuma das 293 verificacoes cobre ambiente ou indexacao: nada impede publicar homologacao sem noindex, nem producao com noindex",
+  "rotas": [
+   "/",
+   "/unidades/",
+   "/unidades/cidade-continental/",
+   "/unidades/novo-horizonte-av-brasil/",
+   "/unidades/novo-horizonte-av-industrial/",
+   "/servicos/",
+   "/servicos/corte-masculino/",
+   "/servicos/barboterapia/",
+   "/visagismo/",
+   "/dia-do-noivo/",
+   "/o-clube/",
+   "/cultura/",
+   "/corporativo/",
+   "/trabalhe-conosco/",
+   "/politica-de-privacidade/",
+   "/termos-de-uso/",
+   "/404.html"
+  ],
+  "arquivos": [
+   "/home/user/salao-morenos/fonte/checar.mjs:197",
+   "/home/user/salao-morenos/fonte/checar.mjs:205",
+   "/home/user/salao-morenos/fonte/testes/arquitetura.mjs",
+   "/home/user/salao-morenos/fonte/build.py:223"
+  ],
+  "evidencia": "`grep -n \"robots|noindex|canonical|X-Robots|homolog|stage\" fonte/checar.mjs` -> so duas linhas, 197 e 205, e as duas sao sobre CONTAGEM de canonical; a palavra \"robots\" nao aparece no arquivo. `grep -in \"robot|canonic|sitemap|noindex|htaccess|stage|homolog|indexa\" fonte/testes/arquitetura.mjs` -> ZERO ocorrencias (o arquivo tem 198 linhas e so trata arquitetura de conteudo). A unica assercao vizinha, checar.mjs:205 (`1 <title> e 1 canonical depois da troca`), roda em 5 combinacoes rota/perfil das 17 rotas e nunca olha o VALOR do canonical. Rodei `node fonte/checar.mjs public` no artefato atual: \"71 ok, 0 falha(s)\" — a suite fica verde exatamente sobre o artefato de producao que nao pode estar no subdominio provisorio. Contraste: build.py aplica \"agulhas\" que abortam o build em transformacoes cosmeticas (patch_config: aborta se nao achar `showOncePerSession`, `C.locations`, `C.env.stage`), mas nao ha nenhuma agulha nem conferencia sobre o noindex, sobre o robots.txt publicado ou sobre o canonical.",
+  "impacto": "O ambiente do artefato depende inteiramente de alguem lembrar de digitar `--homologacao`, e nada no repositorio percebe o erro nos dois sentidos. Errar para menos ja aconteceu (achado P0 anterior: o artefato commitado e o de producao). Errar para mais e pior: publicar o dominio principal com noindex tira o site inteiro do indice em silencio, e nem o build nem as 293 verificacoes nem o deploy diriam qualquer coisa.",
+  "correcao": "Duas travas. (a) No build: depois de gerar as rotas, conferir o artefato — em `--homologacao`, cada uma das 17 rotas tem exatamente 1 `<meta name=\"robots\" content=\"noindex, nofollow\">` no HTML CRU e public/robots.txt e o de homologacao; sem o flag, zero `<meta name=\"robots\">` nas 16 rotas indexaveis (404.html continua com o seu), public/robots.txt e o de producao, e nenhum `X-Robots-Tag` de noindex no .htaccess. Abortar o build se qualquer uma falhar, no mesmo estilo das agulhas existentes. (b) Em fonte/checar.mjs: receber `--homologacao`/`--producao` (ou inferir lendo public/robots.txt) e cobrar as mesmas regras lendo o HTML do disco, mais: canonical absoluto e autorreferente nas 16 rotas (hoje nem o valor nem as outras 12 rotas sao verificados), e nunca `Disallow: /` convivendo com noindex."
+ },
+ {
+  "prioridade": "P1",
+  "tipo": "problema_comprovado",
+  "titulo": "O noindex de homologacao nasce de uma linha de JavaScript; so chega ao HTML porque o Chromium do build executou o script, e a captura do <head> nao e deterministica",
+  "rotas": [
+   "/",
+   "/unidades/",
+   "/unidades/cidade-continental/",
+   "/unidades/novo-horizonte-av-brasil/",
+   "/unidades/novo-horizonte-av-industrial/",
+   "/servicos/",
+   "/servicos/corte-masculino/",
+   "/servicos/barboterapia/",
+   "/visagismo/",
+   "/dia-do-noivo/",
+   "/o-clube/",
+   "/cultura/",
+   "/corporativo/",
+   "/trabalhe-conosco/",
+   "/politica-de-privacidade/",
+   "/termos-de-uso/"
+  ],
+  "arquivos": [
+   "/home/user/salao-morenos/fonte/prototipo/site-config.js:182",
+   "/home/user/salao-morenos/fonte/prerender.mjs:218",
+   "/home/user/salao-morenos/fonte/build.py:253"
+  ],
+  "evidencia": "A unica origem do noindex para as 16 rotas indexaveis e site-config.js:182-185: `if (C.env.stage === 'homologacao') { var m = document.createElement('meta'); m.name='robots'; m.content='noindex, nofollow'; document.head.appendChild(m); }`. `grep -l 'name=\"robots\"' fonte/prototipo/*.dc.html` -> so 404.dc.html tem a meta escrita literalmente. O HTML publicado recebe a meta apenas porque prerender.mjs serializa `document.head.children` depois que o Chromium executou esse script (prerender.mjs:218-230), e o mesmo site-config.js continua embutido na pagina publicada e injeta uma SEGUNDA copia em tempo de execucao — deduplicada pelo `limpaCabeca` do bloco COLA. Na pratica funciona: renderizei as 17 rotas em homologacao e todas trazem a meta no `<head>` cru, e no DOM final sobra exatamente 1. Mas a captura nao e deterministica: rodei o mesmo prerender 4x sobre a MESMA fonte (/tmp/claude-0/-home-user-vegas-site/84202d3b-f43d-5cbd-bf88-0e8d03fe632d/scratchpad/determinismo.py) e obtive 2 `<head>` md5 diferentes, em producao e em homologacao (a ordem das regras CSSOM varia). Corroborando: `public/unidades/index.html` ja chegou no meu checkout divergindo do commit por um bloco `<style data-dc-tpl=\"1\">` inteiro DENTRO do `<head>` (git diff: 61 linhas) — dois builds da mesma fonte, cabecas diferentes. Registro ainda, com honestidade sobre o status: um `build.py --homologacao --so-rota /o-clube/` produziu uma saida SEM nenhuma `<meta name=\"robots\">` (md5 44a097d79d9f5d2bc2f99f1ecbe8a684; o unico \"robots\" no arquivo era o codigo-fonte JS), e o rebuild imediato do mesmo comando produziu a meta (md5 c4d6222927d90069d6112d9472436de1). Nao consegui reproduzir em 27 renderizacoes seguintes, entao reporto como ocorrencia unica observada, nao como mecanismo provado.",
+  "impacto": "A exigencia do cliente e que o noindex nao dependa de JavaScript. Hoje ele e PRODUZIDO por JavaScript e sobrevive por efeito colateral da pre-renderizacao, sem nenhuma agulha nem conferencia que garanta que chegou. Qualquer mexida no site-config.js, na ordem dos scripts do `<head>`, no filtro de `capturado.cabeca` do prerender.mjs ou no runtime do Claude Design remove a protecao do subdominio em silencio — e o build, o checar.mjs e o arquitetura.mjs continuam verdes.",
+  "correcao": "Transformar o noindex numa transformacao de build com agulha, como as demais. Em build.py, quando `--homologacao`, inserir literalmente `<meta name=\"robots\" content=\"noindex, nofollow\">` logo apos o `<helmet>` de cada uma das 17 rotas, conferindo que a insercao ocorreu exatamente 1 vez por rota e abortando o build caso contrario (os .dc.html do design continuam intocados — quem transforma e o build, igual ao que ja e feito com C.routes, links e fontes). Em seguida remover o bloco de injecao de site-config.js:182-185, para que o HTML publicado nao tenha mais nenhum caminho de JavaScript mexendo em meta robots. Fechar com a conferencia descrita no achado anterior."
+ },
+ {
+  "prioridade": "P1",
+  "tipo": "melhoria_recomendada",
+  "titulo": "O .htaccess e unico para os dois ambientes, nao entrega X-Robots-Tag e nao tem protecao de acesso — e o unico arquivo de configuracao que o build nao varia por ambiente",
+  "rotas": [
+   "/",
+   "/unidades/",
+   "/unidades/cidade-continental/",
+   "/unidades/novo-horizonte-av-brasil/",
+   "/unidades/novo-horizonte-av-industrial/",
+   "/servicos/",
+   "/servicos/corte-masculino/",
+   "/servicos/barboterapia/",
+   "/visagismo/",
+   "/dia-do-noivo/",
+   "/o-clube/",
+   "/cultura/",
+   "/corporativo/",
+   "/trabalhe-conosco/",
+   "/politica-de-privacidade/",
+   "/termos-de-uso/",
+   "/404.html"
+  ],
+  "arquivos": [
+   "/home/user/salao-morenos/public/.htaccess:68",
+   "/home/user/salao-morenos/fonte/build.py:525",
+   "/home/user/salao-morenos/fonte/build.py:555"
+  ],
+  "evidencia": "`git ls-files public/.htaccess` -> rastreado; e um arquivo estatico versionado, nao gerado: em build.py o .htaccess so aparece em `confere_htaccess()`, que apenas LE o arquivo para checar regras de bloqueio. `publica_estaticos()` (build.py:525-557) troca o robots.txt por ambiente (`robots = \"robots-homologacao.txt\" if homologacao else \"robots.txt\"`) mas nao toca no .htaccess — rodei o build com e sem `--homologacao` e o .htaccess permaneceu identico. `grep -c \"AuthType|Require valid-user|X-Robots\" public/.htaccess` -> 0. Ao mesmo tempo ja existe um bloco `<IfModule mod_headers.c>` em funcionamento (public/.htaccess:68-82) definindo X-Content-Type-Options, Referrer-Policy e Cache-Control — ou seja, o host aceita cabecalhos e falta so a linha.",
+  "impacto": "Nao existe nenhuma alavanca de servidor para dizer \"este host nao e para o indice\", e a unica alavanca existente (a meta na pagina) fica ilegivel enquanto o `Disallow: /` estiver em vigor. Como o mesmo .htaccess vai para os dois hosts, qualquer regra especifica de ambiente teria que ser editada a mao no servidor — que e justamente como um dominio principal acaba carregando um `X-Robots-Tag: noindex` esquecido.",
+  "correcao": "Passar o .htaccess a ser gerado por ambiente, com o mesmo padrao do robots.txt: manter o arquivo base em fonte/prototipo/seo/ e, no build de homologacao, acrescentar dentro do bloco mod_headers ja existente `Header always set X-Robots-Tag \"noindex, nofollow\"` — no build de producao, nao acrescentar nada. Acrescentar a conferencia correspondente (o cabecalho existe se e somente se o build e de homologacao). Protecao mais forte para o subdominio de aprovacao e autenticacao HTTP (AuthType Basic) em vez de Disallow, mas isso exige o cliente/hospedagem criar usuario e senha e combinar como o cliente vai acessar — pendencia, nao decisao nossa."
+ },
+ {
+  "prioridade": "P1",
+  "tipo": "problema_comprovado",
+  "titulo": "Os tres componentes em /_dc/ sao documentos HTML completos, servidos em URL publica, com 185 marcadores {{ }} crus, sem noindex e sob `Allow: /`",
+  "rotas": [
+   "/_dc/PaginaMorenos.dc.html",
+   "/_dc/SiteHeader.dc.html",
+   "/_dc/SiteFooter.dc.html"
+  ],
+  "arquivos": [
+   "/home/user/salao-morenos/public/_dc/PaginaMorenos.dc.html",
+   "/home/user/salao-morenos/public/_dc/SiteHeader.dc.html",
+   "/home/user/salao-morenos/public/_dc/SiteFooter.dc.html",
+   "/home/user/salao-morenos/public/.htaccess:95",
+   "/home/user/salao-morenos/public/robots.txt"
+  ],
+  "evidencia": "`find public -name \"*.html\" | grep -v -E '(index|404)\\.html$'` -> os tres arquivos de /_dc/ (PaginaMorenos 114 KB, SiteHeader 23 KB, SiteFooter 5 KB). `head -c 300 public/_dc/SiteHeader.dc.html` -> comecam com `<!DOCTYPE html><html><head>...` — sao documentos HTML completos, servidos como text/html. `grep -c '{{' public/_dc/PaginaMorenos.dc.html` -> 185 marcadores crus ({{ secoes }}, {{ s.h1 }}, {{ s.foto }}...). Nenhum tem `<title>` nem `<meta name=\"robots\">` (0 em cada). Nao estao no sitemap (`grep -c _dc public/sitemap.xml` -> 0), mas public/robots.txt de producao e `Allow: /`, e o comentario de public/.htaccess:95-101 explica que bloquear *.dc.html NAO e opcao: ja derrubou o cabecalho, o rodape e o corpo das 13 paginas internas, porque o NAVEGADOR busca esses arquivos em tempo de execucao.",
+  "impacto": "Sao tres URLs publicas, rastreaveis, servindo codigo de template cru. Se entrarem no indice, o visitante que clicar cai numa pagina sem titulo, sem conteudo legivel e cheia de {{ }} — associada a marca. Nao da para resolver com Disallow (nao impede indexacao por link e nem seria lido junto com noindex) nem com `Require all denied` (quebra o site, conforme ja documentado no proprio .htaccess).",
+  "correcao": "Unico caminho que nao quebra o runtime: cabecalho HTTP. Acrescentar ao bloco mod_headers do .htaccess, nos DOIS ambientes, `<FilesMatch \"\\.dc\\.html$\"> Header always set X-Robots-Tag \"noindex\" </FilesMatch>`. Os arquivos continuam respondendo 200 para o fetch do navegador e ficam fora do indice. Entra junto com a geracao do .htaccess por ambiente do achado anterior, e vale a pena cobrir na conferencia (os tres arquivos existem e a regra que os cobre esta presente)."
+ },
+ {
+  "prioridade": "P1",
+  "tipo": "problema_comprovado",
+  "titulo": "`ErrorDocument 404 /index.html`: a pagina 404 gerada nunca e servida — toda URL inexistente devolve a home, com o titulo, o h1 e o canonical da home",
+  "rotas": [
+   "/404.html"
+  ],
+  "arquivos": [
+   "/home/user/salao-morenos/public/.htaccess:104",
+   "/home/user/salao-morenos/public/404.html",
+   "/home/user/salao-morenos/fonte/checar.mjs:79",
+   "/home/user/salao-morenos/fonte/MIGRATION-CHECKLIST.md:49"
+  ],
+  "evidencia": "`grep -n 404 public/.htaccess` -> uma unica linha, a 104: `ErrorDocument 404 /index.html`. O arquivo public/404.html (60 KB) e gerado pelo build (consta em ROTAS, build.py) e traz `<meta name=\"robots\" content=\"noindex\">` — verifiquei no DOM final que ele carrega com [\"noindex\"] e sem canonical — mas nao e referenciado em lugar nenhum da configuracao do servidor. Enquanto isso fonte/checar.mjs:79-85 serve `404.html` para caminho inexistente (\"const e404 = path.join(RAIZ, '404.html')\"), ou seja, o arcabouco de teste exercita uma pagina que o Apache nunca vai entregar. fonte/MIGRATION-CHECKLIST.md:49 (\"404 servido com status HTTP 404 (404.dc.html)\") continua desmarcado.",
+  "impacto": "Toda URL inexistente do dominio entrega o conteudo da home: o `<title>` da home, o `<h1>` da home e `<link rel=canonical href=\"https://salaomorenos.com.br/\">` numa URL que nao e a home. Como o Apache preserva o status 404 quando o ErrorDocument e um caminho local, isso nao deve virar indexacao, mas aparece no Search Console como erro, o canonical emitido e um sinal errado, e a rota 404 — uma das 17 entregas, com noindex proprio — vai para o ar como peso morto. O risco sobe se alguem trocar a linha por um redirect: ai vira 200 e soft-404 de verdade.",
+  "correcao": "Trocar public/.htaccess:104 por `ErrorDocument 404 /404.html`. Acrescentar em fonte/checar.mjs uma conferencia que le o `ErrorDocument` do .htaccess, confirma que o alvo existe em public/ e que esse alvo tem `<meta name=\"robots\" content=\"noindex\">` — hoje o servidor de teste assume 404.html por conta propria, divergindo do Apache real."
+ },
+ {
+  "prioridade": "P2",
+  "tipo": "melhoria_recomendada",
+  "titulo": "O sitemap.xml com as 16 URLs de producao tambem e publicado no build de homologacao",
+  "rotas": [
+   "/"
+  ],
+  "arquivos": [
+   "/home/user/salao-morenos/fonte/build.py:557",
+   "/home/user/salao-morenos/fonte/prototipo/seo/sitemap.xml"
+  ],
+  "evidencia": "build.py:555-557: a linha do robots e condicional (`robots = \"robots-homologacao.txt\" if homologacao else \"robots.txt\"`), mas a seguinte, `shutil.copy2(PROTO / \"seo\" / \"sitemap.xml\", PUB / \"sitemap.xml\")`, e incondicional. Confirmei rodando `python3 fonte/build.py --homologacao --so-rota /o-clube/`: public/sitemap.xml continua la com as 16 `<loc>https://salaomorenos.com.br/...</loc>`. O robots de homologacao nao tem linha Sitemap (verificado), entao hoje o arquivo so e alcancavel por URL direta — e esta sob `Disallow: /`.",
+  "impacto": "Hoje o dano e contido pelo proprio Disallow. Mas as duas correcoes interagem: no momento em que o `Disallow: /` for removido (como recomendo no achado P0 do robots, para que o noindex possa ser lido), `novosite.../sitemap.xml` passa a ser um arquivo rastreavel, servido do host de homologacao, listando 16 URLs do dominio principal. E um convite a rastrear producao a partir do ambiente de aprovacao.",
+  "correcao": "Tornar a copia do sitemap condicional em build.py:557: publicar fonte/prototipo/seo/sitemap.xml apenas quando NAO for `--homologacao`. Incluir na conferencia de ambiente: build de homologacao nao publica sitemap.xml; build de producao publica, com as 16 URLs batendo exatamente com C.paths do site-config.js."
+ },
+ {
+  "prioridade": "P1",
+  "tipo": "so_na_publicacao",
+  "titulo": "No build de producao servido no subdominio, os 16 canonicals apontam para salaomorenos.com.br, onde hoje roda outro site — para as rotas novas o alvo provavelmente nao existe",
+  "rotas": [
+   "/o-clube/",
+   "/visagismo/",
+   "/cultura/",
+   "/dia-do-noivo/",
+   "/corporativo/",
+   "/servicos/barboterapia/",
+   "/unidades/cidade-continental/",
+   "/unidades/novo-horizonte-av-brasil/",
+   "/unidades/novo-horizonte-av-industrial/"
+  ],
+  "arquivos": [
+   "/home/user/salao-morenos/fonte/prototipo/Home.dc.html:18",
+   "/home/user/salao-morenos/fonte/prototipo/o-clube.dc.html:18",
+   "/home/user/salao-morenos/fonte/MIGRATION-CHECKLIST.md:53"
+  ],
+  "evidencia": "Os canonicals sao literais nos .dc.html (`grep -rn canonical fonte/prototipo/*.dc.html` -> 16 arquivos, um cada, todos `https://salaomorenos.com.br/<rota>`); o build nao os reescreve por ambiente (nenhuma ocorrencia de \"canonical\" em build.py). Auditei o DOM final das 16 rotas nos dois builds: em producao E em homologacao o canonical e sempre o mesmo, absoluto e autorreferente em relacao a rota, apontando para o dominio principal. fonte/MIGRATION-CHECKLIST.md:53 registra que \"as 9 URLs atuais foram mantidas\" — ou seja, rotas como /o-clube/, /visagismo/, /cultura/, /dia-do-noivo/ e /corporativo/ sao novas e nao existiam no WordPress. Nao consegui conferir o que o dominio principal responde hoje nessas URLs: o DNS dos dominios do cliente esta bloqueado neste ambiente.",
+  "impacto": "Enquanto o build de producao estiver no subdominio (achado P0), cada pagina diz ao Google \"minha versao oficial e salaomorenos.com.br/<rota>\". Para as rotas que ja existem no WordPress, o Google consolida o novosite no conteudo ANTIGO. Para as rotas novas, o alvo do canonical provavelmente devolve 404 ou o conteudo errado; canonical invalido e ignorado, e o Google tende a indexar a propria URL de homologacao. Nos dois casos o sinal emitido e falso.",
+  "correcao": "Enquanto o subdominio for provisorio, o artefato que mora nele tem que ser o de homologacao — com o noindex no HTML inicial e, idealmente, X-Robots-Tag — e ai o destino do canonical deixa de importar. Nao mexer nos canonicals: absolutos e autorreferentes para o dominio final e o comportamento correto para a publicacao definitiva, e as URLs devem ser preservadas como estao. Pendencia para o cliente, a resolver antes da migracao: confirmar quais das 16 URLs ja respondem em salaomorenos.com.br e mapear os 301 das URLs antigas que mudarem — item que fonte/MIGRATION-CHECKLIST.md:53 ja preve e que continua desmarcado."
+ },
+ {
+  "prioridade": "P0",
+  "tipo": "problema_comprovado",
+  "titulo": "A mesma unidade real existe como duas entidades diferentes no grafo: @id da Home e @id da página da unidade nunca se encontram",
+  "rotas": [
+   "/",
+   "/unidades/cidade-continental/",
+   "/unidades/novo-horizonte-av-brasil/",
+   "/unidades/novo-horizonte-av-industrial/"
+  ],
+  "arquivos": [
+   "/home/user/salao-morenos/fonte/prototipo/Home.dc.html:62",
+   "/home/user/salao-morenos/fonte/prototipo/cidade-continental.dc.html:44",
+   "/home/user/salao-morenos/fonte/prototipo/novo-horizonte-av-brasil.dc.html:44",
+   "/home/user/salao-morenos/fonte/prototipo/novo-horizonte-av-industrial.dc.html:44"
+  ],
+  "evidencia": "Expansão JSON-LD 1.1 (valida2.mjs) devolveu 6 @id HairSalon para 3 lugares reais:\n  https://salaomorenos.com.br/#cidade-continental              (Home.dc.html)\n  https://salaomorenos.com.br/#novo-horizonte-av-brasil        (Home.dc.html)\n  https://salaomorenos.com.br/#novo-horizonte-av-industrial    (Home.dc.html)\n  https://salaomorenos.com.br/unidades/cidade-continental/#unidade              (cidade-continental.dc.html)\n  https://salaomorenos.com.br/unidades/novo-horizonte-av-brasil/#unidade        (novo-horizonte-av-brasil.dc.html)\n  https://salaomorenos.com.br/unidades/novo-horizonte-av-industrial/#unidade    (novo-horizonte-av-industrial.dc.html)\nOs dois nós do mesmo lugar nem carregam as mesmas propriedades: o inventário de propriedades mostra HairSalon.image 3x e HairSalon.parentOrganization 3x — só nas páginas de unidade. Os 3 nós da Home têm apenas name, url, address, areaServed. Não existe sameAs, nem referência cruzada por @id, nem nada que diga que são a mesma coisa.",
+  "impacto": "Para um consumidor de grafo (Google incluído) o Salão Morenos tem 6 estabelecimentos em Serra, não 3, e os atributos de cada unidade ficam divididos entre dois identificadores. A página que deveria ser a ficha canônica da unidade (/unidades/<slug>/) disputa com um nó da Home que descreve o mesmo endereço. Qualquer propriedade futura (telefone, horário, foto confirmada) precisará ser escrita em dois lugares ou a divergência vira contradição explícita.",
+  "correcao": "Adotar UM @id canônico por unidade, o da própria página: https://salaomorenos.com.br/unidades/<slug>/#unidade. Em fonte/prototipo/Home.dc.html (linha 62) parar de declarar os nós completos e emitir apenas referências dentro de um ItemList:\n{\"@type\":\"ItemList\",\"@id\":\"https://salaomorenos.com.br/#unidades\",\"itemListElement\":[{\"@type\":\"ListItem\",\"position\":1,\"item\":{\"@id\":\"https://salaomorenos.com.br/unidades/cidade-continental/#unidade\"}}, ... ]}\nSe for preferível manter a descrição na Home (para quem só rastreia a home), repetir o nó COM O MESMO @id .../unidades/<slug>/#unidade e as mesmas propriedades — nunca um @id novo. Remover por completo os @id https://salaomorenos.com.br/#<slug>."
+ },
+ {
+  "prioridade": "P0",
+  "tipo": "problema_comprovado",
+  "titulo": "Na Home, a propriedade url das três unidades aponta para a Home, não para a página da unidade",
+  "rotas": [
+   "/"
+  ],
+  "arquivos": [
+   "/home/user/salao-morenos/fonte/prototipo/Home.dc.html:62"
+  ],
+  "evidencia": "Bloco ld+json da Home, extraído na íntegra (os três nós, sem corte):\n  {\"@type\":\"HairSalon\",\"@id\":\"https://salaomorenos.com.br/#cidade-continental\",...,\"url\":\"https://salaomorenos.com.br/\"}\n  {\"@type\":\"HairSalon\",\"@id\":\"https://salaomorenos.com.br/#novo-horizonte-av-brasil\",...,\"url\":\"https://salaomorenos.com.br/\"}\n  {\"@type\":\"HairSalon\",\"@id\":\"https://salaomorenos.com.br/#novo-horizonte-av-industrial\",...,\"url\":\"https://salaomorenos.com.br/\"}\nAs três têm url idêntica = a Home. Enquanto isso a Home VISIVELMENTE linka para cada página de unidade: `grep -o 'href=\"/unidades/[a-z-]*/\"' public/index.html | sort | uniq -c` devolve 3 ocorrências de cada uma das três rotas de unidade. E nas páginas de unidade o mesmo lugar declara url correta (ex.: \"url\":\"https://salaomorenos.com.br/unidades/cidade-continental/\").",
+  "impacto": "O grafo da Home afirma que a página oficial dos três negócios é a Home. Três entidades distintas apontando para a mesma URL é o padrão clássico que faz um consumidor de grafo tratar a Home como a ficha das três unidades e descartar ou rebaixar as páginas individuais — exatamente o contrário da arquitetura do site, que tem uma página por unidade e linka para ela três vezes na própria Home.",
+  "correcao": "Em /home/user/salao-morenos/fonte/prototipo/Home.dc.html (linha 62): se a correção do @id (achado anterior) for adotada com referências por @id, o problema desaparece junto. Se os nós forem mantidos descritos na Home, trocar url por: \"url\":\"https://salaomorenos.com.br/unidades/cidade-continental/\", \"url\":\"https://salaomorenos.com.br/unidades/novo-horizonte-av-brasil/\" e \"url\":\"https://salaomorenos.com.br/unidades/novo-horizonte-av-industrial/\" — os mesmos valores que já estão em C.paths no site-config.js."
+ },
+ {
+  "prioridade": "P0",
+  "tipo": "problema_comprovado",
+  "titulo": "image de duas unidades declara foto não confirmada — e numa delas a imagem declarada nem está na página",
+  "rotas": [
+   "/unidades/novo-horizonte-av-brasil/",
+   "/unidades/novo-horizonte-av-industrial/"
+  ],
+  "arquivos": [
+   "/home/user/salao-morenos/fonte/prototipo/novo-horizonte-av-brasil.dc.html:44",
+   "/home/user/salao-morenos/fonte/prototipo/novo-horizonte-av-industrial.dc.html:44",
+   "/home/user/salao-morenos/fonte/prototipo/site-config.js:63",
+   "/home/user/salao-morenos/fonte/prototipo/site-config.js:85"
+  ],
+  "evidencia": "O próprio projeto proíbe essa afirmação. site-config.js linhas 63/68/73 e o comentário das linhas 80-84:\n  cidade-continental   -> foto: 'img/unidade-cidade-continental.webp', fotoConfirmada: true\n  novo-horizonte-av-brasil     -> foto: 'img/unidade-av-brasil.webp',     fotoConfirmada: false\n  novo-horizonte-av-industrial -> foto: 'img/unidade-av-industrial.webp', fotoConfirmada: false\n  // Enquanto fotoConfirmada for false, a pagina NAO usa a imagem de fachada:\n  // um cartao com o nome da avenida e uma fachada embaixo afirma que aquele\n  // predio e aquele endereco, e isso ninguem confirmou.\n  C.fotoNeutra = ['img/foto-salao.webp','img/foto-atendimento-2.webp','img/foto-atendimento.webp'];\nO JSON-LD ignora a regra e grava a foto neutra como image do LocalBusiness:\n  av-brasil      -> \"image\":\"https://salaomorenos.com.br/img/foto-salao.webp\"\n  av-industrial  -> \"image\":\"https://salaomorenos.com.br/img/foto-atendimento-2.webp\"\nPior: o valor nem bate com o que a página renderiza. Lendo o DOM depois da troca (heros.mjs), /unidades/novo-horizonte-av-brasil/ tem as imagens [logo.webp, foto-atendimento-2.webp (alt \"Ambiente do Salão Morenos durante o atendimento\"), foto-barba.webp, unidade-cidade-continental.webp, foto-atendimento.webp, foto-atendimento-2.webp, logo.webp] — foto-salao.webp NÃO APARECE em lugar nenhum da página. E em /unidades/novo-horizonte-av-industrial/ a foto da própria unidade é foto-atendimento.webp; o foto-atendimento-2.webp que o JSON-LD declara é, naquela página, o cartão da OUTRA unidade (Av. Brasil) no bloco de outras unidades. (O mesmo valor errado também está no og:image e no <link rel=preload as=image> dessas duas páginas — isso é da frente de metadados/performance, não mexo aqui.)",
+  "impacto": "O dado estruturado afirma a um robô que aquela foto é a imagem daquele estabelecimento naquele endereço, que é exatamente a afirmação que o site se recusa a fazer na tela por não ter confirmação do cliente. É afirmação não confirmada em dado estruturado, não um enfeite faltando. E como o valor está escrito à mão, ele já desincronizou da rotação C.fotoNeutra[i % 3]: a Av. Brasil declara uma imagem que não existe na página.",
+  "correcao": "Remover a propriedade image do nó HairSalon em /home/user/salao-morenos/fonte/prototipo/novo-horizonte-av-brasil.dc.html (linha 44) e /home/user/salao-morenos/fonte/prototipo/novo-horizonte-av-industrial.dc.html (linha 44). Manter image apenas em cidade-continental.dc.html, onde fotoConfirmada é true e a imagem declarada (img/unidade-cidade-continental.webp) é a que a página mostra, com alt \"Fachada do Salão Morenos com a placa Cidade Continental\". Quando o cliente entregar a fachada real das outras duas, virar fotoConfirmada para true e, no mesmo commit, voltar image apontando para img/unidade-av-brasil.webp e img/unidade-av-industrial.webp (os arquivos já estão em public/img/). Melhor ainda: fazer o helmet derivar image de C.location(id).fotoConfirmada em vez de repetir o caminho à mão."
+ },
+ {
+  "prioridade": "P1",
+  "tipo": "problema_comprovado",
+  "titulo": "Não existe Organization da marca com @id nem WebSite; parentOrganization é um objeto anônimo repetido três vezes",
+  "rotas": [
+   "/",
+   "/unidades/",
+   "/unidades/cidade-continental/",
+   "/unidades/novo-horizonte-av-brasil/",
+   "/unidades/novo-horizonte-av-industrial/",
+   "/servicos/",
+   "/servicos/corte-masculino/",
+   "/servicos/barboterapia/",
+   "/visagismo/",
+   "/dia-do-noivo/",
+   "/o-clube/",
+   "/cultura/",
+   "/corporativo/",
+   "/trabalhe-conosco/"
+  ],
+  "arquivos": [
+   "/home/user/salao-morenos/fonte/prototipo/Home.dc.html:62",
+   "/home/user/salao-morenos/fonte/prototipo/cidade-continental.dc.html:44",
+   "/home/user/salao-morenos/fonte/prototipo/novo-horizonte-av-brasil.dc.html:44",
+   "/home/user/salao-morenos/fonte/prototipo/novo-horizonte-av-industrial.dc.html:44"
+  ],
+  "evidencia": "Expansão (valida2.mjs), seção \"nós tipados SEM @id\":\n  1x Organization @ fonte/prototipo/cidade-continental.dc.html\n  1x Organization @ fonte/prototipo/novo-horizonte-av-brasil.dc.html\n  1x Organization @ fonte/prototipo/novo-horizonte-av-industrial.dc.html\nOs três são literalmente {\"@type\":\"Organization\",\"name\":\"Salão Morenos\",\"url\":\"https://salaomorenos.com.br/\"} embutidos em parentOrganization, sem @id. Inventário de tipos sobre os 42 blocos: nenhum WebSite, nenhum WebPage. A Home não tem Organization nenhuma (HairSalon.parentOrganization aparece 3x no inventário de propriedades, e as 3 são das páginas de unidade). Grep de links sociais em SiteFooter.dc.html, PaginaMorenos.dc.html e site-config.js: zero instagram/facebook/tiktok/youtube — não há base para sameAs.",
+  "impacto": "Sem @id, cada parentOrganization é um nó em branco: na prática o grafo tem três organizações anônimas homônimas, nenhuma ligada à outra, e a Home — a página que de fato representa a marca — não declara a marca. Não há um nó ao qual pendurar, no futuro, o telefone confirmado, o logo ou os perfis sociais, e as 14 rotas que têm só BreadcrumbList não se ligam a nenhuma entidade de negócio.",
+  "correcao": "Definir UMA Organization com @id fixo e referenciá-la em todas as páginas. Em /home/user/salao-morenos/fonte/prototipo/Home.dc.html (linha 62), acrescentar ao @graph:\n  {\"@type\":\"Organization\",\"@id\":\"https://salaomorenos.com.br/#organizacao\",\"name\":\"Salão Morenos\",\"url\":\"https://salaomorenos.com.br/\",\"logo\":\"https://salaomorenos.com.br/img/logo.webp\",\"areaServed\":\"Serra, ES\"}\n  {\"@type\":\"WebSite\",\"@id\":\"https://salaomorenos.com.br/#site\",\"url\":\"https://salaomorenos.com.br/\",\"name\":\"Salão Morenos\",\"inLanguage\":\"pt-BR\",\"publisher\":{\"@id\":\"https://salaomorenos.com.br/#organizacao\"}}\nNas três páginas de unidade (linha 44 de cada), trocar o objeto inline por referência:\n  \"parentOrganization\":{\"@id\":\"https://salaomorenos.com.br/#organizacao\"}\nNas 11 demais rotas internas, acrescentar ao @graph apenas a referência mínima {\"@type\":\"Organization\",\"@id\":\"https://salaomorenos.com.br/#organizacao\"} (ou nada, se a Organization vier a ser emitida por um helmet compartilhado). NÃO incluir telephone (C.whatsapp tem needsConfirmation: true), NÃO incluir sameAs (não há perfil social no repositório) e NÃO incluir contactPoint."
+ },
+ {
+  "prioridade": "P1",
+  "tipo": "problema_comprovado",
+  "titulo": "/politica-de-privacidade/ e /termos-de-uso/ exibem migalha na tela e não têm BreadcrumbList",
+  "rotas": [
+   "/politica-de-privacidade/",
+   "/termos-de-uso/"
+  ],
+  "arquivos": [
+   "/home/user/salao-morenos/fonte/prototipo/politica-de-privacidade.dc.html:35",
+   "/home/user/salao-morenos/fonte/prototipo/termos-de-uso.dc.html:35"
+  ],
+  "evidencia": "semjs.mjs (JS desligado) e dom.mjs (DOM depois da troca) devolvem blocosLD=0 para /politica-de-privacidade/, /termos-de-uso/ e /404.html; as outras 14 rotas têm BreadcrumbList. `grep -c '<script type=\"application/ld+json\"'` nos dois .dc.html e nos dois index.html gerados: 0 em todos os quatro. Mas a migalha está na tela: migalhas.mjs lê, no DOM depois da troca, nav[aria-label=\"Você está em\"] com \"Início / Política de Privacidade\" e \"Início / Termos de Uso\", com <a href=\"/\"> em Início — mesma estrutura das 13 rotas que têm BreadcrumbList. (404.html sem migalha e sem breadcrumb está correto.)\nConferi também as 13 que existem: posições 1..n sequenciais, nomes idênticos ao texto visível (inclusive \"Sobre a Morenos\" em /cultura/ e \"Serviços\" como pai de /visagismo/ e /dia-do-noivo/, que batem com a migalha na tela) e item em URL absoluta igual a C.paths. Nenhum erro de posição, nome ou item nas 13.",
+  "impacto": "Duas das 15 rotas internas descrevem para o usuário uma hierarquia que não descrevem para o robô. É a única inconsistência de cobertura de BreadcrumbList do site e fica mais barata de corrigir agora do que depois, porque o bloco é idêntico ao das outras rotas.",
+  "correcao": "Acrescentar, logo antes de </helmet> em /home/user/salao-morenos/fonte/prototipo/politica-de-privacidade.dc.html (linha 35):\n<script type=\"application/ld+json\">{\"@context\":\"https://schema.org\",\"@graph\":[{\"@type\":\"BreadcrumbList\",\"itemListElement\":[{\"@type\":\"ListItem\",\"position\":1,\"name\":\"Início\",\"item\":\"https://salaomorenos.com.br/\"},{\"@type\":\"ListItem\",\"position\":2,\"name\":\"Política de Privacidade\",\"item\":\"https://salaomorenos.com.br/politica-de-privacidade/\"}]}]}</script>\nE o equivalente em /home/user/salao-morenos/fonte/prototipo/termos-de-uso.dc.html (linha 35) com name \"Termos de Uso\" e item https://salaomorenos.com.br/termos-de-uso/. Não acrescentar nada em 404.dc.html."
+ },
+ {
+  "prioridade": "P2",
+  "tipo": "problema_comprovado",
+  "titulo": "O HTML servido traz o grafo duas vezes (head + helmet dentro de x-dc); só fica um depois da hidratação, e nenhum teste garante isso",
+  "rotas": [
+   "/",
+   "/unidades/",
+   "/unidades/cidade-continental/",
+   "/unidades/novo-horizonte-av-brasil/",
+   "/unidades/novo-horizonte-av-industrial/",
+   "/servicos/",
+   "/servicos/corte-masculino/",
+   "/servicos/barboterapia/",
+   "/visagismo/",
+   "/dia-do-noivo/",
+   "/o-clube/",
+   "/cultura/",
+   "/corporativo/",
+   "/trabalhe-conosco/"
+  ],
+  "arquivos": [
+   "/home/user/salao-morenos/fonte/prerender.mjs:98",
+   "/home/user/salao-morenos/fonte/checar.mjs:198"
+  ],
+  "evidencia": "Com JS desligado (semjs.mjs, javaScriptEnabled:false), as 14 rotas com grafo têm DOIS blocos:\n  [0] head  tpl=17  pai: head < html\n  [1] body  tpl=null pai: helmet < x-dc < body < html\n  identicos? true   (em todas as 14)\nDepois da troca (dom.mjs, espera html.mo-vivo e a saída de #mo-estatico) sobra exatamente 1 bloco, sempre no head, em todas as 14 rotas. O bloco do head é o que prerender.mjs copia de `capturado.cabeca`; o segundo é o `<helmet>` que viaja dentro do `${template}` publicado. A deduplicação está em prerender.mjs linha 98: a chave é `'ld:' + el.textContent`, comparação de texto exato, e `limpaCabeca()` só percorre document.head.children. checar.mjs linha 198 coleta `ld: document.querySelectorAll('script[type=\"application/ld+json\"]').length` e esse valor nunca entra num `checa()` — grep por `r.ld` em checar.mjs não retorna nenhuma asserção.",
+  "impacto": "Hoje é inofensivo: um rastreador sem JS lê o mesmo grafo duas vezes (dois BreadcrumbList idênticos, sem @id, e HairSalon com @id iguais que se fundem). O risco é o acoplamento silencioso: a deduplicação depende de os dois textos serem byte a byte iguais. Qualquer reescrita futura que toque só a cópia do head — a virada do domínio para produção, uma minificação, uma agulha nova em build.py — faz os dois sobreviverem à hidratação, e aí o DOM final publica o grafo em duplicata sem nada falhar no build.",
+  "correcao": "Fixar o contrato com teste, já que o custo é baixo e hoje não existe nenhum: em /home/user/salao-morenos/fonte/checar.mjs, usar o `r.ld` que já é coletado, com `checa(r.ld === 1, `${etq}: 1 script ld+json depois da troca (${r.ld})`)`. Acrescentar, no bloco sem JS do mesmo arquivo, uma contagem esperada por rota (2 nas 14 rotas com grafo, 0 em /politica-de-privacidade/, /termos-de-uso/ e 404) e a asserção de que os dois textos são idênticos. Opcionalmente, remover o ld+json do `${template}` emitido em prerender.mjs (o head já o carrega) — mas só com o teste acima no lugar, porque o runtime reaplica o helmet e a remoção precisa ser verificada no DOM final."
+ },
+ {
+  "prioridade": "P2",
+  "tipo": "melhoria_recomendada",
+  "titulo": "O grafo é escrito à mão em 14 helmets, duplicando dados que já têm fonte única em site-config.js, sem nenhuma agulha no build",
+  "rotas": [
+   "/",
+   "/unidades/",
+   "/unidades/cidade-continental/",
+   "/unidades/novo-horizonte-av-brasil/",
+   "/unidades/novo-horizonte-av-industrial/",
+   "/servicos/",
+   "/servicos/corte-masculino/",
+   "/servicos/barboterapia/",
+   "/visagismo/",
+   "/dia-do-noivo/",
+   "/o-clube/",
+   "/cultura/",
+   "/corporativo/",
+   "/trabalhe-conosco/"
+  ],
+  "arquivos": [
+   "/home/user/salao-morenos/fonte/build.py",
+   "/home/user/salao-morenos/fonte/prototipo/site-config.js:10",
+   "/home/user/salao-morenos/fonte/checar.mjs"
+  ],
+  "evidencia": "`grep -n 'ld+json\\|@type\\|@id\\|schema.org\\|BreadcrumbList\\|HairSalon' fonte/build.py` não retorna nada: nenhuma das agulhas do build olha para dado estruturado. Os mesmos valores vivem em dois lugares: C.env.siteUrl ('https://salaomorenos.com.br', site-config.js linha 10) e C.paths (linhas 48-58) de um lado; do outro, as mesmas strings digitadas em 14 helmets (linha 44 de cada .dc.html de rota interna, linha 62 na Home). A desincronização já aconteceu uma vez e está provada no achado da foto: o helmet fixou o resultado de C.fotoNeutra[i % 3] e errou. checar.mjs e arquitetura.mjs não cobrem nada disso (71 ok / 0 falhas na baseline, e nenhum dos 222 testes de arquitetura menciona JSON-LD).",
+  "impacto": "Toda alteração em site-config.js — endereço, caminho de rota, foto confirmada, e principalmente a virada de novosite.salaomorenos.com.br para o domínio final — passa pelo build sem que nada verifique se os 14 grafos acompanharam. O build aborta se o DESIGN mudar, mas não se o DADO ESTRUTURADO mentir.",
+  "correcao": "Acrescentar um arquivo de verificação (ou uma seção em /home/user/salao-morenos/fonte/checar.mjs) que, para cada rota de public/, faça JSON.parse do ld+json do head e assegure: (a) todo @id e url começam com C.env.siteUrl; (b) o url de cada HairSalon é igual a C.paths[id] da unidade; (c) o item de cada ListItem é C.env.siteUrl + C.paths[rota] e as posições são 1..n sem buraco; (d) existe image só nas unidades com fotoConfirmada true, e o valor é C.env.siteUrl + '/' + C.location(id).foto; (e) o grafo NÃO contém telephone, openingHours, openingHoursSpecification, geo, priceRange, offers, price, aggregateRating nem review. O item (e) é uma guarda barata contra o que o cliente proibiu, e hoje não existe."
+ },
+ {
+  "prioridade": "P2",
+  "tipo": "melhoria_recomendada",
+  "titulo": "Service nas páginas de serviço: vale nas quatro páginas de serviço específico, não vale no índice — e sem offers",
+  "rotas": [
+   "/servicos/corte-masculino/",
+   "/servicos/barboterapia/",
+   "/visagismo/",
+   "/dia-do-noivo/",
+   "/servicos/"
+  ],
+  "arquivos": [
+   "/home/user/salao-morenos/fonte/prototipo/corte-masculino.dc.html:44",
+   "/home/user/salao-morenos/fonte/prototipo/barboterapia.dc.html:44",
+   "/home/user/salao-morenos/fonte/prototipo/visagismo.dc.html:44",
+   "/home/user/salao-morenos/fonte/prototipo/dia-do-noivo.dc.html:44",
+   "/home/user/salao-morenos/fonte/prototipo/servicos.dc.html:44"
+  ],
+  "evidencia": "O inventário mostra que /servicos/corte-masculino/, /servicos/barboterapia/, /visagismo/ e /dia-do-noivo/ têm no grafo APENAS BreadcrumbList — nenhuma entidade de negócio, nenhuma ligação com o Salão Morenos. São as quatro únicas rotas com página própria por serviço (site-config.js, campo `pagina` nos itens corte-masculino, barboterapia e visagismo de C.services, mais a rota dia-do-noivo em C.paths). Sobre preço: C.services só tem `duracao`, nenhum serviço tem preço publicado; e C.clubPlans/C.corporatePlans recebem `needsConfirmation = true` em bloco (site-config.js linhas 144 e 154), com source 'legacy-site'.",
+  "impacto": "Sem Service, essas quatro páginas não dizem ao grafo de que negócio estão falando: ficam como páginas soltas com uma migalha. Com Service + provider por @id, cada página passa a ser a descrição de um serviço prestado por uma entidade identificada. Não prometo rich result: Service não gera resultado enriquecido na busca; o ganho é desambiguação de entidade e um lugar estável para, no futuro, pendurar duração e preço quando o cliente confirmar.",
+  "correcao": "Acrescentar ao @graph das quatro páginas (linha 44 de cada), depois de existir a Organization com @id:\n  {\"@type\":\"Service\",\"@id\":\"https://salaomorenos.com.br/servicos/corte-masculino/#servico\",\"name\":\"Corte Masculino\",\"serviceType\":\"Corte de cabelo masculino\",\"url\":\"https://salaomorenos.com.br/servicos/corte-masculino/\",\"provider\":{\"@id\":\"https://salaomorenos.com.br/#organizacao\"},\"areaServed\":\"Serra, ES\",\"description\":\"<a mesma frase que já está visível na página>\"}\ne o análogo para barboterapia (#servico em /servicos/barboterapia/), visagismo (/visagismo/#servico, name \"Consultoria de Visagismo\") e dia-do-noivo (/dia-do-noivo/#servico). NÃO incluir offers nem price em nenhum deles: não há preço de serviço publicado, e os preços de plano são needsConfirmation. Em /servicos/ (índice) um Service seria só enfeite — não descreve serviço nenhum; se algo for acrescentado ali, que seja um ItemList apontando por @id para os quatro Service acima."
+ },
+ {
+  "prioridade": "P2",
+  "tipo": "melhoria_recomendada",
+  "titulo": "/unidades/ e / não ligam o hub às três unidades por @id (falta ItemList)",
+  "rotas": [
+   "/unidades/",
+   "/"
+  ],
+  "arquivos": [
+   "/home/user/salao-morenos/fonte/prototipo/unidades.dc.html:44",
+   "/home/user/salao-morenos/fonte/prototipo/Home.dc.html:62"
+  ],
+  "evidencia": "O grafo de /unidades/ tem exatamente um nó: {\"@type\":\"BreadcrumbList\",...} com 2 ListItem (bloco de 278 bytes, idêntico ao de /servicos/). Nenhuma menção às três unidades, embora a página renderize os três cartões (heros.mjs em /unidades/ mostra unidade-cidade-continental.webp, foto-atendimento-2.webp e foto-atendimento.webp, um por unidade) e linke para as três rotas. Na Home, os três HairSalon existem mas soltos, sem nenhum nó que os agrupe.",
+  "impacto": "A página que é o índice das unidades não declara que é o índice das unidades. Com o ItemList, o hub passa a ser a prova explícita de que as três fichas pertencem ao mesmo conjunto — o que é o reforço natural da correção de @id do primeiro achado.",
+  "correcao": "Em /home/user/salao-morenos/fonte/prototipo/unidades.dc.html (linha 44), acrescentar ao @graph:\n  {\"@type\":\"ItemList\",\"@id\":\"https://salaomorenos.com.br/unidades/#lista\",\"itemListElement\":[{\"@type\":\"ListItem\",\"position\":1,\"item\":{\"@id\":\"https://salaomorenos.com.br/unidades/cidade-continental/#unidade\"}},{\"@type\":\"ListItem\",\"position\":2,\"item\":{\"@id\":\"https://salaomorenos.com.br/unidades/novo-horizonte-av-brasil/#unidade\"}},{\"@type\":\"ListItem\",\"position\":3,\"item\":{\"@id\":\"https://salaomorenos.com.br/unidades/novo-horizonte-av-industrial/#unidade\"}}]}\nA ordem das posições deve ser a mesma de C.locations, que é a ordem em que os cartões aparecem na página. O mesmo bloco (com @id https://salaomorenos.com.br/#unidades) resolve a Home."
+ },
+ {
+  "prioridade": "P1",
+  "tipo": "depende_do_cliente",
+  "titulo": "Dados que o grafo corretamente NÃO afirma hoje e que não podem ser acrescentados sem o cliente",
+  "rotas": [
+   "/",
+   "/unidades/cidade-continental/",
+   "/unidades/novo-horizonte-av-brasil/",
+   "/unidades/novo-horizonte-av-industrial/",
+   "/o-clube/",
+   "/corporativo/"
+  ],
+  "arquivos": [
+   "/home/user/salao-morenos/fonte/prototipo/site-config.js:25",
+   "/home/user/salao-morenos/fonte/prototipo/site-config.js:31",
+   "/home/user/salao-morenos/fonte/prototipo/site-config.js:60"
+  ],
+  "evidencia": "Inventário de propriedades sobre os 14 blocos do protótipo, checando as sensíveis uma a uma: telephone ausente, openingHours ausente, openingHoursSpecification ausente, geo ausente, latitude ausente, longitude ausente, priceRange ausente, aggregateRating ausente, review ausente, offers ausente, price ausente. Grep por aggregateRating|ratingValue|\"Review\"|reviewCount|bestRating em todo o repositório fora de node_modules: zero ocorrências — inclusive em fonte/avaliacoes/avaliacoes-google.js, que não emite schema nenhum, e a integração nasce desligada (build.py só publica fonte/avaliacoes/ com --avaliacoes-google). As pendências estão marcadas na fonte: C.whatsapp needsConfirmation: true (linha 25-26); C.hours needsConfirmation: true, com a observação \"Domingo não informado no site antigo: não exibir\" (linhas 31-34); numero: null /* needsConfirmation */ em cidade-continental e novo-horizonte-av-brasil (linhas 61 e 66); googleProfile: null nas três (sem coordenada e sem perfil do Google); fotoConfirmada: false em duas; C.clubPlans e C.corporatePlans com needsConfirmation: true.",
+  "impacto": "O grafo está limpo nesse ponto e a tentação de \"completar o LocalBusiness\" é justamente o que quebraria a regra do cliente. Registrar como pendência evita que a próxima rodada de SEO acrescente telefone/horário/coordenada/nota por conta própria.",
+  "correcao": "Manter fora do JSON-LD até o cliente confirmar, por unidade: (1) telefone — hoje há um único WhatsApp migrado do site antigo, não um telefone por unidade; só vira telephone depois de confirmado, e no nó da unidade a que pertence; (2) horário — C.hours é global e não confirmado, e falta domingo; só vira openingHoursSpecification por unidade depois de confirmado; (3) número do imóvel de Cidade Continental e Av. Brasil (Av. Industrial já tem 830 — Loja 3, visível na página e já refletido no streetAddress); (4) coordenada/geo e perfil do Google Business de cada unidade; (5) foto de fachada das duas unidades não confirmadas; (6) preço de serviço e de plano — todos needsConfirmation, então nada de offers/Offer. Transformar essa lista em pendência de cliente e aplicar junto com a guarda (e) do achado da agulha de verificação, que impede que qualquer um desses campos entre sem confirmação."
+ },
+ {
+  "prioridade": "P2",
+  "tipo": "problema_comprovado",
+  "titulo": "Todos os 42 blocos de JSON-LD são sintaticamente válidos e expandem sem erro — nada a corrigir nesta dimensão",
+  "rotas": [
+   "/",
+   "/unidades/",
+   "/unidades/cidade-continental/",
+   "/unidades/novo-horizonte-av-brasil/",
+   "/unidades/novo-horizonte-av-industrial/",
+   "/servicos/",
+   "/servicos/corte-masculino/",
+   "/servicos/barboterapia/",
+   "/visagismo/",
+   "/dia-do-noivo/",
+   "/o-clube/",
+   "/cultura/",
+   "/corporativo/",
+   "/trabalhe-conosco/"
+  ],
+  "arquivos": [
+   "/home/user/salao-morenos/fonte/prototipo/Home.dc.html:62"
+  ],
+  "evidencia": "extrai.mjs varreu os 40 HTML (20 em public/, 20 em fonte/prototipo/) e isolou 42 blocos <script type=\"application/ld+json\">: \"arquivos=40 blocos=42 invalidos=0\" — todos passaram em JSON.parse. valida2.mjs rodou expansão JSON-LD 1.1 com o processador `jsonld` nos mesmos 42: \"EXPANSAO JSON-LD 1.1: ok=42 falhas=0 de 42 blocos\", sem nenhum termo fora do vocabulário e sem nenhum tipo inesperado. (schema.org está bloqueado pelo proxy — curl devolve \"CONNECT tunnel failed, response 403\" — então servi o contexto por documentLoader local com @vocab https://schema.org/ e @type:@id em url/image/item; o algoritmo de expansão é o do processador, só o contexto é local.) Tipos encontrados: HairSalon (6), PostalAddress (6), Organization (3), BreadcrumbList (13), ListItem (33). Todos existem em schema.org e HairSalon é subtipo válido de LocalBusiness.",
+  "impacto": "Nenhum. Fica registrado para que a revisão não gaste tempo procurando erro de sintaxe: o que está errado no dado estruturado deste site é semântico (identidade das entidades e uma afirmação não confirmada), não sintático.",
+  "correcao": "Nada a fazer. Se for útil congelar essa garantia, a verificação proposta no achado da agulha já faz JSON.parse de cada grafo e falha o build se algum deixar de ser válido."
+ },
+ {
+  "prioridade": "P1",
+  "tipo": "problema_comprovado",
+  "titulo": "A política de privacidade publicada declara Google Fonts como terceiro, mas o build removeu o Google Fonts do site",
+  "rotas": [
+   "/politica-de-privacidade/"
+  ],
+  "arquivos": [
+   "fonte/prototipo/politica-de-privacidade.dc.html:88",
+   "public/politica-de-privacidade/index.html"
+  ],
+  "evidencia": "No texto renderizado de /politica-de-privacidade/, seção \"6. Serviços de terceiros\": \"Cashbarber: agenda online e assinatura do Clube. / WhatsApp (Meta): conversas e envio dos formulários. / Google Maps: mapas e rotas das unidades. / Google Fonts: fontes usadas no site.\" Mas `grep -rl \"fonts.googleapis.com\\|fonts.gstatic.com\" public/` não retorna NENHUM arquivo — o build troca o Google Fonts pela Poppins local em public/fonts/ (está no README: \"Poppins local no lugar do Google Fonts\" e \"Nenhuma requisição a domínio de terceiro além do iframe do mapa\"). Fonte: fonte/prototipo/politica-de-privacidade.dc.html linha 88, `<li><strong>Google Fonts</strong>: fontes usadas no site.</li>`.",
+  "impacto": "Uma página jurídica afirma ao visitante que os dados dele passam por um serviço do Google que o site não usa mais. É informação errada numa página de LGPD — o tipo de erro que o cliente aponta primeiro numa revisão, e que enfraquece a credibilidade das outras declarações da mesma lista.",
+  "correcao": "Retirar a linha `<li><strong>Google Fonts</strong>: fontes usadas no site.</li>` de fonte/prototipo/politica-de-privacidade.dc.html:88. Se valer a pena ser explícito, trocar por uma frase afirmando o oposto, que é o que o build garante: \"As fontes do site são servidas pelo próprio domínio, sem requisição a serviços de terceiros.\" Vale também adicionar uma agulha no build.py conferindo que, enquanto não houver referência a fonts.googleapis.com em public/, a política não cite Google Fonts."
+ },
+ {
+  "prioridade": "P1",
+  "tipo": "problema_comprovado",
+  "titulo": "A Home e a /o-clube/ se contradizem sobre em quais unidades o assinante pode ser atendido",
+  "rotas": [
+   "/",
+   "/o-clube/"
+  ],
+  "arquivos": [
+   "fonte/prototipo/Home.dc.html:223",
+   "fonte/prototipo/PaginaMorenos.dc.html:613"
+  ],
+  "evidencia": "Home, bloco \"O CLUBE\" (texto renderizado): \"Um estilo de vida, um clube para chamar de seu. Em vez de pagar a cada visita, você mantém corte e barba em dia com uma mensalidade e agenda na unidade participante.\" — \"unidade participante\" afirma que existe um subconjunto de unidades. Já o FAQ de /o-clube/ (texto renderizado, acordeão aberto): \"Posso usar qualquer unidade? → Membros podem ser atendidos em qualquer uma das três unidades.\" `grep -rn \"participante\" fonte/prototipo/` dá uma única ocorrência: Home.dc.html:223. A resposta oposta está em PaginaMorenos.dc.html:613 e carrega, no fonte, o comentário `/* source: legacy-site, needsConfirmation */`.",
+  "impacto": "As duas páginas que vendem a assinatura dizem coisas incompatíveis sobre a regra mais básica do produto: onde o plano vale. Quem lê a Home acha que há restrição de unidade; quem lê o Clube acha que não há. Numa barbearia com três endereços, essa é exatamente a dúvida que decide a assinatura — e qualquer das duas versões pode gerar reclamação no balcão.",
+  "correcao": "Duas decisões, nesta ordem. (1) Resolver o fato com o cliente: o plano vale nas três unidades ou não? A resposta de /o-clube/ está marcada como needsConfirmation no fonte, então hoje nenhuma das duas frases está confirmada. (2) Enquanto não houver resposta, alinhar as duas páginas pela formulação que não afirma restrição nem ausência dela: na Home, trocar \"agenda na unidade participante\" por \"agenda na unidade que preferir\" só se o cliente confirmar as três; caso contrário, cortar o trecho e deixar \"você mantém corte e barba em dia com uma mensalidade\". A regra de unidade some da Home e fica num lugar só, o FAQ de /o-clube/, depois de confirmada."
+ },
+ {
+  "prioridade": "P1",
+  "tipo": "problema_comprovado",
+  "titulo": "Dois planos pagos do Clube são publicados com o nome idêntico \"Família Corte e Barba Clássico\"",
+  "rotas": [
+   "/o-clube/"
+  ],
+  "arquivos": [
+   "fonte/prototipo/site-config.js:138",
+   "fonte/prototipo/site-config.js:140"
+  ],
+  "evidencia": "A árvore de headings renderizada de /o-clube/ tem dois H3 com o mesmo texto: \"Família Corte e Barba Clássico\" e \"Família Corte e Barba Clássico\". No texto renderizado os dois cartões aparecem em sequência: \"Família Corte e Barba Clássico / 8 procedimentos mensais. / R$ 209,90 /mês\" e \"Família Corte e Barba Clássico / 6 procedimentos mensais. / R$ 169,90 /mês\". No fonte, site-config.js:138 `{ id: 'familia-8', nome: 'Família Corte e Barba Clássico', ... preco: 'R$ 209,90', desc: '8 procedimentos mensais.' }` e :140 `{ id: 'familia-6', nome: 'Família Corte e Barba Clássico', ... preco: 'R$ 169,90', desc: '6 procedimentos mensais.' }`. Os ids já distinguem; o nome publicado não.",
+  "impacto": "Na página que converte assinatura, dois produtos de preços diferentes (R$ 209,90 e R$ 169,90) têm o mesmo título. O que separa os dois está só na linha de descrição abaixo. Quem compara pelo título — que é o que o olho pega e o que um leitor de tela anuncia como cabeçalho do cartão — não distingue os planos, e o botão ASSINAR de cada um leva a cobranças diferentes.",
+  "correcao": "Levar a quantidade para o nome, usando o dado que já está confirmado no próprio campo desc, sem inventar nada: em site-config.js:138, `nome: 'Família Corte e Barba Clássico — 8 procedimentos'`; em :140, `nome: 'Família Corte e Barba Clássico — 6 procedimentos'`. Se o cliente usa outro nome comercial para cada um, ele manda os dois nomes e a gente substitui. Vale uma verificação nova no fonte/testes/arquitetura.mjs: nenhum H3 repetido dentro da mesma rota."
+ },
+ {
+  "prioridade": "P1",
+  "tipo": "problema_comprovado",
+  "titulo": "O horário de funcionamento é publicado duas vezes na mesma página, palavra por palavra, em 4 rotas",
+  "rotas": [
+   "/unidades/",
+   "/unidades/cidade-continental/",
+   "/unidades/novo-horizonte-av-brasil/",
+   "/unidades/novo-horizonte-av-industrial/"
+  ],
+  "arquivos": [
+   "fonte/prototipo/PaginaMorenos.dc.html:583",
+   "fonte/prototipo/PaginaMorenos.dc.html:634"
+  ],
+  "evidencia": "No texto renderizado de /unidades/: o bloco \"FUNCIONAMENTO / HORÁRIO / Segunda a sexta: 08:00 – 20:00 / Sábado: 09:00 – 18:00\" e, poucas linhas abaixo, o FAQ \"Qual o horário de funcionamento? + / Segunda a sexta: 08:00 – 20:00. Sábado: 09:00 – 18:00.\" Idem nas três páginas de unidade, onde o bloco \"INFORMAÇÕES DA UNIDADE / HORÁRIO\" é seguido pelo mesmo FAQ. Contagem automática sobre o texto renderizado: a string \"Segunda a sexta: 08:00 – 20:00\" aparece 2 vezes em cada uma das 4 rotas. No fonte é literalmente a mesma expressão nos dois lugares: `horarios.join('. ') + '.'` em PaginaMorenos.dc.html:583 (faqUnidade) e :634 (FAQ de /unidades/), contra o mesmo array `horarios` usado no bloco `tipo: 'info'` das linhas 595 e 624.",
+  "impacto": "O FAQ gasta uma pergunta das cinco para devolver a informação que está na tela, sem rolagem, logo acima. Isso treina o visitante a não abrir o acordeão — e as perguntas que realmente acrescentam alguma coisa (\"Posso ir sem agendar?\", \"Qual a diferença entre as duas unidades de Novo Horizonte?\") perdem a chance de serem lidas. É o mesmo vício de repetição que a revisão de arquitetura já tirou entre rotas, sobrevivendo dentro da rota.",
+  "correcao": "Tirar a pergunta \"Qual o horário de funcionamento?\" do faqUnidade (PaginaMorenos.dc.html:583) e do FAQ de /unidades/ (:634). O bloco info já publica o horário, com rótulo e tudo. Se o cliente quiser manter uma pergunta sobre horário, que ela responda o que o bloco NÃO responde — feriado, domingo, último horário de encaixe — e isso é dado a confirmar com ele, não a inventar aqui."
+ },
+ {
+  "prioridade": "P1",
+  "tipo": "problema_comprovado",
+  "titulo": "O endereço completo e o CEP aparecem de 3 a 6 vezes na mesma página de unidade; o FAQ \"Como chego?\" só repete o que já está em dois blocos acima",
+  "rotas": [
+   "/unidades/cidade-continental/",
+   "/unidades/novo-horizonte-av-brasil/",
+   "/unidades/novo-horizonte-av-industrial/"
+  ],
+  "arquivos": [
+   "fonte/prototipo/PaginaMorenos.dc.html:584",
+   "fonte/prototipo/PaginaMorenos.dc.html:602"
+  ],
+  "evidencia": "Contagem sobre o texto renderizado: em /unidades/cidade-continental/ a via \"Avenida Terceiro Mundo\" aparece 4× e o CEP 29163-603 aparece 3×; em /unidades/novo-horizonte-av-brasil/ \"Avenida Brasil\" aparece 6× e o CEP 29163-331 3×; em /unidades/novo-horizonte-av-industrial/ \"Avenida Industrial\" aparece 6× e o CEP 29163-357 3×. Os quatro lugares em Cidade Continental, na ordem da página: (1) intro do hero \"Na Avenida Terceiro Mundo, no Setor Ásia.\"; (2) bloco INFORMAÇÕES DA UNIDADE > ENDEREÇO, em quatro linhas com CEP; (3) bloco COMO CHEGAR \"Avenida Terceiro Mundo, Cidade Continental — Setor Ásia, Serra — ES, CEP 29163-603. A unidade fica no Setor Ásia de Cidade Continental.\"; (4) FAQ \"Como chego? → O endereço é Avenida Terceiro Mundo, Cidade Continental — Setor Ásia, Serra — ES, CEP 29163-603. Use o botão Como chegar para abrir a rota no Google Maps.\" Fonte: PaginaMorenos.dc.html:584 monta a resposta do FAQ com `'O endereço é ' + l.enderecoLinha`, a mesma `l.enderecoLinha` que a linha 602 já usa no bloco do mapa. Nota à parte: a frase de referência de Cidade Continental, \"A unidade fica no Setor Ásia de Cidade Continental\", vem logo depois de \"...Setor Ásia, Serra — ES, CEP 29163-603\" na MESMA frase — é uma tautologia; nas outras duas unidades o mesmo campo carrega informação útil (\"Não confunda com a unidade da Avenida Industrial, no mesmo bairro\").",
+  "impacto": "Uma página de ~340 palavras gasta três delas repetindo um CEP. O CEP é campo postal, não texto de leitura: quem chega na página quer a via e o botão de rota, e recebe a mesma string quatro vezes. A página de unidade é curta justamente porque a revisão de arquitetura a enxugou — esse volume de repetição devolve o inchaço que foi tirado, agora dentro da rota em vez de entre rotas.",
+  "correcao": "Três cortes em PaginaMorenos.dc.html. (1) Tirar a pergunta \"Como chego?\" do faqUnidade (:584): o bloco COMO CHEGAR, com mapa e botão, já é a resposta — e se a pergunta ficar, responder só \"Use o botão Abrir no Google Maps no bloco Como chegar\", sem repetir o endereço. (2) No bloco do mapa (:602), passar só `l.curto` + a referência, não a `enderecoLinha` inteira — o endereço formatado já está no bloco INFORMAÇÕES logo acima. (3) Para Cidade Continental, substituir a referência tautológica \"A unidade fica no Setor Ásia de Cidade Continental.\" por um ponto de referência de verdade (esquina, comércio vizinho, ponto de ônibus) — esse é dado a pedir ao cliente; enquanto não vier, deixar o campo vazio em vez de uma frase que não informa. O CEP fica em um lugar só: o bloco ENDEREÇO."
+ },
+ {
+  "prioridade": "P1",
+  "tipo": "problema_comprovado",
+  "titulo": "/servicos/barboterapia/ não explica no corpo a diferença para a Barba Alinhada — a explicação está só dentro de um acordeão fechado",
+  "rotas": [
+   "/servicos/barboterapia/"
+  ],
+  "arquivos": [
+   "fonte/prototipo/PaginaMorenos.dc.html:690",
+   "fonte/prototipo/PaginaMorenos.dc.html:700"
+  ],
+  "evidencia": "Texto renderizado de /servicos/barboterapia/. O corpo (H2 \"Mais do que tirar o excesso.\") diz: \"A barboterapia cuida da pele e dos fios da barba ao mesmo tempo. O objetivo é deixar a barba alinhada, macia e com acabamento limpo. / O atendimento leva cerca de 40 minutos. Para um ajuste rápido de contorno, existe também a Barba Alinhada, em cerca de 20 minutos.\" — isso diz o que a Barba Alinhada é, mas nunca diz o que a barboterapia TEM que a outra não tem. A diferença só aparece no FAQ, que nasce fechado para quem tem JavaScript: \"Qual a diferença para a Barba Alinhada? → A Barba Alinhada é um ajuste de contorno, em cerca de 20 minutos. A barboterapia inclui preparo e finalização da pele.\" (PaginaMorenos.dc.html:700). Não há link da palavra \"Barba Alinhada\" para o catálogo, embora /servicos/ publique o verbete completo: \"Barba Alinhada / Desenho e alinhamento dos contornos da barba. / Aprox. 20 min\" (site-config.js:114).",
+  "impacto": "A intenção que o cliente definiu para esta rota é, nas palavras dele, \"barboterapia em Serra + diferença para a barba alinhada\". Hoje a página entrega a primeira metade e esconde a segunda atrás de um clique. Quem está decidindo entre um serviço de 20 minutos e um de 40 minutos — a dúvida comercial da página — tem que abrir um acordeão para achar o critério. A camada estática pré-renderizada nasce com o FAQ aberto, então o robô lê; o visitante com JavaScript, não.",
+  "correcao": "Levar a comparação para o corpo, usando só fato já confirmado no site. Reescrever o segundo parágrafo do bloco \"O que é\" (PaginaMorenos.dc.html:690) para: \"O atendimento leva cerca de 40 minutos. A Barba Alinhada, de cerca de 20 minutos, só desenha e alinha os contornos; a barboterapia acrescenta o preparo da pele antes e a finalização depois.\" E transformar \"Barba Alinhada\" em link para /servicos/#catalogo. Com isso, a pergunta de FAQ \"Qual a diferença para a Barba Alinhada?\" pode sair — ela vira repetição do corpo, que é o achado seguinte."
+ },
+ {
+  "prioridade": "P1",
+  "tipo": "problema_comprovado",
+  "titulo": "A pergunta \"Quanto tempo leva?\" repete literalmente a duração que o corpo acabou de dar, nas três páginas de serviço",
+  "rotas": [
+   "/servicos/corte-masculino/",
+   "/servicos/barboterapia/",
+   "/visagismo/"
+  ],
+  "arquivos": [
+   "fonte/prototipo/PaginaMorenos.dc.html:696",
+   "fonte/prototipo/PaginaMorenos.dc.html:699",
+   "fonte/prototipo/PaginaMorenos.dc.html:716"
+  ],
+  "evidencia": "Texto renderizado das três rotas, com acordeões abertos. /servicos/corte-masculino/: corpo \"O atendimento leva cerca de 30 minutos.\" → FAQ \"Quanto tempo leva? → Cerca de 30 minutos.\" /servicos/barboterapia/: corpo \"O atendimento leva cerca de 40 minutos.\" → FAQ \"Quanto tempo leva? → Cerca de 40 minutos.\" /visagismo/: a duração é dada TRÊS vezes — corpo \"É uma consultoria com tempo: cerca de 2 horas, da conversa ao corte e à barba.\", bloco Onde fazer \"Por durar cerca de 2 horas, o visagismo precisa ser agendado com antecedência.\", e FAQ \"Quanto tempo leva? → Cerca de 2 horas.\" No /visagismo/ há um segundo caso: FAQ \"O corte e a barba estão incluídos? → Sim. A consultoria termina com corte e barba personalizados.\" contra o passo 04 do mesmo corpo, \"Resultado / Corte e barba personalizados, com orientação de manutenção.\"",
+  "impacto": "É a primeira pergunta do FAQ nas três páginas, e nas três ela não acrescenta nada. O visitante que abre a primeira e recebe o que já leu não abre a segunda — e a segunda, na barboterapia, é justamente a que carrega a diferença para a Barba Alinhada. O FAQ deixa de ser onde se tira dúvida e vira resumo do corpo.",
+  "correcao": "Tirar \"Quanto tempo leva?\" dos três FAQs (PaginaMorenos.dc.html:696, :699, :716) — a duração já está no corpo e no catálogo de /servicos/, com o aviso de que é aproximada. Tirar também \"O corte e a barba estão incluídos?\" do /visagismo/, já respondida pelo passo 04. No /visagismo/, deixar \"cerca de 2 horas\" em um lugar só: o corpo; no bloco Onde fazer, trocar \"Por durar cerca de 2 horas, o visagismo precisa ser agendado com antecedência.\" pelo texto de disponibilidade que falta (ver achado sobre /visagismo/). O espaço liberado no FAQ serve para perguntas que o corpo não responde — e, se não houver nenhuma, um FAQ de 2 perguntas é melhor que um de 3 com uma vazia."
+ },
+ {
+  "prioridade": "P1",
+  "tipo": "problema_comprovado",
+  "titulo": "A meta description da Home tem 206 caracteres e é cortada antes da chamada para ação",
+  "rotas": [
+   "/"
+  ],
+  "arquivos": [
+   "fonte/prototipo/Home.dc.html:16"
+  ],
+  "evidencia": "Medição sobre o HTML gerado (public/index.html): a description da Home tem 206 caracteres, contra 98 a 150 em todas as outras 15 rotas que têm description — é a única acima de 155. Texto atual: \"Salão Morenos: barbearia em Serra, ES, com três endereços — Cidade Continental, Novo Horizonte Av. Brasil e Novo Horizonte Av. Industrial. Corte, barba, barboterapia e visagismo. Escolha a unidade e agende.\" O corte em ~155 caracteres cai dentro de \"Corte, barba, barbote...\": perdem-se os serviços e a frase \"Escolha a unidade e agende.\" Os nomes das três unidades por extenso consomem 95 dos 206 caracteres.",
+  "impacto": "A rota mais importante do site é a única cujo snippet é truncado, e o que o truncamento come é exatamente a parte que convida ao clique. Enumerar \"Novo Horizonte Av. Brasil e Novo Horizonte Av. Industrial\" por extenso num espaço de 155 caracteres é gastar metade do orçamento para repetir \"Novo Horizonte\" duas vezes.",
+  "correcao": "Em fonte/prototipo/Home.dc.html:16, trocar por (155 caracteres, só fato já publicado): \"Barbearia com três endereços em Serra, ES: Cidade Continental e duas em Novo Horizonte. Corte, barba, barboterapia e visagismo. Escolha a unidade e agende.\" Os endereços completos continuam na /unidades/ e nas três páginas de unidade, que é onde quem procura endereço cai."
+ },
+ {
+  "prioridade": "P1",
+  "tipo": "problema_comprovado",
+  "titulo": "/visagismo/ nunca diz em quais unidades o serviço está disponível, enquanto as páginas irmãs dizem",
+  "rotas": [
+   "/visagismo/"
+  ],
+  "arquivos": [
+   "fonte/prototipo/PaginaMorenos.dc.html:715"
+  ],
+  "evidencia": "Comparação do texto renderizado das três páginas de serviço, no bloco \"ONDE FAZER / Escolha a unidade.\" — a frase que fica entre o H2 e os três cartões. /servicos/barboterapia/: \"A barboterapia é oferecida nas três unidades; confira a disponibilidade na agenda.\" — responde. /servicos/corte-masculino/: \"O corte masculino é o serviço principal da Morenos.\" — não responde. /visagismo/: \"Por durar cerca de 2 horas, o visagismo precisa ser agendado com antecedência.\" — não responde, e em nenhum outro ponto da página (304 palavras, lidas inteiras) aparece se o visagismo é feito nas três unidades ou em alguma. A página lista os três cartões de unidade logo abaixo, o que sugere que sim, sem afirmar.",
+  "impacto": "A intenção que o cliente definiu para esta rota é \"consultoria, processo e disponibilidade\". O processo está bem feito (quatro etapas), a consultoria está explicada, a disponibilidade está ausente. Numa consultoria de 2 horas, que exige reserva antecipada, saber se a unidade do caminho dela faz o serviço é a condição para agendar — e os três cartões embaixo de um texto que não confirma nada deixam o visitante deduzir uma coisa que ninguém afirmou. O FAQ de /servicos/ ainda avisa o contrário: \"Todos os serviços estão em todas as unidades? → Não necessariamente.\"",
+  "correcao": "Pedir ao cliente a resposta: o visagismo é oferecido nas três unidades? Com a confirmação, trocar o texto do bloco Onde fazer (PaginaMorenos.dc.html:715) pela mesma construção que a barboterapia já usa: \"O visagismo é oferecido nas três unidades; por durar cerca de 2 horas, precisa ser agendado com antecedência.\" Se for só em algumas, nomear quais. Enquanto não vier a resposta, NÃO afirmar as três: deixar \"Confira a disponibilidade do visagismo na agenda, ao escolher a unidade.\" — que é verdadeiro e manda para onde o dado existe. Mesma correção para /servicos/corte-masculino/, cujo texto de Onde fazer (\"O corte masculino é o serviço principal da Morenos.\") também não responde onde."
+ },
+ {
+  "prioridade": "P1",
+  "tipo": "problema_comprovado",
+  "titulo": "A frase de abertura de /servicos/corte-masculino/ é idêntica, palavra por palavra, ao verbete do catálogo em /servicos/",
+  "rotas": [
+   "/servicos/corte-masculino/",
+   "/servicos/"
+  ],
+  "arquivos": [
+   "fonte/prototipo/site-config.js:104",
+   "fonte/prototipo/PaginaMorenos.dc.html:681"
+  ],
+  "evidencia": "Cruzamento automático de todas as linhas com >=6 palavras entre as 17 rotas renderizadas. Uma única frase de prosa própria aparece duplicada entre duas rotas: \"Corte masculino personalizado de acordo com referências, estilo e preferência do cliente, com atenção ao acabamento.\" — em /servicos/ (verbete do catálogo, vindo de site-config.js:104) e em /servicos/corte-masculino/ (texto do hero, PaginaMorenos.dc.html:681). Nas duas rotas é o mesmo string. Além disso, essa mesma frase é a meta description de /servicos/corte-masculino/, com o acréscimo de \"no Salão Morenos, em Serra, ES\" — ou seja, o visitante que vem do Google lê a frase no snippet, lê de novo no hero, e leria uma terceira vez se tivesse passado pelo catálogo.",
+  "impacto": "O hero de uma página de serviço é o lugar onde ela se apresenta com voz própria. Hoje ele é a legenda de uma linha de tabela. Quem chega em /servicos/corte-masculino/ vindo do catálogo encontra, como primeira frase da página inteira, a mesma frase que acabou de clicar — e a página não dá nenhum motivo para ter valido a pena abrir. É a única duplicação de prosa real entre rotas no site; todo o resto que se repete é endereço, botão ou o banner do Clube, que a arquitetura limita a 3 rotas de propósito.",
+  "correcao": "Manter a frase curta no catálogo (site-config.js:104, que é o lugar de um verbete) e dar ao hero de /servicos/corte-masculino/ um texto próprio, a partir do que a página já afirma mais abaixo. Em PaginaMorenos.dc.html:681, trocar o `texto:` do hero por: \"Você chega com uma referência ou só com uma ideia; o corte sai da conversa, com o acabamento conferido antes de você levantar da cadeira.\" — tudo isso já está no corpo da página (bloco \"Um corte que combina com você e com a sua rotina\" e passo 04 \"Acabamento\"), nenhum fato novo."
+ },
+ {
+  "prioridade": "P1",
+  "tipo": "depende_do_cliente",
+  "titulo": "/cultura/ não cumpre o papel de \"Sobre\": não tem história nem equipe, e sobram ~100 palavras de texto próprio",
+  "rotas": [
+   "/cultura/"
+  ],
+  "arquivos": [
+   "fonte/prototipo/PaginaMorenos.dc.html:752",
+   "fonte/prototipo/cultura.dc.html:15"
+  ],
+  "evidencia": "Leitura integral do texto renderizado de /cultura/: 230 palavras no main, das quais os três cartões de endereço, as migalhas e os botões respondem por ~100 — restam 132 palavras de linhas de prosa, e dentro delas o H1, a legenda da galeria e a linha de endereço. A prosa inteira cabe em cinco frases: \"Três endereços em Serra para quem já conhece a marca e para quem está chegando pela primeira vez.\" / \"Na Morenos, o atendimento começa por uma conversa. O que você quer, como é a sua rotina, quanto tempo você tem para arrumar o cabelo de manhã.\" / \"Daí sai um corte que funciona na vida real, e não só na saída da cadeira.\" / \"Corte, barba e estética para quem quer se sentir bem, do corte de rotina a uma ocasião especial. Atendimento próximo, sem pose.\" / \"Cidade Continental e duas unidades em Novo Horizonte.\" Não há uma data, um ano de fundação, um marco, um nome de pessoa, um número de barbeiros. Busca por nomes próprios no site inteiro: o único profissional nomeado em qualquer rota é \"o barbeiro Herom\", e aparece dentro da citação de uma avaliação do Google na Home. Sobre concorrente NÃO existe: `grep` em SiteHeader.dc.html (linhas 36 e 93), SiteFooter.dc.html (linha 55) e no sitemap confirma que /cultura/ é a única rota rotulada \"Sobre a Morenos\", com o mesmo rótulo na barra do desktop, no menu do celular, no rodapé, nas migalhas e no botão de /trabalhe-conosco/. A rota /cultura/ também é a de maior densidade de \"Serra\" do site: 7 ocorrências em 230 palavras, incluindo \"Três endereços em Serra\" duas vezes (intro do hero e H2).",
+  "impacto": "A intenção que o cliente definiu é \"identidade, história e equipe, só com informação confirmada\". Entregues: identidade. Ausentes: história e equipe — os dois assuntos pelos quais alguém abre uma página Sobre. Como a rota também perdeu a galeria de avaliações e os blocos genéricos na revisão de arquitetura, o que restou é a rota mais magra do site depois do 404, e metade dela é a lista de endereços que já aparece em outras seis rotas. Quem clica em \"Sobre a Morenos\" esperando saber quem é a Morenos recebe três parágrafos sobre método de atendimento e volta para a escolha de unidade.",
+  "correcao": "Isto é pendência de cliente, não texto a inventar — nenhuma data, nome ou número pode sair daqui. Pedir, em uma lista: (1) ano de abertura da primeira unidade e ordem de abertura das três; (2) quem fundou e, se fizer sentido publicar, por quê; (3) a equipe — quantos barbeiros, e quais aceitam ser nomeados e fotografados; (4) algum marco verificável (prêmio, tempo de casa de alguém, número de atendimentos). Com isso, entram dois blocos novos em PaginaMorenos.dc.html:752: um \"A história\" e um \"Quem atende\". Enquanto não chegar, NÃO publicar texto de preenchimento e NÃO publicar aviso na tela — a página fica como está, e a pendência entra no fonte/MIGRATION-CHECKLIST.md. Independente do cliente, dá para corrigir agora a repetição: o H2 \"Três endereços em Serra.\" repete a intro do hero; trocar por \"Onde a Morenos atende.\""
+ },
+ {
+  "prioridade": "P2",
+  "tipo": "melhoria_recomendada",
+  "titulo": "og:title e og:description são cópia literal do title e da description em 13 rotas, e não existem nas 2 rotas jurídicas",
+  "rotas": [
+   "/unidades/",
+   "/unidades/cidade-continental/",
+   "/unidades/novo-horizonte-av-brasil/",
+   "/unidades/novo-horizonte-av-industrial/",
+   "/servicos/",
+   "/servicos/corte-masculino/",
+   "/servicos/barboterapia/",
+   "/visagismo/",
+   "/dia-do-noivo/",
+   "/o-clube/",
+   "/cultura/",
+   "/corporativo/",
+   "/trabalhe-conosco/",
+   "/politica-de-privacidade/",
+   "/termos-de-uso/"
+  ],
+  "arquivos": [
+   "fonte/prototipo/politica-de-privacidade.dc.html:16",
+   "fonte/prototipo/termos-de-uso.dc.html:16"
+  ],
+  "evidencia": "Extração dos metadados das 17 rotas do HTML gerado: og:title é idêntico ao <title> em 13 rotas e og:description idêntico à meta description nas mesmas 13; /politica-de-privacidade/, /termos-de-uso/ e /404.html não têm og:title, og:description, og:url, og:image nem twitter:card. A única rota que trata os dois pares como coisas diferentes é a Home: title \"Salão Morenos | Barbearia em Serra, ES\" contra og:title \"Salão Morenos: barbearia em Serra, ES\", e description de 206 caracteres contra og:description de 150, sem o \"| marca\" e sem a enumeração das unidades. Ou seja: o padrão correto já existe no projeto, em uma rota só.",
+  "impacto": "O título de busca e o título de um cartão compartilhado têm trabalhos diferentes. No WhatsApp — que é o canal de contato do site inteiro — o sufixo \"| Salão Morenos\" ocupa espaço do cartão repetindo o nome que já está no og:site_name e no domínio. E as duas rotas jurídicas, que são justamente as que alguém manda para outra pessoa como prova (\"olha a política deles\"), chegam no WhatsApp sem cartão nenhum.",
+  "correcao": "Dois ajustes nos helmets de fonte/prototipo/*.dc.html. (1) Nas 13 rotas, tirar o sufixo \"| Salão Morenos\" do og:title e deixá-lo ler como frase, no mesmo espírito da Home — por exemplo, em barboterapia.dc.html:22, `og:title` = \"Barboterapia no Salão Morenos\" em vez de \"Barboterapia em Serra | Salão Morenos\". (2) Acrescentar o bloco og completo (og:type, og:locale, og:site_name, og:title, og:description, og:url, og:image, twitter:card) a politica-de-privacidade.dc.html e termos-de-uso.dc.html, copiando o padrão das outras rotas e usando a description que já existe nas duas. O 404 pode ficar sem og — é noindex e ninguém compartilha."
+ },
+ {
+  "prioridade": "P2",
+  "tipo": "melhoria_recomendada",
+  "titulo": "\"em Serra\" aparece três vezes (title, H1 e description) em corte-masculino e barboterapia, mas uma só vez em visagismo — o excesso que o cliente pediu para evitar",
+  "rotas": [
+   "/servicos/corte-masculino/",
+   "/servicos/barboterapia/"
+  ],
+  "arquivos": [
+   "fonte/prototipo/PaginaMorenos.dc.html:681",
+   "fonte/prototipo/PaginaMorenos.dc.html:688",
+   "fonte/prototipo/corte-masculino.dc.html:15",
+   "fonte/prototipo/barboterapia.dc.html:15"
+  ],
+  "evidencia": "Tabela extraída do HTML gerado. /servicos/corte-masculino/: title \"Corte Masculino em Serra | Salão Morenos\", H1 \"Corte masculino no Salão Morenos em Serra\", description \"...no Salão Morenos, em Serra, ES...\" — três vezes. /servicos/barboterapia/: title \"Barboterapia em Serra | Salão Morenos\", H1 \"Barboterapia no Salão Morenos em Serra\", description \"...no Salão Morenos, em Serra, ES...\" — três vezes. /visagismo/, na mesma família de páginas: title \"Visagismo Masculino em Serra | Salão Morenos\", H1 \"Visagismo masculino no Salão Morenos\" (sem \"em Serra\"), description \"...em Serra, ES...\" — duas vezes, e o H1 não carrega a cidade. Contexto que vale registrar, porque contraria o medo original do cliente: a palavra \"barbearia\" NÃO está espalhada — contagem no texto renderizado das 17 rotas dá 2 ocorrências na Home, 2 em /o-clube/, 1 na política e ZERO nas outras 13 rotas. O excesso real não é \"barbearia em Serra\" no corpo; é \"em Serra\" empilhado nos três campos de metadado das páginas de serviço.",
+  "impacto": "O cliente pediu explicitamente para não repetir a localidade em todos os títulos e parágrafos. Title, H1 e description são os três textos que aparecem juntos na mesma tela de resultado e no topo da página — repetir a cidade nos três faz o conjunto soar construído para robô, que é o oposto da linguagem direta da marca. E a inconsistência com /visagismo/ mostra que não foi uma decisão, foi descuido.",
+  "correcao": "Adotar a regra que /visagismo/ já segue: a cidade mora no title; o H1 nomeia o serviço e a marca. Em PaginaMorenos.dc.html:681, H1 de corte-masculino vira \"Corte masculino no Salão Morenos\"; em :688, H1 de barboterapia vira \"Barboterapia no Salão Morenos\". Os titles ficam como estão — é neles que a localidade trabalha. E as descriptions passam a gastar o espaço com o fato que diferencia, não com a cidade: corte-masculino.dc.html:16 → \"Corte masculino personalizado a partir das suas referências, com conversa, execução e acabamento. Cerca de 30 minutos. Agende na unidade mais perto.\" (148 car.); barboterapia.dc.html:16 → \"Barboterapia no Salão Morenos: preparo da pele, desenho, alinhamento e finalização, em cerca de 40 minutos. Vai além da Barba Alinhada, de contorno rápido.\" (155 car.); visagismo.dc.html:16 → \"Consultoria de visagismo masculino: conversa, análise do rosto e, no fim, corte e barba personalizados. Cerca de 2 horas, com agendamento antecipado.\" (149 car.). Todos os fatos usados já estão publicados no corpo e no catálogo."
+ },
+ {
+  "prioridade": "P2",
+  "tipo": "melhoria_recomendada",
+  "titulo": "Os metadados das três unidades abrem com CEP, fecham com o mesmo fragmento e usam sufixo de título inconsistente",
+  "rotas": [
+   "/unidades/cidade-continental/",
+   "/unidades/novo-horizonte-av-brasil/",
+   "/unidades/novo-horizonte-av-industrial/"
+  ],
+  "arquivos": [
+   "fonte/prototipo/cidade-continental.dc.html:15",
+   "fonte/prototipo/novo-horizonte-av-brasil.dc.html:15",
+   "fonte/prototipo/novo-horizonte-av-industrial.dc.html:15"
+  ],
+  "evidencia": "Metadados extraídos do HTML gerado. Titles: \"Salão Morenos Cidade Continental | Serra, ES\" / \"Salão Morenos Novo Horizonte — Av. Brasil | Serra\" / \"Salão Morenos Novo Horizonte — Av. Industrial | Serra\" — um termina em \"Serra, ES\" e dois em \"Serra\", sem motivo (todos cabem com \", ES\": ficariam com 53 e 57 caracteres, dentro do limite). Descriptions: as três trazem o CEP e as três terminam com o MESMO fragmento, \"Corte, barba e agendamento online.\" — que não é frase, é lista. Exemplo: \"Salão Morenos em Cidade Continental, Serra: Avenida Terceiro Mundo, Setor Ásia, CEP 29163-603. Corte, barba e agendamento online.\" As duas de Novo Horizonte acertam ao nomear a avenida, mas nenhuma das duas avisa, no snippet, que existe outra unidade no mesmo bairro — que é exatamente o alerta que o corpo das páginas repete (\"Não confunda com a unidade da Avenida Industrial, no mesmo bairro\") e o assunto de uma pergunta inteira do FAQ de /unidades/.",
+  "impacto": "O snippet é o único texto que o visitante lê antes de decidir qual das três unidades abrir, e as três dizem a mesma coisa terminando igual. O CEP gasta ~15 dos ~155 caracteres visíveis com um dado que ninguém usa para escolher barbearia. E o risco real do negócio — duas unidades no mesmo bairro, em avenidas diferentes — é o que o resultado de busca mais deveria desambiguar, e é justamente o que ele não diz.",
+  "correcao": "Padronizar o sufixo em \"| Serra, ES\" nos três titles (novo-horizonte-av-brasil.dc.html:15 e novo-horizonte-av-industrial.dc.html:15). E reescrever as três descriptions, sem CEP, cada uma com a informação que diferencia, tudo dado já publicado: Cidade Continental → \"Unidade do Salão Morenos na Avenida Terceiro Mundo, Setor Ásia, em Cidade Continental, Serra. Veja horário, como chegar e agende nesta unidade.\" (143 car.); Av. Brasil → \"Unidade do Salão Morenos na Avenida Brasil, em Novo Horizonte, Serra. A outra unidade do bairro fica na Avenida Industrial. Horário, rota e agendamento.\" (152 car.); Av. Industrial → \"Unidade do Salão Morenos na Avenida Industrial, 830 — Loja 3, em Novo Horizonte, Serra. A outra unidade do bairro fica na Avenida Brasil. Horário e rota.\" (153 car.). Lembrando de replicar nos og:description das mesmas rotas (linha 23 de cada arquivo)."
+ },
+ {
+  "prioridade": "P2",
+  "tipo": "melhoria_recomendada",
+  "titulo": "O title de /corporativo/ não diz o que a página oferece, e o de /cultura/ repete a marca duas vezes",
+  "rotas": [
+   "/corporativo/",
+   "/cultura/"
+  ],
+  "arquivos": [
+   "fonte/prototipo/corporativo.dc.html:15",
+   "fonte/prototipo/cultura.dc.html:15"
+  ],
+  "evidencia": "Metadados extraídos do HTML gerado. /corporativo/: title \"Corporativo | Salão Morenos em Serra\" — a palavra \"Corporativo\" sozinha é rótulo de menu interno, não assunto; nada no título diz corte, barba, empresa ou colaborador. A description da mesma rota faz o trabalho direito (\"Planos corporativos de corte e barba do Salão Morenos para empresas de Serra, ES, e atendimento para eventos. Solicite uma proposta.\") e o H1 também (\"Morenos para empresas.\"). /cultura/: title \"Sobre a Morenos | Salão Morenos em Serra\" — \"Morenos\" e \"Salão Morenos\" no mesmo título, 40 caracteres dos quais 13 são a marca repetida.",
+  "impacto": "No /corporativo/, o campo mais visível do resultado de busca é o único que não nomeia o produto — quem procura benefício de barbearia para equipe não reconhece a página pelo título. No /cultura/, a repetição da marca consome espaço e soa automática, contra a linguagem direta que o cliente pediu.",
+  "correcao": "Em corporativo.dc.html:15 e :22, title e og:title → \"Planos de corte e barba para empresas | Salão Morenos\" (53 caracteres). Em cultura.dc.html:15 e :22 → \"Sobre o Salão Morenos | Serra, ES\" (33 caracteres). A description de /cultura/ também pode ficar mais concreta, com texto que a própria página já afirma: \"O Salão Morenos e a forma de atender nas três unidades de Serra: ouvir a referência, cortar com cuidado e explicar como manter.\" (127 car.) — e ela deve ser revista de novo quando história e equipe entrarem na página. As URLs não mudam."
+ },
+ {
+  "prioridade": "P2",
+  "tipo": "melhoria_recomendada",
+  "titulo": "O bloco do Clube na Home usa linguagem de folheto e um H2 que não diz o que o Clube é",
+  "rotas": [
+   "/"
+  ],
+  "arquivos": [
+   "fonte/prototipo/Home.dc.html:222",
+   "fonte/prototipo/Home.dc.html:223"
+  ],
+  "evidencia": "Texto renderizado da Home, bloco \"O CLUBE\": H2 \"Muito além de uma barbearia.\" e parágrafo \"Um estilo de vida, um clube para chamar de seu. Em vez de pagar a cada visita, você mantém corte e barba em dia com uma mensalidade e agenda na unidade participante.\" (Home.dc.html:222 e :223). Comparação com o resto do site, que segue outro registro: o mesmo produto é apresentado em /servicos/ como \"Corte e barba em dia, com uma mensalidade. / No Clube Morenos você escolhe um plano mensal e agenda quando precisar, sem pagar a cada visita.\" e em /o-clube/ como \"A assinatura mensal da Morenos.\" O H2 da Home é a única construção do site que vende por adjetivo em vez de dizer o que a coisa é — e \"Muito além de uma barbearia\" nem nomeia o Clube.",
+  "impacto": "Esse é o bloco que leva da Home para a página de assinatura, e é o único ponto do site que não fala como a marca fala. \"Um estilo de vida, um clube para chamar de seu\" não informa nada — o leitor chega ao fim das duas primeiras orações sem saber que se trata de mensalidade. E \"Muito além de uma barbearia\" é a segunda das duas únicas ocorrências de \"barbearia\" na Home, gasta numa frase que nega a categoria do negócio.",
+  "correcao": "Em Home.dc.html:222, H2 → \"Corte e barba em dia, com uma mensalidade.\" (a mesma frase que o banner do Clube já usa em /servicos/, /servicos/corte-masculino/ e /servicos/barboterapia/, o que também alinha a Home ao resto). Em :223, parágrafo → \"Em vez de pagar a cada visita, você assina um plano mensal e agenda quando precisar.\" — cortando \"Um estilo de vida, um clube para chamar de seu\" e resolvendo de quebra a contradição de \"unidade participante\" apontada em outro achado. Atenção: a frase \"Corte e barba em dia, com uma mensalidade.\" já aparece como H2 em 3 rotas; usá-la aqui faria 4 e quebraria a regra 1 do fonte/testes/arquitetura.mjs (nenhum H2 em mais de 3 rotas). Então, ou variar na Home — \"Corte e barba por mensalidade.\" — ou rever o limite junto com quem mexer na arquitetura."
+ },
+ {
+  "prioridade": "P2",
+  "tipo": "depende_do_cliente",
+  "titulo": "/servicos/corte-masculino/ e /visagismo/ não têm bloco \"Para quem\", e o corte não diz o que inclui",
+  "rotas": [
+   "/servicos/corte-masculino/",
+   "/visagismo/"
+  ],
+  "arquivos": [
+   "fonte/prototipo/PaginaMorenos.dc.html:681",
+   "fonte/prototipo/PaginaMorenos.dc.html:704"
+  ],
+  "evidencia": "Checklist montada lendo as três páginas de serviço renderizadas por inteiro. Barboterapia tem os seis itens: o que é (H2 \"Mais do que tirar o excesso.\"), o que inclui (as quatro etapas), PARA QUEM (bloco próprio: \"Para quem usa barba e quer cuidar dela. / Faz sentido para quem está deixando a barba crescer, para quem sente a pele irritada depois de fazer em casa ou para quem quer chegar arrumado a uma ocasião.\"), como funciona, duração, onde, como agendar. Corte-masculino NÃO tem bloco \"Para quem\" e não diz o que o serviço inclui: a página fala de conversa, estilo, execução e acabamento, mas nunca diz se lavagem, pezinho ou finalização entram — e o site afirma em outro lugar que \"Pezinho\" é item destacável, porque /o-clube/ lista \"✓ Corte personalizado / ✓ Pezinho\" como duas linhas separadas no plano Corte Ilimitado (site-config.js:128). Visagismo também não tem bloco \"Para quem\" — a página explica processo e duração, mas não diz para quem a consultoria de 2 horas faz sentido.",
+  "impacto": "Das três páginas de serviço, só uma responde \"isso é para mim?\". Nas outras duas o visitante tem que inferir. No corte masculino, a lacuna é concreta e tem consequência de balcão: o site separa \"corte\" de \"pezinho\" na página de planos e não separa (nem junta) na página do serviço, então quem agenda um corte avulso não sabe se o pezinho está incluído.",
+  "correcao": "Parte é pendência de cliente, parte é escrita. Pendência: perguntar o que está incluído no corte masculino avulso — lavagem, pezinho, finalização, sobrancelha — porque isso é preço e procedimento, não texto a deduzir. Escrita: acrescentar um bloco \"Para quem\" em /servicos/corte-masculino/ e outro em /visagismo/, no mesmo formato do que a barboterapia já usa (`this.texto({ claro: false, label: 'Para quem', ... })`, PaginaMorenos.dc.html:693), montado só com o que a página já afirma — no visagismo, por exemplo, serve para quem vai mudar de visual, para quem nunca definiu um corte que combine com o rosto e para quem quer orientação de manutenção, todos pontos já cobertos pelas quatro etapas. Com a resposta do cliente, a lista do que inclui entra no bloco \"O serviço\" do corte."
+ },
+ {
+  "prioridade": "P2",
+  "tipo": "problema_comprovado",
+  "titulo": "O H1 da Home sai colado quando lido como texto: \"Salão Morenos.Seu estilo começa aqui.\"",
+  "rotas": [
+   "/"
+  ],
+  "arquivos": [
+   "fonte/prototipo/Home.dc.html:78"
+  ],
+  "evidencia": "Lido no navegador, depois da troca das camadas: `document.querySelector('h1').textContent` devolve exatamente `\"Salão Morenos.Seu estilo começa aqui.\"` — sem espaço entre \"Morenos.\" e \"Seu\". O innerHTML explica: `Salão Morenos.<br data-dc-tpl=\"29\"><span data-dc-tpl=\"30\" style=\"color: rgb(183, 154, 106);\">Seu estilo</span> <br data-dc-tpl=\"31\">começa aqui.` (fonte/prototipo/Home.dc.html:78). O `<br>` quebra a linha na tela, então visualmente está certo em três linhas, mas não insere separador no textContent. É a única rota do site onde isso acontece: nas outras 16 o H1 sai limpo (\"Encontre a sua Morenos em Serra.\", \"Barboterapia no Salão Morenos em Serra\", etc.).",
+  "impacto": "Qualquer coisa que leia o H1 como string — ferramenta de auditoria, preview, extração automática, e parte dos agentes que resumem a página — recebe \"Morenos.Seu\" grudado no cabeçalho principal da rota mais importante. Não quebra a tela nem a leitura humana, mas é o tipo de detalhe que aparece feio em relatório de terceiro e custa um caractere para resolver.",
+  "correcao": "Em fonte/prototipo/Home.dc.html:78, inserir um espaço antes do primeiro `<br>`: `Salão Morenos. <br>...`. O `<br>` continua quebrando a linha, o layout não muda, e o textContent passa a ser \"Salão Morenos. Seu estilo começa aqui.\" Como o build trabalha por agulha que exige o trecho exato uma única vez, conferir se esse H1 é alvo de alguma transformação antes de mexer."
+ },
+ {
+  "prioridade": "P2",
+  "tipo": "melhoria_recomendada",
+  "titulo": "A abertura de /o-clube/ diz a mesma coisa três vezes seguidas, e o H1 é uma pergunta que não nomeia o produto",
+  "rotas": [
+   "/o-clube/"
+  ],
+  "arquivos": [
+   "fonte/prototipo/PaginaMorenos.dc.html:736",
+   "fonte/prototipo/PaginaMorenos.dc.html:737"
+  ],
+  "evidencia": "Primeiras três seções do texto renderizado de /o-clube/, nesta ordem. (1) Hero, H1 \"Morenos faz parte da sua rotina? Conheça o Clube.\" + \"A assinatura mensal da Morenos. Você escolhe um plano e mantém corte e barba em dia sem pagar a cada visita.\" (2) Maquete, H2 \"Assinatura mensal, agenda no celular.\" + \"Você escolhe o plano, assina pela plataforma da Morenos e agenda pelo celular na unidade que preferir, sem pagar a cada visita.\" (3) Passos, H2 \"Assinar é simples.\" + \"01 Escolha o plano / 02 Assine / 03 Agende\". As três dizem escolher plano → assinar → agendar, e \"sem pagar a cada visita\" aparece duas vezes em dois parágrafos consecutivos (contagem no texto renderizado: 2 ocorrências em /o-clube/). O H1 é a única rota do site cujo cabeçalho principal é pergunta, e ele não contém a palavra \"assinatura\" nem \"mensalidade\".",
+  "impacto": "O visitante lê a mesma mecânica três vezes antes de chegar nos planos, que é o que ele veio ver. E o H1, que é o primeiro texto grande da página, pergunta em vez de afirmar: quem chega pelo Google lendo o title \"Clube Salão Morenos | Planos e Assinatura\" encontra como H1 uma pergunta retórica, e precisa ler mais dois parágrafos para confirmar que caiu no lugar certo. Vale registrar o contraponto: o FAQ desta rota é o melhor do site — as oito perguntas (adesão, limite de uso, pagamento, presencial) trazem informação que o corpo não tem, e nenhuma repete o corpo.",
+  "correcao": "Em PaginaMorenos.dc.html:736, H1 → \"Clube Morenos: corte e barba por mensalidade.\" — afirma, nomeia o produto e casa com o title. E escolher UM dos dois parágrafos de abertura: ou o hero, ou o da maquete. Sugestão: manter no hero \"A assinatura mensal da Morenos. Você escolhe um plano e mantém corte e barba em dia sem pagar a cada visita.\" e trocar o texto da maquete (:737) por algo que fale do que a imagem mostra e o hero não diz — \"O agendamento continua o mesmo: você marca pelo celular, na unidade que preferir.\" — eliminando a segunda ocorrência de \"sem pagar a cada visita\"."
+ },
+ {
+  "prioridade": "P2",
+  "tipo": "depende_do_cliente",
+  "titulo": "/dia-do-noivo/ não diz o que o atendimento inclui, quanto dura nem em que unidade acontece",
+  "rotas": [
+   "/dia-do-noivo/"
+  ],
+  "arquivos": [
+   "fonte/prototipo/PaginaMorenos.dc.html:722"
+  ],
+  "evidencia": "Leitura integral do texto renderizado de /dia-do-noivo/ (262 palavras). A página diz o que a proposta é (\"Cabelo e barba em dia para o casamento, com horário reservado para você e, se quiser, para os padrinhos\"), como solicitar (três passos) e tem formulário. Não diz: quais serviços compõem o atendimento (é corte + barba? entra barboterapia? entra algo para os padrinhos?), quanto tempo dura, nem onde — a única resposta sobre local é o FAQ \"Em qual unidade é o atendimento? → A unidade é combinada na conversa pelo WhatsApp.\" A pergunta de antecedência também fica sem número: \"Com quanto tempo de antecedência devo consultar? → Quanto antes, melhor, para garantir o horário no dia do casamento.\" Comparação: as outras três páginas de serviço (/servicos/corte-masculino/, /servicos/barboterapia/, /visagismo/) publicam duração, e o catálogo de /servicos/ publica duração para 15 dos 16 itens.",
+  "impacto": "É a página com a intenção mais comercial do site — \"atendimento para casamento e solicitação de informações\" — e ela pede os dados do visitante sem dar os dela. Quem está montando cronograma de casamento precisa de duração e local antes de preencher formulário; hoje tem que abrir o WhatsApp para descobrir se o atendimento cabe no dia. Isso derruba o preenchimento do formulário, que é a conversão declarada da rota.",
+  "correcao": "Pendência de cliente, não texto a inventar: perguntar (1) o que o Dia do Noivo inclui, item por item; (2) duração aproximada para o noivo sozinho e com padrinhos; (3) se o atendimento acontece em unidade fixa, em qualquer uma, ou fora; (4) a antecedência mínima real em dias ou semanas. Com as respostas, entra um bloco \"O que inclui\" em PaginaMorenos.dc.html:722, no formato dos outros serviços, e as duas respostas vagas do FAQ passam a trazer número. Enquanto não vier, não publicar estimativa nem faixa — e não colocar aviso na tela."
+ },
+ {
+  "prioridade": "P2",
+  "tipo": "depende_do_cliente",
+  "titulo": "Corte Kids é o único item do catálogo sem duração, sob um texto que anuncia \"Durações aproximadas\"",
+  "rotas": [
+   "/servicos/"
+  ],
+  "arquivos": [
+   "fonte/prototipo/site-config.js:108"
+  ],
+  "evidencia": "Catálogo renderizado de /servicos/: 15 dos 16 itens trazem a linha \"Aprox. X\" (de \"Aprox. 10 min\" a \"Aprox. 2 horas\"). O único sem é \"Corte Kids / Corte para crianças, com paciência e cuidado.\" — no fonte, site-config.js:108, `duracao: null`. O texto de abertura da seção, logo acima, diz \"Durações aproximadas. Confira a disponibilidade do serviço na agenda, ao escolher a unidade.\"",
+  "impacto": "Baixo, e a omissão está CERTA pela regra do cliente: duração não confirmada não vira texto. O custo é só de leitura — numa lista onde todos os outros itens têm o campo, a ausência num só parece erro de montagem em vez de decisão, ainda mais sob uma frase que promete durações. Registro aqui para que a próxima rodada com o cliente feche a lacuna em vez de alguém \"completar\" com um palpite.",
+  "correcao": "Perguntar ao cliente a duração aproximada do Corte Kids e preencher `duracao` em site-config.js:108. Não estimar a partir dos outros cortes (todos 30 min) — corte infantil tem tempo próprio e a regra do projeto proíbe o chute. Até lá, deixar como está: nada na tela, nenhum \"a confirmar\" visível."
+ },
+ {
+  "prioridade": "P1",
+  "tipo": "problema_comprovado",
+  "titulo": "A seção do Clube na Home não tem link para /o-clube/: manda direto para o checkout externo",
+  "rotas": [
+   "/"
+  ],
+  "arquivos": [
+   "fonte/prototipo/Home.dc.html:213",
+   "fonte/prototipo/Home.dc.html:225",
+   "fonte/prototipo/Home.dc.html:226",
+   "fonte/prototipo/Home.dc.html:705"
+  ],
+  "evidencia": "DOM da Home depois da troca de camadas (final.mjs, Chromium 1440x900):\n  [HOME: secao #clube]\n    h2: \"Muito além de uma barbearia.\"\n      A \"Seja membro\" -> https://cashbarber.com.br/salaomorenos\n      A \"Agendar como visitante\" -> https://wa.me/5527998713993?text=...\n    links em <main> da Home apontando para /o-clube/: [] (de 17 links no main)\nOs dois únicos links da seção são externos. No fonte, Home.dc.html:705 define `clubeHref: window.MORENOS ? window.MORENOS.links.membership : 'o-clube.dc.html'` — o fallback aponta para a página, mas o caminho real (MORENOS sempre existe, o site-config.js é embutido e síncrono) é sempre o cashbarber.com.br.\nNo grafo coletado, `/` -> conteudo nunca inclui /o-clube/; ele só aparece em `cabecalho` e `rodape`. E em 390px a Home não tem NENHUM link no cabeçalho (só logo + botão Agendar + ☰), então no celular o caminho Home->Clube depende do rodapé ou de abrir o hambúrguer.",
+  "impacto": "O caminho \"Home -> Clube\" que o cliente pediu existe só na navegação global. O visitante que lê o bloco (\"um clube para chamar de seu\", \"mensalidade\") é empurrado para um checkout de terceiro sem nunca ver a página que tem os 7 planos, os valores, as regras e as 8 perguntas frequentes. Quem não estava pronto para assinar sai do site.",
+  "correcao": "Em fonte/prototipo/Home.dc.html, trocar o par de CTAs da seção #clube (linhas 225-226) para: primário \"Conhecer o Clube\" -> `o-clube.dc.html` (o build reescreve para /o-clube/) e secundário \"Seja membro\" -> clubeHref externo com target=_blank rel=\"noopener noreferrer\" já existente. Alternativa de menor mudança: manter \"Seja membro\" e acrescentar um terceiro link discreto \"Ver planos e regras →\" -> `o-clube.dc.html#planos`, no mesmo padrão tipográfico do link \"Prefere conversar antes? Fale pelo WhatsApp →\" que já existe na Home. Não cria seção nova, então a regra 1 do fonte/testes/arquitetura.mjs (h2 em no máximo 3 rotas) não é afetada."
+ },
+ {
+  "prioridade": "P1",
+  "tipo": "problema_comprovado",
+  "titulo": "/unidades/ é a única rota ausente do rodapé; 6 rotas publicadas não oferecem nenhum caminho até ela",
+  "rotas": [
+   "/unidades/",
+   "/dia-do-noivo/",
+   "/o-clube/",
+   "/corporativo/",
+   "/trabalhe-conosco/",
+   "/politica-de-privacidade/",
+   "/termos-de-uso/"
+  ],
+  "arquivos": [
+   "fonte/prototipo/SiteFooter.dc.html:64",
+   "fonte/prototipo/SiteFooter.dc.html:63"
+  ],
+  "evidencia": "Rodapé renderizado em /cultura/ (final.mjs):\n  Serviços: Corte Masculino, Barboterapia, Visagismo, Dia do Noivo, **Todos os serviços -> /servicos/**\n  Unidades: Cidade Continental, Novo Horizonte — Av. Brasil, Novo Horizonte — Av. Industrial   (não há \"Todas as unidades\")\nContagem de links de entrada no grafo (desktop, estado de repouso, 404 excluído como origem):\n  /unidades/ .................... 9     todas as outras 15 rotas .... 15\nBusca de `href=\"/unidades/\"` na cópia estática de cada public/**/index.html:\n  SEM nenhum link: /dia-do-noivo/, /o-clube/, /corporativo/, /trabalhe-conosco/, /politica-de-privacidade/, /termos-de-uso/\nNessas 6 rotas o destino também não aparece no DOM vivo em repouso (nem cabeçalho, nem conteúdo, nem rodapé): só depois de abrir o mega menu (desktop) ou o hambúrguer (celular), porque \"Todas as unidades\" vive dentro de `<sc-if value=\"{{ navVisivel }}\">` em SiteHeader.dc.html:146.",
+  "impacto": "A página que compara os três endereços — a decisão comercial central de uma rede de 3 unidades — é a rota mais fraca do site em links internos, e some por completo para quem está no Clube, no Corporativo, no Dia do Noivo ou nas jurídicas. Assimetria visível para o visitante: a coluna Serviços tem \"Todos os serviços\" e a coluna Unidades não tem o equivalente.",
+  "correcao": "Em fonte/prototipo/SiteFooter.dc.html, acrescentar `{ label: 'Todas as unidades', href: 'unidades.dc.html' }` como último item da coluna 'Unidades' (linhas 64-67), espelhando o 'Todos os serviços' da linha 63. O build (troca_links em fonte/build.py) já converte `unidades.dc.html` em `/unidades/`. Uma linha, sobe /unidades/ de 9 para 16 links de entrada e resolve as 6 rotas sem caminho."
+ },
+ {
+  "prioridade": "P1",
+  "tipo": "problema_comprovado",
+  "titulo": "O \"Assinar\" do rodapé sai do site na mesma aba e sem rel, ao contrário de todos os outros links externos",
+  "rotas": [
+   "/",
+   "/unidades/",
+   "/unidades/cidade-continental/",
+   "/unidades/novo-horizonte-av-brasil/",
+   "/unidades/novo-horizonte-av-industrial/",
+   "/servicos/",
+   "/servicos/corte-masculino/",
+   "/servicos/barboterapia/",
+   "/visagismo/",
+   "/dia-do-noivo/",
+   "/o-clube/",
+   "/cultura/",
+   "/corporativo/",
+   "/trabalhe-conosco/",
+   "/politica-de-privacidade/",
+   "/termos-de-uso/"
+  ],
+  "arquivos": [
+   "fonte/prototipo/SiteFooter.dc.html:71",
+   "fonte/prototipo/SiteFooter.dc.html:24"
+  ],
+  "evidencia": "Propriedades lidas do elemento no DOM vivo de /cultura/ (inter.mjs):\n  [2] rodape \"Assinar\": {\"href\":\"https://cashbarber.com.br/salaomorenos\",\"target\":\"\",\"rel\":\"\",\"coluna\":\"Clube\"}\n      depois do clique: URL da aba = chrome-error://chromewebdata/ | abas abertas = 1 (antes 1)\n(ou seja: a própria aba saiu do site; nenhuma aba nova foi aberta — o erro é só porque o domínio do cliente está bloqueado no ambiente)\nMesmo markup na cópia estática de public/index.html:\n  <a data-dc-tpl=\"14\" href=\"https://cashbarber.com.br/salaomorenos\" class=\"scp2\" style=\"…\"><span class=\"sc-interp\">Assinar</span></a>\nTabulação de target/rel de todos os 61 links para cashbarber.com.br no estado de repouso:\n  ('_blank','noopener noreferrer') = 44   ('','') = 17   ('_self','') = 11\nOs 17 sem target e sem rel são exatamente este item do rodapé, um por rota (as 16 + 404.html). Os links wa.me (354 ocorrências) e google.com/maps (216) são 100% _blank + noopener noreferrer.",
+  "impacto": "Um link que parece navegação interna do rodapé tira o visitante do site sem aviso e sem deixar a aba de volta — comportamento diferente de todos os outros 44 links para o mesmo destino, que abrem em aba nova. Sem rel=\"noopener\", a página de destino ainda recebe window.opener.",
+  "correcao": "Em fonte/prototipo/SiteFooter.dc.html, o template genérico da linha 24 (`<a href=\"{{ l.href }}\">{{ l.label }}</a>`) não propaga target/rel. Acrescentar `target=\"{{ l.target }}\" rel=\"{{ l.rel }}\"` no template e, no renderVals, marcar só o item 'Assinar' (linha 71) com `target: '_blank', rel: 'noopener noreferrer'`, deixando os demais com `target: '_self', rel: ''`. Mesma convenção já usada em PaginaMorenos.dc.html:500 (helper `cta`)."
+ },
+ {
+  "prioridade": "P1",
+  "tipo": "melhoria_recomendada",
+  "titulo": "\"Unidades\" e \"Serviços\" no cabeçalho são botões sem href: as duas páginas-catálogo não têm link no cabeçalho renderizado",
+  "rotas": [
+   "/",
+   "/unidades/",
+   "/unidades/cidade-continental/",
+   "/unidades/novo-horizonte-av-brasil/",
+   "/unidades/novo-horizonte-av-industrial/",
+   "/servicos/",
+   "/servicos/corte-masculino/",
+   "/servicos/barboterapia/",
+   "/visagismo/",
+   "/dia-do-noivo/",
+   "/o-clube/",
+   "/cultura/",
+   "/corporativo/",
+   "/trabalhe-conosco/",
+   "/politica-de-privacidade/",
+   "/termos-de-uso/"
+  ],
+  "arquivos": [
+   "fonte/prototipo/SiteHeader.dc.html:33",
+   "fonte/prototipo/SiteHeader.dc.html:145",
+   "fonte/prototipo/SiteHeader.dc.html:152"
+  ],
+  "evidencia": "Cabeçalho de /o-clube/ em repouso, 1440x900, cursor afastado em (1400,880) para não disparar hover (inter2.mjs):\n  links : [\"/ :: Salão Morenos, página inicial\",\"/o-clube/ :: O Clube\",\"/cultura/ :: Sobre a Morenos\",\"/corporativo/ :: Corporativo\",\"/o-clube/#planos :: Ver planos\"]\n  botoes: [\"Unidades▼ [haspopup]\",\"Serviços▼ [haspopup]\",\"Agendar\"]\nComportamento real:\n  [1] clique em \"Serviços\": URL NAO mudou; links no painel aberto: 2\n  [1b] Enter no botão \"Unidades\": URL NAO mudou; link \"Todas as unidades\" visível: 1\nNa cópia estática (pré-renderizada em 390x844, fonte/prerender.mjs:60), o cabeçalho inteiro de /o-clube/ tem UM link:\n  <a href=\"/\" aria-label=\"Salão Morenos, página inicial\">  +  <button>Agendar</button>  +  <button aria-label=\"Abrir menu\">☰</button>\nVarredura de `<a>` sem href / href=\"\" / href=\"#\" nas 17 rotas: nenhuma. Varredura de `<a>` aninhada: nenhuma. Os demais botões sem href (Agendar, filtros do Clube, acordeão de FAQ, lightbox da galeria, carrossel de etapas) são interação de tela, não navegação de conteúdo — esses dois são os únicos itens de navegação de conteúdo sem href no site.",
+  "impacto": "Quem clica no título \"SERVIÇOS\" esperando o catálogo recebe um dropdown; não dá para abrir em aba nova nem com ctrl-clique. Um leitor sem JavaScript (ou o robô antes de executar JS) não encontra navegação alguma no cabeçalho. É o que compõe, junto com o buraco do rodapé, a fraqueza de /unidades/: nenhum dos dois blocos globais entrega essa rota sem interação.",
+  "correcao": "Em fonte/prototipo/SiteHeader.dc.html, separar rótulo de disclosure no item de menu do desktop (linha 33): `<a href=\"{{ m.verTudoHref }}\" onMouseEnter=\"{{ m.open }}\">{{ m.titulo }}</a>` seguido de `<button type=\"button\" onClick=\"{{ m.toggle }}\" aria-expanded=\"{{ m.isOpen }}\" aria-haspopup=\"true\" aria-label=\"Abrir submenu de {{ m.titulo }}\">▼</button>`. O hover continua abrindo o painel (comportamento e visual preservados), mas o rótulo passa a ser um link real para /unidades/ e /servicos/. Mesmo tratamento no acordeão do celular (linha ~96), onde o \"Todas as unidades →\" já existe dentro do acordeão aberto. URLs, tipografia e cores não mudam."
+ },
+ {
+  "prioridade": "P1",
+  "tipo": "melhoria_recomendada",
+  "titulo": "Nenhuma página de serviço linka para outro serviço: o caminho \"serviços relacionados entre si\" só existe no rodapé global",
+  "rotas": [
+   "/servicos/corte-masculino/",
+   "/servicos/barboterapia/",
+   "/visagismo/",
+   "/dia-do-noivo/"
+  ],
+  "arquivos": [
+   "fonte/prototipo/PaginaMorenos.dc.html:671",
+   "fonte/prototipo/PaginaMorenos.dc.html:689",
+   "fonte/prototipo/PaginaMorenos.dc.html:706",
+   "fonte/prototipo/PaginaMorenos.dc.html:721"
+  ],
+  "evidencia": "Links internos no <main> de cada página de serviço (grafo, desktop, repouso):\n  /servicos/corte-masculino/ -> / (migalha), /servicos/ (migalha), /unidades/, 3 unidades, /o-clube/   | irmãos de serviço: NENHUM\n  /servicos/barboterapia/    -> / , /servicos/ x2, /unidades/, 3 unidades, /o-clube/                   | irmãos de serviço: NENHUM\n  /visagismo/                -> / , /servicos/ x2, /unidades/, 3 unidades                              | irmãos de serviço: NENHUM\n  /dia-do-noivo/             -> / , /servicos/ , /politica-de-privacidade/                             | irmãos de serviço: NENHUM\nPara comparação, /servicos/ linka os quatro (destaques + catálogo). Nas páginas de unidade o bloco `texto` com `links: servicoLinks` (PaginaMorenos.dc.html:601, 565-568) já entrega os quatro serviços — o mecanismo existe e só não foi usado entre serviços.",
+  "impacto": "O visitante que chegou direto na barboterapia por busca não tem como descobrir o visagismo ou o Dia do Noivo sem voltar ao catálogo ou abrir o mega menu. Dentro do conteúdo, cada serviço é um beco: a única ponte lateral é a navegação global, que é igual em todas as páginas e não diz o que combina com o quê.",
+  "correcao": "Reaproveitar o bloco `texto` com `links` que já existe (PaginaMorenos.dc.html:156 renderiza `s.links` como pílulas) e acrescentar 2-3 serviços relacionados ao fim de cada página de serviço, antes do ctaFinal. Atenção: a regra 1 de fonte/testes/arquitetura.mjs proíbe o mesmo h2 em mais de 3 rotas — usar um h2 diferente por página (\"Combina com a barba.\" no corte, \"Antes de decidir o corte.\" na barboterapia, \"Para uma ocasião.\" no visagismo, \"Antes do grande dia.\" no noivo) em vez de um \"Serviços relacionados\" repetido quatro vezes. Textos de âncora já existem em `servicoLinks` (linhas 565-568), nenhum dado novo é inventado."
+ },
+ {
+  "prioridade": "P1",
+  "tipo": "melhoria_recomendada",
+  "titulo": "/dia-do-noivo/ não linka para nenhuma unidade nem para /unidades/ — é a única página de serviço sem o caminho \"serviço → onde fazer\"",
+  "rotas": [
+   "/dia-do-noivo/"
+  ],
+  "arquivos": [
+   "fonte/prototipo/PaginaMorenos.dc.html:721",
+   "fonte/prototipo/PaginaMorenos.dc.html:739"
+  ],
+  "evidencia": "Links internos no <main> de /dia-do-noivo/ (grafo, desktop, repouso, DOM depois da troca):\n  / (\"Início\", migalha) | /servicos/ (\"Serviços\", migalha) | /politica-de-privacidade/ (\"Política de Privacidade\", nota do formulário)\n  -> unidades linkadas no conteudo: 0/3\nAs outras três páginas de serviço têm 3/3 unidades + /unidades/, pelo bloco `{ tipo: 'unidades', id: 'onde', label: 'Onde fazer' }` (ex.: PaginaMorenos.dc.html:681, 698, 714). O /dia-do-noivo/ não tem esse bloco, e o ctaFinal dele (linha 739) foi sobrescrito para \"Preencher a consulta\" + WhatsApp, derrubando o \"Ver unidades\" que o ctaFinal padrão traz (linha 554-557).\nTambém é uma das 6 rotas em que `href=\"/unidades/\"` não aparece em lugar nenhum do HTML publicado.",
+  "impacto": "Rompe o caminho \"Serviço -> unidades que o oferecem\" que o cliente pediu, justamente na página de maior ticket. Quem quer saber onde o atendimento acontece antes de entregar nome, telefone e data do casamento não tem para onde ir.",
+  "correcao": "Não acrescentar o bloco \"Onde fazer\" com as três unidades: o próprio FAQ da página diz \"A unidade é combinada na conversa pelo WhatsApp\", e afirmar que as três fazem Dia do Noivo é dado que ninguém confirmou. A correção segura é devolver o link neutro para a comparação de endereços: em PaginaMorenos.dc.html:739, trocar o segundo CTA do ctaFinal por `this.cta('Ver unidades', R.unidades, false)` (mantendo \"Preencher a consulta\" como primário), ou acrescentar um terceiro link discreto. Se o cliente confirmar em quais unidades o Dia do Noivo acontece, aí sim entra o bloco 'unidades' com a lista filtrada."
+ },
+ {
+  "prioridade": "P1",
+  "tipo": "melhoria_recomendada",
+  "titulo": "/cultura/ (Sobre) não linka para Corporativo nem para Trabalhe Conosco, dois dos três destinos que o cliente pediu",
+  "rotas": [
+   "/cultura/"
+  ],
+  "arquivos": [
+   "fonte/prototipo/PaginaMorenos.dc.html:754",
+   "fonte/prototipo/PaginaMorenos.dc.html:760"
+  ],
+  "evidencia": "Links internos no <main> de /cultura/ (grafo, desktop, repouso):\n  / (\"Início\") | /unidades/ (\"Ver unidades\") x2 | /servicos/ (\"Conhecer serviços\") | /unidades/cidade-continental/ | /unidades/novo-horizonte-av-brasil/ | /unidades/novo-horizonte-av-industrial/\nNão há /corporativo/ nem /trabalhe-conosco/ no conteúdo; os dois só aparecem no rodapé (coluna 'Morenos') e, no caso do Corporativo, também no cabeçalho desktop.\nA volta já existe: /trabalhe-conosco/ linka duas vezes para /cultura/ com a âncora \"Sobre a Morenos\" (PaginaMorenos.dc.html:786 e 798). O caminho é de mão única.",
+  "impacto": "Dos três destinos pedidos para a página Sobre (unidades, Corporativo, Trabalhe Conosco), só \"unidades\" existe no conteúdo. Quem leu sobre a marca e se interessou em contratar para a empresa ou em trabalhar lá depende de achar o rodapé ou o menu, que são iguais em todas as páginas e não têm relação com o que a pessoa acabou de ler.",
+  "correcao": "Em PaginaMorenos.dc.html, no bloco `texto` \"Cuidado masculino sem cerimônia.\" (linha 757) ou no \"Ouvir primeiro. Cortar depois.\" (linha 756), acrescentar `links: [{ label: 'Morenos para empresas', href: R.corporativo }, { label: 'Trabalhe conosco', href: R['trabalhe-conosco'] }]` — o renderizador de `s.links` já existe (linha 156) e é o mesmo usado nas páginas de unidade. Não cria seção nova, então a regra 1 do fonte/testes/arquitetura.mjs não é tocada."
+ },
+ {
+  "prioridade": "P2",
+  "tipo": "melhoria_recomendada",
+  "titulo": "/o-clube/ não tem nenhum link interno de saída no conteúdo: 11 dos 13 links do main vão para fora do site",
+  "rotas": [
+   "/o-clube/"
+  ],
+  "arquivos": [
+   "fonte/prototipo/PaginaMorenos.dc.html:742",
+   "fonte/prototipo/PaginaMorenos.dc.html:613",
+   "fonte/prototipo/PaginaMorenos.dc.html:752"
+  ],
+  "evidencia": "Todos os links do <main> de /o-clube/ (grafo, desktop, repouso):\n  /                     \"Início\"            (migalha)\n  /o-clube/#planos      \"Ver planos\"        (âncora da própria página)\n  https://wa.me/...     \"Agendar como visitante\"  x2\n  https://cashbarber.com.br/salaomorenos  \"Seja membro\" | \"Assinar\" x7 | \"Assinar agora\"\nNenhum link para /unidades/, /servicos/ ou qualquer página de serviço. E o FAQ da própria página diz, em texto puro, \"Posso usar qualquer unidade? Membros podem ser atendidos em qualquer uma das três unidades.\" (PaginaMorenos.dc.html:613) sem link. /o-clube/ também é uma das 6 rotas sem nenhum `href=\"/unidades/\"` no HTML publicado.",
+  "impacto": "A página comercial de assinatura é um beco no conteúdo: ou o visitante converte no checkout externo, ou volta pelo rodapé. A frase que mais pede um link (\"qualquer uma das três unidades\") é a que não tem.",
+  "correcao": "Duas mudanças pequenas em PaginaMorenos.dc.html: (1) na seção final \"Pronto para entrar no Clube?\" (linha 752), acrescentar um terceiro link `this.cta('Ver unidades', R.unidades, false)` ao lado de \"Assinar agora\" e \"Agendar como visitante\"; (2) no FAQ do Clube, a resposta de \"Posso usar qualquer unidade?\" é string pura e hoje não aceita markup — se o renderizador de FAQ não suportar link, resolver só pelo item (1). Nada de texto novo inventado."
+ },
+ {
+  "prioridade": "P2",
+  "tipo": "melhoria_recomendada",
+  "titulo": "/corporativo/ cita \"as três unidades\" três vezes e não linka para nenhuma",
+  "rotas": [
+   "/corporativo/"
+  ],
+  "arquivos": [
+   "fonte/prototipo/PaginaMorenos.dc.html:763",
+   "fonte/prototipo/PaginaMorenos.dc.html:765"
+  ],
+  "evidencia": "Links internos no <main> de /corporativo/ (final.mjs, DOM depois da troca):\n  \"Início\" -> /\n  \"Solicitar proposta\" -> /corporativo/#proposta\n  \"Política de Privacidade\" -> /politica-de-privacidade/\n  \"Solicitar proposta\" -> /corporativo/#proposta\nFrases da mesma página que citam as unidades sem link:\n  * \"Um benefício que o colaborador usa todo mês. A empresa contrata o plano e o time agenda nas unidades da Morenos em Serra.\"\n  * \"Atendimento nas três unidades da Morenos.\"\n  * \"Nas unidades da Morenos em Serra.\"\nFora a migalha e a nota de privacidade, os únicos links de conteúdo são âncoras para o formulário da própria página. /corporativo/ é mais uma das 6 rotas sem `href=\"/unidades/\"` no HTML publicado.",
+  "impacto": "Uma página de venda B2B em que o decisor não consegue, de dentro do conteúdo, conferir onde o time dele seria atendido — e a página repete três vezes que o atendimento é \"nas unidades\".",
+  "correcao": "Em PaginaMorenos.dc.html:765, no bloco `texto` \"Para quem é\", acrescentar `links: [{ label: 'Ver as três unidades', href: R.unidades }]` (renderizador de `s.links` já existe na linha 156), ou trocar o secundário do ctaFinal da linha 781 por 'Ver unidades'. Uma linha, sem inventar dado."
+ },
+ {
+  "prioridade": "P2",
+  "tipo": "melhoria_recomendada",
+  "titulo": "Três links com o mesmo nome acessível (\"Conhecer unidade\", \"Como chegar\") apontando para três destinos diferentes na mesma página",
+  "rotas": [
+   "/",
+   "/unidades/",
+   "/unidades/cidade-continental/",
+   "/unidades/novo-horizonte-av-brasil/",
+   "/unidades/novo-horizonte-av-industrial/",
+   "/servicos/corte-masculino/",
+   "/servicos/barboterapia/",
+   "/visagismo/",
+   "/cultura/"
+  ],
+  "arquivos": [
+   "fonte/prototipo/PaginaMorenos.dc.html:125",
+   "fonte/prototipo/PaginaMorenos.dc.html:126",
+   "fonte/prototipo/PaginaMorenos.dc.html:127",
+   "fonte/prototipo/Home.dc.html:128"
+  ],
+  "evidencia": "Varredura do <main> por âncoras de mesmo texto com destinos diferentes (inter2.mjs, DOM depois da troca):\n  /unidades/ -> {\"nome\":\"Conhecer unidade\",\"destinos\":[\"/unidades/cidade-continental/\",\"/unidades/novo-horizonte-av-brasil/\",\"/unidades/novo-horizonte-av-industrial/\"]}\n  /unidades/ -> {\"nome\":\"Como chegar\",\"destinos\":[3 URLs diferentes do google.com/maps, uma por endereço]}\n  /servicos/corte-masculino/ -> mesmas duas ocorrências\n  /cultura/ -> mesmas duas ocorrências\nAgregando o texto de âncora por destino no conteúdo das 17 rotas: \"Conhecer unidade\" x8 (uma por rota que tem o bloco de cartões), \"Agendar\" x3 por rota nos cartões de unidade. Nenhum desses links tem aria-label; o nome do link é só o texto visível.",
+  "impacto": "Quem navega por lista de links (leitor de tela, navegação por teclado, extensão de links) recebe \"Conhecer unidade, Conhecer unidade, Conhecer unidade\" e \"Como chegar, Como chegar, Como chegar\" sem saber qual é qual. O nome da unidade está no cartão, acima, mas não no nome acessível do link.",
+  "correcao": "Em fonte/prototipo/PaginaMorenos.dc.html, acrescentar aria-label aos três links do cartão de unidade (linhas 125-127): `aria-label=\"Conhecer a unidade {{ u.curto }}\"`, `aria-label=\"Agendar na unidade {{ u.curto }}\"`, `aria-label=\"Como chegar à unidade {{ u.curto }}\"`. O mesmo em Home.dc.html:127-128. O texto visível, a tipografia e o layout não mudam — só o nome acessível."
+ },
+ {
+  "prioridade": "P2",
+  "tipo": "depende_do_cliente",
+  "titulo": "Os 7 botões \"Assinar\" dos planos do Clube apontam todos para a mesma URL genérica: o plano escolhido se perde",
+  "rotas": [
+   "/o-clube/"
+  ],
+  "arquivos": [
+   "fonte/prototipo/PaginaMorenos.dc.html:872",
+   "fonte/prototipo/site-config.js"
+  ],
+  "evidencia": "Destinos dos botões de plano no DOM vivo de /o-clube/:\n  x7  'Assinar'       -> https://cashbarber.com.br/salaomorenos\n  x1  'Assinar agora' -> https://cashbarber.com.br/salaomorenos\nNo fonte, PaginaMorenos.dc.html:872 monta todos os planos com `href: M.links.membership` — a mesma URL para os 7 planos. O site-config.js define `C.clubPlans` (Corte Ilimitado R$ 79,90, Combo Supremo R$ 139,90, Barba Premium R$ 89,90, Plano One, Plano Due, duas variações Família) sem nenhum campo de URL por plano; `C.links.membership` é a única URL de assinatura que existe.\nO rastreamento até registra o plano (`M.track('club_plan_click', { plan: p.id })`), então a informação existe no site e só não chega ao destino.",
+  "impacto": "O visitante compara sete planos, clica em \"Assinar\" no que escolheu e cai na mesma página genérica de todos — tem que escolher de novo na plataforma. A ambiguidade também vale para o leitor de tela: sete links com o nome \"Assinar\".",
+  "correcao": "Pendência para o cliente: pedir a URL de assinatura de cada plano na plataforma Cashbarber (ou confirmar que só existe a URL única). Com elas, acrescentar `url` a cada item de `C.clubPlans` em fonte/prototipo/site-config.js e usar `p.url || M.links.membership` em PaginaMorenos.dc.html:872. NÃO inventar nem deduzir URL de plano. Independente disso, já dá para corrigir a ambiguidade do nome do link agora, com `aria-label=\"Assinar o plano {{ p.nome }}\"` no botão (PaginaMorenos.dc.html:276), sem mudar o texto visível."
+ },
+ {
+  "prioridade": "P2",
+  "tipo": "melhoria_recomendada",
+  "titulo": "Os CTAs \"Agendar...\" de conteúdo têm href externo para o Cashbarber com target=_self e sem rel: ctrl-clique pula a escolha de unidade",
+  "rotas": [
+   "/unidades/",
+   "/servicos/",
+   "/servicos/corte-masculino/",
+   "/servicos/barboterapia/",
+   "/visagismo/",
+   "/cultura/"
+  ],
+  "arquivos": [
+   "fonte/prototipo/PaginaMorenos.dc.html:503",
+   "fonte/prototipo/PaginaMorenos.dc.html:500"
+  ],
+  "evidencia": "Links para cashbarber.com.br no <main> de /servicos/ (inter.mjs):\n  {\"txt\":\"Agendar um serviço\",\"href\":\"https://cashbarber.com.br/salaomorenos/inicio\",\"target\":\"_self\",\"rel\":\"\"}\n  {\"txt\":\"Agendar\",\"href\":\"https://cashbarber.com.br/salaomorenos/inicio\",\"target\":\"_self\",\"rel\":\"\"}\nComportamento no clique normal (funciona como desenhado):\n  [B] clique em \"Agendar um serviço\": URL NAO mudou; modal de unidades visível: true\nSão 11 links desse padrão no estado de repouso, gerados por `ctaEscolher` (PaginaMorenos.dc.html:503), que usa `e.preventDefault()` e dispara o evento `morenos:agendar`. O href é só fallback.",
+  "impacto": "Clique normal está certo (abre o modal). Mas ctrl-clique, clique do meio ou \"abrir em nova aba\" ignoram o preventDefault e levam o visitante direto ao Cashbarber sem ter escolhido unidade — e, se o JavaScript falhar, o fallback tira a pessoa do site na mesma aba, em vez de levá-la à página que compara os endereços. Para o robô, o CTA principal de 6 rotas é um link externo sem rel.",
+  "correcao": "Em fonte/prototipo/PaginaMorenos.dc.html:503, trocar o href de fallback de `M.links.booking` para `M.routes.unidades`: o clique normal continua abrindo o modal (o preventDefault não muda) e o fallback passa a ser a página /unidades/, que é exatamente o que o modal faz — escolher o endereço. De quebra o link deixa de ser externo, some a questão de rel e os CTAs passam a reforçar /unidades/, que é a rota mais fraca do grafo. Se o cliente preferir manter o destino externo, acrescentar `rel=\"noopener noreferrer\"` no helper `cta` (linha 500) quando o href for de outro domínio."
+ },
+ {
+  "prioridade": "P1",
+  "tipo": "problema_comprovado",
+  "titulo": "As paginas da Av. Brasil e da Av. Industrial sao o mesmo texto com o nome da avenida trocado",
+  "rotas": [
+   "/unidades/novo-horizonte-av-brasil/",
+   "/unidades/novo-horizonte-av-industrial/",
+   "/unidades/cidade-continental/"
+  ],
+  "arquivos": [
+   "fonte/prototipo/PaginaMorenos.dc.html:587",
+   "fonte/prototipo/PaginaMorenos.dc.html:645",
+   "fonte/prototipo/PaginaMorenos.dc.html:650"
+  ],
+  "evidencia": "Extrai o innerText de cada <section> das tres rotas apos a troca de camadas e substitui 'Avenida Terceiro Mundo|Avenida Brasil|Avenida Industrial, 830 - Loja 3' por <RUA>, 'Cidade Continental - Setor Asia|Cidade Continental|Novo Horizonte' por <BAIRRO> e 'CEP 29163-xxx' por <CEP>. Resultado: 'AB normalizado === AI normalizado ? true / tamanho AB 1776 AI 1776'. Secao a secao, 'Informacoes da unidade', 'Duvidas sobre esta unidade.' e 'Pronto para marcar seu horario?' ficam identicos nas TRES rotas depois da normalizacao. A medicao de altura em 390x844 confirma: Av. Brasil e Av. Industrial tem 7133px de documento e exatamente as mesmas alturas por secao (988/736/935/815/714/1244/467 px). O gerador e um unico `paginaUnidade(id, o)` em que as unicas variaveis de conteudo sao h1, intro, posicao da foto, titulo da secao de servicos, foto2/alt2 e uma frase de referencia.",
+  "impacto": "As duas unidades do mesmo bairro, que disputam a mesma busca ('barbearia Novo Horizonte Serra'), oferecem ao visitante e ao buscador o mesmo documento. Quem chega pela Av. Brasil nao encontra nenhum motivo para preferir aquele endereco, e as duas paginas competem entre si sem nenhum sinal proprio alem da rua.",
+  "correcao": "Dar a cada unidade pelo menos um bloco que so exista nela. Sem inventar nada hoje da para: (a) usar o campo de referencia para orientacao real em vez de 'nao confunda com a outra' (hoje a Av. Brasil nao tem nenhum ponto de referencia); (b) deixar o FAQ e o bloco de servicos receberem itens por unidade quando o cliente responder. O que destrava de verdade esta nos achados de pendencia por unidade: servicos daquele endereco, foto daquele endereco, telefone, horario e perfil do Google. Vale tambem acrescentar ao fonte/testes/arquitetura.mjs uma verificacao nova: comparar o texto das tres rotas de unidade com rua/bairro/CEP normalizados e falhar se duas ficarem iguais."
+ },
+ {
+  "prioridade": "P1",
+  "tipo": "problema_comprovado",
+  "titulo": "O botao Agendar do cabecalho joga fora a unidade da pagina e pede a escolha de novo",
+  "rotas": [
+   "/unidades/cidade-continental/",
+   "/unidades/novo-horizonte-av-brasil/",
+   "/unidades/novo-horizonte-av-industrial/"
+  ],
+  "arquivos": [
+   "fonte/prototipo/SiteHeader.dc.html:171",
+   "fonte/prototipo/SiteHeader.dc.html:246",
+   "fonte/prototipo/site-config.js:180"
+  ],
+  "evidencia": "Num contexto de navegador novo (visitante que cai direto pela busca), abri /unidades/novo-horizonte-av-brasil/ e li `localStorage.getItem('morenos_selected_unit')` -> null. Cliquei no botao 'Agendar' do <header> e inspecionei o dialog: titulo 'Escolha sua unidade.', texto 'Escolha o endereco e continue para a agenda', e os tres botoes de unidade com `aria-pressed=\"false\"` - nenhum pre-selecionado, nem o da pagina em que o visitante esta. O codigo confirma: `abrirBooking((e.detail && e.detail.unit) || (M && M.getUnit()) || null)` (SiteHeader.dc.html:171) e `openBooking: () => this.abrirBooking((M && M.getUnit()) || null)` (linha 246); `M.setUnit(id)` so e chamado dentro dos onClick dos CTAs do corpo, nunca ao montar a pagina de unidade.",
+  "impacto": "O CTA mais visivel e permanente da pagina (fica fixo no topo) e o unico que nao sabe onde o visitante esta. Numa pagina de unidade ele abre um modal perguntando algo que a URL ja respondeu, adicionando um passo a mais exatamente no ponto de conversao, e o visitante pode escolher o endereco errado ali.",
+  "correcao": "Na pagina de unidade, registrar a unidade corrente assim que o componente monta (`M.setUnit(id)` no mount de `paginaUnidade`), ou disparar o evento `morenos:agendar` com `detail.unit = id` - o cabecalho ja aceita `e.detail.unit` e `abrirBooking(picked)` ja sabe receber uma unidade pre-escolhida. Nenhum dado novo e necessario."
+ },
+ {
+  "prioridade": "P1",
+  "tipo": "problema_comprovado",
+  "titulo": "O WhatsApp do bloco 'Informacoes da unidade' abre a conversa sem dizer de qual unidade o visitante veio",
+  "rotas": [
+   "/unidades/cidade-continental/",
+   "/unidades/novo-horizonte-av-brasil/",
+   "/unidades/novo-horizonte-av-industrial/"
+  ],
+  "arquivos": [
+   "fonte/prototipo/PaginaMorenos.dc.html:599",
+   "fonte/prototipo/PaginaMorenos.dc.html:513"
+  ],
+  "evidencia": "Na pagina da Av. Brasil ha dois links wa.me. O do rodape da pagina ('Prefere conversar antes? Fale pelo WhatsApp') abre com `text=Ola! Vim pelo site da Morenos, pela pagina da unidade Novo Horizonte - Av. Brasil, e gostaria de informacoes.` Ja o link 'Conversar' do bloco 'Informacoes da unidade' - que e o unico lugar da pagina onde o numero aparece escrito - abre com `text=Ola! Vim pelo seu site e quero agendar um corte como visitante`, a mensagem padrao do site. O codigo e `link: { label: 'Conversar', href: M.waLink(), ... }` (linha 599): chamada sem argumento, cai no `C.whatsapp.visitorMessage`. O mesmo acontece no link de WhatsApp dentro do modal de agendamento do cabecalho. Isso contraria o comentario do proprio arquivo na linha 513: 'A conversa comeca de onde a pessoa estava lendo: quem sai da pagina da Avenida Industrial nao devia abrir o WhatsApp com a mesma frase de quem sai do corporativo.'",
+  "impacto": "O WhatsApp e hoje um canal unico para as tres lojas. Quem atende recebe 'quero agendar um corte como visitante' sem saber de qual endereco veio a pessoa, e precisa perguntar - justamente no contato que o visitante abriu para nao ter que perguntar nada. O contexto ja existe e e descartado.",
+  "correcao": "Trocar `M.waLink()` por `M.waLink(this.mensagemWa())` na linha 599 (o metodo `mensagemWa()` ja devolve a frase da unidade a partir do slug). Fazer o mesmo no link de WhatsApp do modal do cabecalho, repassando a unidade escolhida quando houver. Uma linha em cada ponto, sem dado novo."
+ },
+ {
+  "prioridade": "P1",
+  "tipo": "problema_comprovado",
+  "titulo": "'Como chegar' abre uma busca no Google Maps, nao uma rota - e em duas unidades a busca nao tem numero do imovel",
+  "rotas": [
+   "/unidades/cidade-continental/",
+   "/unidades/novo-horizonte-av-brasil/",
+   "/unidades/novo-horizonte-av-industrial/"
+  ],
+  "arquivos": [
+   "fonte/prototipo/site-config.js:95",
+   "fonte/prototipo/site-config.js:96",
+   "fonte/prototipo/PaginaMorenos.dc.html:584",
+   "fonte/prototipo/PaginaMorenos.dc.html:594"
+  ],
+  "evidencia": "Os tres links 'Como chegar' / 'Abrir no Google Maps' que li no DOM sao do tipo busca, nao rota. Ex.: `https://www.google.com/maps/search/?api=1&query=Avenida%20Brasil%2C%20Novo%20Horizonte%2C%20Serra%20-%20ES%2C%2029163-331`. A montagem esta em site-config.js:95: `l.rota = l.googleProfile || ('https://www.google.com/maps/search/?api=1&query=' + ...)`, e `googleProfile` e null nas tres unidades (linhas 64, 69, 74). Duas das tres consultas nao tem numero do imovel, porque `numero: null` em Cidade Continental (linha 61) e na Av. Brasil (linha 66): a busca e so 'Avenida Terceiro Mundo, Cidade Continental - Setor Asia, Serra - ES, 29163-603' e 'Avenida Brasil, Novo Horizonte, Serra - ES, 29163-331'. Ao mesmo tempo, o FAQ afirma literalmente: 'Use o botao Como chegar para abrir a rota no Google Maps' (PaginaMorenos.dc.html:584). O iframe embutido tem o mesmo problema: `maps.google.com/maps?q=<endereco>&z=16&output=embed` (site-config.js:96), com z=16 sobre uma rua inteira.",
+  "impacto": "O botao promete rota e entrega uma pesquisa. Numa avenida sem numero - e 'Avenida Brasil' e um dos nomes de rua mais comuns do pais - o resultado cai na via ou numa lista de resultados, nao na porta nem no cartao da loja, e o visitante ainda precisa escolher o destino a mao antes de conseguir navegar. E o pior caso justamente na unidade que ja e a mais fraca em orientacao (a Av. Brasil nao tem nenhum ponto de referencia no texto, so 'nao confunda com a Avenida Industrial').",
+  "correcao": "Duas correcoes independentes. (1) Para o botao 'Como chegar', usar a URL de direcoes da Maps URLs API (`https://www.google.com/maps/dir/?api=1&destination=<endereco>`, com `&destination_place_id=<PLACE_ID>` quando o Place ID chegar) em vez de `/maps/search/`; se preferir manter a busca, mudar o rotulo e a resposta do FAQ para 'ver no mapa' e parar de prometer rota. (2) Numero do imovel de Cidade Continental e da Av. Brasil: ja esta no fonte/MIGRATION-CHECKLIST.md - a novidade aqui e que sem ele o link de mapa nao resolve o endereco, entao esse item bloqueia mais coisa do que parecia."
+ },
+ {
+  "prioridade": "P1",
+  "tipo": "depende_do_cliente",
+  "titulo": "As tres paginas afirmam o mesmo horario como se fosse daquela unidade, sem confirmacao e sem dizer nada sobre domingo",
+  "rotas": [
+   "/unidades/cidade-continental/",
+   "/unidades/novo-horizonte-av-brasil/",
+   "/unidades/novo-horizonte-av-industrial/"
+  ],
+  "arquivos": [
+   "fonte/prototipo/site-config.js:31",
+   "fonte/prototipo/PaginaMorenos.dc.html:583",
+   "fonte/prototipo/PaginaMorenos.dc.html:597"
+  ],
+  "evidencia": "O DOM renderizado das tres unidades traz, dentro da secao cujo <h2> e 'Informacoes da unidade', a linha 'HORARIO / Segunda a sexta: 08:00 - 20:00 / Sabado: 09:00 - 18:00', e repete o mesmo no FAQ ('Qual o horario de funcionamento? -> Segunda a sexta: 08:00 - 20:00. Sabado: 09:00 - 18:00.'). Nao ha nenhuma ressalva na tela. A origem e `C.hours` (site-config.js:31), marcado `source: 'legacy-site', needsConfirmation: true`, com o comentario 'Domingo nao informado no site antigo: nao exibir'. Ou seja: o mesmo dado nao confirmado e publicado tres vezes, cada vez sob um titulo que diz 'desta unidade'. O horario tambem nao aparece no JSON-LD de nenhuma das tres (nao ha `openingHoursSpecification`), entao a pagina afirma na tela o que nao afirma nos dados estruturados.",
+  "impacto": "O site declara, com a autoridade de um dado da loja, um horario que ninguem conferiu, para tres enderecos diferentes. Se uma das unidades abrir mais tarde no sabado ou abrir no domingo, o visitante bate na porta fechada ou deixa de ir num dia em que havia atendimento. A ausencia do domingo tambem e ambigua: nao da para saber se e dia fechado ou dia nao informado.",
+  "correcao": "Pendencia de cliente, somando ao item 'horarios por unidade' que ja esta em fonte/MIGRATION-CHECKLIST.md: perguntar os tres horarios separadamente e, explicitamente, o que acontece no domingo em cada endereco (fechado ou horario proprio). Enquanto nao vierem, decidir entre (a) manter como esta, assumindo o risco, ou (b) mover o horario de 'Informacoes da unidade' para uma linha de marca ('Atendimento nas tres unidades: ...'), que e verdadeira pelo que se sabe hoje e nao e recado interno. Quando confirmarem, `C.hours` vira campo por unidade em `C.locations` e o `openingHoursSpecification` entra no JSON-LD das tres paginas."
+ },
+ {
+  "prioridade": "P1",
+  "tipo": "depende_do_cliente",
+  "titulo": "O numero de WhatsApp aparece dentro de 'Informacoes da unidade' sem dizer que e canal unico das tres lojas",
+  "rotas": [
+   "/unidades/cidade-continental/",
+   "/unidades/novo-horizonte-av-brasil/",
+   "/unidades/novo-horizonte-av-industrial/"
+  ],
+  "arquivos": [
+   "fonte/prototipo/PaginaMorenos.dc.html:599",
+   "fonte/prototipo/site-config.js:25"
+  ],
+  "evidencia": "Nas tres rotas, o bloco <dl> da secao 'Informacoes da unidade' traz quatro pares: Endereco, Horario, Agendamento e WhatsApp. O valor do ultimo e '+55 27 99871-3993', o mesmo nas tres paginas, sem nenhuma qualificacao. Em `C.whatsapp` (site-config.js:25) o numero esta como `source: 'legacy-site', needsConfirmation: true`. Nao existe nenhum link `tel:` na pagina (verifiquei: `document.querySelectorAll('a[href^=\"tel:\"]')` -> 0) nem elemento <address>, e o JSON-LD HairSalon das tres nao tem `telephone`.",
+  "impacto": "Um numero posto ao lado do endereco, do horario e do titulo 'Informacoes da unidade' e lido como o telefone daquela loja. Quem liga ou escreve esperando falar com a recepcao da Av. Industrial cai num atendimento central e descobre isso na conversa. E, como a mesma pagina nao diz que o canal e compartilhado, as tres paginas parecem publicar o mesmo telefone por engano.",
+  "correcao": "Perguntar ao cliente se existe telefone/WhatsApp por unidade (ja esta no checklist como 'telefones por unidade' e 'WhatsApp definitivo'). O que falta registrar e a decisao de rotulo: se o canal for mesmo unico, trocar o rotulo da linha de 'WhatsApp' para algo que descreva o que e - 'WhatsApp (atendimento das tres unidades)' - que e informacao ao visitante, nao recado interno. Se existir numero por unidade, ele entra em `C.locations` e, junto, o `telephone` no JSON-LD de cada pagina."
+ },
+ {
+  "prioridade": "P1",
+  "tipo": "problema_comprovado",
+  "titulo": "A Home e as paginas de unidade descrevem as mesmas tres lojas como entidades diferentes, e na Home as tres apontam para a URL errada",
+  "rotas": [
+   "/",
+   "/unidades/cidade-continental/",
+   "/unidades/novo-horizonte-av-brasil/",
+   "/unidades/novo-horizonte-av-industrial/"
+  ],
+  "arquivos": [
+   "fonte/prototipo/Home.dc.html:62",
+   "fonte/prototipo/cidade-continental.dc.html:44",
+   "fonte/prototipo/novo-horizonte-av-brasil.dc.html:44",
+   "fonte/prototipo/novo-horizonte-av-industrial.dc.html:44"
+  ],
+  "evidencia": "JSON-LD da Home (public/index.html): tres nos HairSalon com `\"@id\":\"https://salaomorenos.com.br/#cidade-continental\"`, `\"...#novo-horizonte-av-brasil\"`, `\"...#novo-horizonte-av-industrial\"` e, nos TRES, `\"url\":\"https://salaomorenos.com.br/\"`. JSON-LD de cada pagina de unidade: o mesmo negocio com outro identificador, `\"@id\":\"https://salaomorenos.com.br/unidades/cidade-continental/#unidade\"`, e `url` correta da propria pagina. Nenhum dos dois lados referencia o outro (nao ha `sameAs`, nem `@id` em comum, nem `branchOf` apontando para um `@id`): o `parentOrganization` e um objeto Organization repetido inline, sem `@id`, em cada uma das tres paginas. O /unidades/ nao tem nenhum no de negocio, so BreadcrumbList.",
+  "impacto": "Sao tres lojas fisicas descritas em seis nos distintos, e na Home as tres declaram que a URL do negocio e a pagina inicial do site. Isso diz ao buscador que tres enderecos diferentes compartilham a mesma pagina - exatamente o oposto do trabalho que as tres rotas de unidade fazem - e desperdica o unico sinal explicito de identidade que o site emite.",
+  "correcao": "Unificar os identificadores: na Home, usar para cada loja o mesmo `@id` da respectiva pagina de unidade (`https://salaomorenos.com.br/unidades/<id>/#unidade`) e corrigir `url` para a URL daquela pagina. Dar um `@id` unico a Organization (ex.: `https://salaomorenos.com.br/#organizacao`) e referenciar esse `@id` em `parentOrganization` nas tres paginas, em vez de repetir o objeto. Em /unidades/, acrescentar um ItemList apontando para os tres `@id`. Nenhum dado novo e necessario - e so reusar identificador. O JSON-LD e escrito a mao no <head> de cada .dc.html (linha 44 nas unidades, 62 na Home); o build.py nao mexe nele, entao a alteracao nao esbarra em agulha, mas vale rodar `python3 fonte/build.py` e as duas suites depois."
+ },
+ {
+  "prioridade": "P2",
+  "tipo": "melhoria_recomendada",
+  "titulo": "O JSON-LD das unidades omite dados que a propria pagina ja publica na tela",
+  "rotas": [
+   "/unidades/cidade-continental/",
+   "/unidades/novo-horizonte-av-brasil/",
+   "/unidades/novo-horizonte-av-industrial/"
+  ],
+  "arquivos": [
+   "fonte/prototipo/cidade-continental.dc.html:44",
+   "fonte/prototipo/novo-horizonte-av-brasil.dc.html:44",
+   "fonte/prototipo/novo-horizonte-av-industrial.dc.html:44"
+  ],
+  "evidencia": "O no HairSalon das tres paginas tem exatamente: @type, @id, name, url, image, address (streetAddress, addressLocality, addressRegion, postalCode, addressCountry), areaServed e parentOrganization. Nao tem `openingHoursSpecification`, embora a pagina exiba o horario duas vezes; nao tem `hasMap`, embora a pagina tenha o link e o iframe do mapa; nao tem `potentialAction`/ReserveAction, embora a pagina tenha cinco links de agendamento. E o bairro, que a pagina publica em quatro lugares ('Cidade Continental - Setor Asia', 'Novo Horizonte'), nao aparece em lugar nenhum do endereco estruturado: `addressLocality` e 'Serra' e `streetAddress` e so o logradouro. Nada disso e dado novo - tudo ja esta visivel ao visitante.",
+  "impacto": "Os dados estruturados dizem menos do que a pagina, e o bairro - que e o termo pelo qual as tres unidades sao distinguidas no site inteiro e nos titulos - some justamente na parte lida por maquina. Para duas lojas no mesmo bairro e uma terceira em outro, perder o bairro no endereco estruturado apaga a unica diferenca formalizada entre elas.",
+  "correcao": "Acrescentar ao HairSalon de cada unidade, so com o que ja esta publicado: `addressLocality` continuando 'Serra' e o bairro dentro de `streetAddress` (ex.: 'Avenida Industrial, 830 - Loja 3, Novo Horizonte'), ou usar `addressNeighborhood` se preferir separar; `hasMap` com a URL do mapa; `openingHoursSpecification` espelhando exatamente o que a tela mostra (so depois que o cliente confirmar o horario - ver o achado de horario); `potentialAction` ReserveAction apontando para o link de agendamento. Deixar `telephone`, `geo`, `priceRange` e `sameAs` de fora ate os dados chegarem."
+ },
+ {
+  "prioridade": "P2",
+  "tipo": "melhoria_recomendada",
+  "titulo": "'O que voce encontra em <unidade>' entrega uma lista generica identica nas tres paginas",
+  "rotas": [
+   "/unidades/cidade-continental/",
+   "/unidades/novo-horizonte-av-brasil/",
+   "/unidades/novo-horizonte-av-industrial/"
+  ],
+  "arquivos": [
+   "fonte/prototipo/PaginaMorenos.dc.html:601",
+   "fonte/prototipo/PaginaMorenos.dc.html:643"
+  ],
+  "evidencia": "O <h2> muda ('O que voce encontra em Cidade Continental.' / 'na Avenida Brasil.' / 'na Avenida Industrial.'), mas o corpo e byte a byte o mesmo nas tres: 'Corte, barba, estetica e tratamentos. Escolha o servico na agenda, ao marcar o horario.' seguido dos mesmos cinco links (Corte Masculino, Barboterapia, Visagismo, Dia do Noivo, Todos os servicos). No codigo e um unico `this.texto({ ..., paragrafos: ['Corte, barba, estetica e tratamentos. ...'], links: servicoLinks, ... })` com apenas `o.servicosTitulo` variando. A secao ocupa 935-967px no celular, 13-14% da pagina.",
+  "impacto": "O titulo faz uma promessa por unidade e o conteudo responde pela rede. O visitante que entrou para saber se aquele endereco faz barboterapia sai sem resposta, depois de rolar uma tela inteira - e ainda e mandado para a agenda para descobrir. Em tres paginas que ja sao quase iguais, essa secao e a que mais parece conteudo de unidade sem ser.",
+  "correcao": "Enquanto a lista por unidade nao chegar (item 'servicos por unidade' ja registrado em fonte/MIGRATION-CHECKLIST.md), trocar o titulo por um que o corpo sustente - 'Servicos da Morenos' ou 'O catalogo completo' - e deixar o texto dizer, sem rodeios, que o catalogo e o mesmo nas tres e que a disponibilidade de cada servico aparece na agenda. Quando o cliente mandar a lista real, `C.locations[].servicos` passa a alimentar a secao e o titulo atual volta a ser verdadeiro."
+ },
+ {
+  "prioridade": "P2",
+  "tipo": "melhoria_recomendada",
+  "titulo": "'Duvidas sobre esta unidade' nao tem nenhuma pergunta cuja resposta mude de unidade para unidade",
+  "rotas": [
+   "/unidades/cidade-continental/",
+   "/unidades/novo-horizonte-av-brasil/",
+   "/unidades/novo-horizonte-av-industrial/"
+  ],
+  "arquivos": [
+   "fonte/prototipo/PaginaMorenos.dc.html:581"
+  ],
+  "evidencia": "O FAQ das tres paginas tem as mesmas quatro perguntas, na mesma ordem: 'Como agendo nesta unidade?', 'Qual o horario de funcionamento?', 'Como chego?' e 'Posso ir sem agendar?'. Comparando o texto renderizado, tres das quatro respostas sao identicas caractere a caractere nas tres rotas; a quarta ('Como chego?') so difere na linha de endereco interpolada. Depois de normalizar o endereco, a secao inteira fica identica nas tres (714px de altura em todas, 10% da pagina). O gerador e um unico `faqUnidade(l)` que recebe a unidade mas so a usa para montar `l.enderecoLinha`.",
+  "impacto": "O titulo diz 'desta unidade' e nada ali e desta unidade. Alem de nao responder nada local, o bloco entra na conta de secao repetida entre rotas (o teste de arquitetura permite ate 3 e este esta exatamente em 3, sem folga para a quarta unidade).",
+  "correcao": "As perguntas que diferenciariam de verdade dependem de dado que o cliente ainda nao deu - estacionamento, acessibilidade, equipe, servicos do endereco - e esses itens ja estao no checklist. O que da para fazer agora sem inventar: tirar do FAQ da unidade as duas perguntas que sao de rede e ja estao respondidas em /unidades/ ('Posso ir sem agendar?' e 'Como agendo'), deixando o bloco menor e honesto, e reservar o FAQ da unidade para quando houver resposta propria. Se o bloco ficar com uma pergunta so, vale fundi-lo ao bloco 'Como chegar'."
+ },
+ {
+  "prioridade": "P2",
+  "tipo": "melhoria_recomendada",
+  "titulo": "A secao das outras duas unidades e a maior da pagina e exibe a unica fachada identificada do site - a de outro endereco",
+  "rotas": [
+   "/unidades/cidade-continental/",
+   "/unidades/novo-horizonte-av-brasil/",
+   "/unidades/novo-horizonte-av-industrial/"
+  ],
+  "arquivos": [
+   "fonte/prototipo/PaginaMorenos.dc.html:604"
+  ],
+  "evidencia": "Medi as alturas em 390x844: na pagina da Av. Brasil a secao 'Mais dois enderecos em Serra.' tem 1244px, 17% do documento - a maior das sete secoes, maior que o hero (988px) e que o bloco de informacoes (736px). Mesmo numero exato nas tres rotas. Dentro dela, dois cartoes de 460px cada, ambos visiveis (opacity 1, visibility visible), cada um com tres acoes: 'Conhecer unidade', 'Agendar' e 'Como chegar'. O screenshot da secao na pagina da Av. Brasil mostra o cartao de Cidade Continental liderado por uma foto grande e clara da fachada com a placa 'SALAO MORENOS'. Listando as imagens renderizadas em <main>, nas tres rotas a unica foto de fachada e `/img/unidade-cidade-continental.webp`: nas paginas da Av. Brasil e da Av. Industrial ela aparece no cartao da outra unidade, e as duas paginas nao tem nenhuma foto do proprio endereco (hero e foto-atendimento-2 e foto-atendimento, ambas genericas, com alt 'Ambiente do Salao Morenos durante o atendimento').",
+  "impacto": "Numa pagina de endereco, o maior bloco e a imagem mais forte sao de outro endereco. O visitante que chegou buscando Novo Horizonte ve, no ponto mais vistoso da pagina, a fachada de Cidade Continental e dois botoes 'Agendar' que concorrem com o CTA da propria unidade. Somando com o encerramento ('Ver as tres unidades'), o rodape (coluna Unidades) e o mega menu, a pagina tem quatro saidas para as outras lojas.",
+  "correcao": "Encolher o bloco para uma faixa de texto com dois links ('Tambem atendemos na Avenida Industrial e em Cidade Continental'), sem cartao, sem foto e sem os botoes 'Agendar'/'Como chegar' duplicados - o encerramento ja leva a /unidades/ para quem quer comparar. Isso devolve cerca de uma tela e meia de celular para o conteudo da propria unidade. Vale cobrir no fonte/testes/arquitetura.mjs: numa rota de unidade, nenhuma secao que nao seja a principal deve ser mais alta que o hero."
+ },
+ {
+  "prioridade": "P2",
+  "tipo": "melhoria_recomendada",
+  "titulo": "Os cinco botoes de agendamento da pagina levam ao mesmo link geral, e a pagina nao avisa que a unidade sera escolhida de novo la",
+  "rotas": [
+   "/unidades/cidade-continental/",
+   "/unidades/novo-horizonte-av-brasil/",
+   "/unidades/novo-horizonte-av-industrial/"
+  ],
+  "arquivos": [
+   "fonte/prototipo/site-config.js:97",
+   "fonte/prototipo/site-config.js:64",
+   "fonte/prototipo/PaginaMorenos.dc.html:582"
+  ],
+  "evidencia": "Na pagina da Av. Brasil contei os links para o Cashbarber no DOM renderizado: 5 links, 1 URL distinta (`https://cashbarber.com.br/salaomorenos/inicio`). Sao 'Agendar nesta unidade' (hero), 'Agendar' (bloco de informacoes), 'Agendar' no cartao de Cidade Continental, 'Agendar' no cartao da Av. Industrial e 'Agendar nesta unidade' (encerramento) - inclusive os dois que estao sob o nome de OUTRA unidade apontam para o mesmo lugar. A causa esta em site-config.js:97 (`l.agendar = l.bookingUrl || C.links.booking`) com `bookingUrl: null` nas tres (linhas 64, 69, 74). O FAQ diz 'Toque em Agendar nesta unidade. Voce segue para a agenda online da Morenos e escolhe o horario' (linha 582) - menciona escolher o horario, nao a unidade. A revisao de arquitetura ja tirou a frase 'cada unidade tem a propria agenda' (confirmado em fonte/ARQUITETURA.md), mas o rotulo 'nesta unidade' continua.",
+  "impacto": "O rotulo promete uma agenda da unidade que o link nao entrega, e o visitante descobre isso ja no sistema de terceiro, tendo que escolher o endereco outra vez - sem saber que precisa, porque a pagina disse que ele ja estava escolhido. Risco concreto de reserva no endereco errado, especialmente entre as duas unidades de Novo Horizonte.",
+  "correcao": "Enquanto os tres `bookingUrl` forem null: completar a resposta do FAQ para dizer que na agenda o visitante confirma a unidade e o horario (e informacao util, nao recado interno), e tirar o rotulo 'Agendar' dos cartoes das outras unidades, deixando so 'Conhecer unidade' - hoje esses dois botoes nao fazem nada diferente do botao principal da pagina. O item 'links de agendamento por unidade' ja esta no checklist; quando chegarem, preencher `bookingUrl` em `C.locations` e o rotulo 'Agendar nesta unidade' volta a ser verdadeiro em todos os pontos."
+ },
+ {
+  "prioridade": "P2",
+  "tipo": "depende_do_cliente",
+  "titulo": "O nome do negocio aparece em quatro grafias no site, e a fachada do cliente traz uma quinta ('Salao Moreno's')",
+  "rotas": [
+   "/unidades/cidade-continental/",
+   "/unidades/novo-horizonte-av-brasil/",
+   "/unidades/novo-horizonte-av-industrial/"
+  ],
+  "arquivos": [
+   "fonte/prototipo/site-config.js:65",
+   "fonte/prototipo/novo-horizonte-av-brasil.dc.html:44",
+   "fonte/prototipo/PaginaMorenos.dc.html:646"
+  ],
+  "evidencia": "Para a mesma loja da Av. Brasil o site usa: <title> 'Salao Morenos Novo Horizonte - Av. Brasil | Serra'; <h1> 'Salao Morenos em Novo Horizonte - Avenida Brasil'; JSON-LD `\"name\":\"Salao Morenos - Novo Horizonte, Avenida Brasil\"`; e `C.locations[].nome` = 'Salao Morenos - Novo Horizonte - Avenida Brasil' (site-config.js:65, usado so no modal de agendamento). Alem disso, ampliei public/img/unidade-cidade-continental.webp (a unica foto de fachada confirmada, `fotoConfirmada: true`): a placa grande diz 'SALAO MORENOS', mas a linha menor abaixo, ao lado do icone do Facebook, diz 'Salao Moreno's Cidade Continental' - com apostrofo. Na mesma placa o icone do Instagram traz o handle 'salaomorenos'.",
+  "impacto": "O nome e, junto com endereco e telefone, o que amarra a pagina ao perfil real do negocio. Com quatro grafias internas e um apostrofo na fachada (provavelmente tambem no Facebook e possivelmente no Perfil da Empresa), nao existe uma forma canonica do nome para usar no `name` do JSON-LD nem para conferir com o que o cliente cadastrou no Google.",
+  "correcao": "Perguntar ao cliente qual e o nome oficial, exatamente como esta no Perfil da Empresa do Google e na placa ('Salao Morenos' ou 'Salao Moreno's'), e padronizar uma unica grafia no `name` do JSON-LD das tres paginas e em `C.locations[].nome`. Os titulos e h1 podem continuar com a variacao natural de frase; o que precisa ser identico e o `name` estruturado. Aproveitar a mesma conversa para fechar os itens 'Instagram oficial' e 'Facebook oficial' do checklist - o handle 'salaomorenos' esta legivel na propria foto da fachada do cliente, mas precisa de confirmacao antes de virar `sameAs`."
+ },
+ {
+  "prioridade": "P1",
+  "tipo": "depende_do_cliente",
+  "titulo": "Sem o Perfil da Empresa das tres unidades, nada no site liga cada pagina a loja que o Google ja conhece",
+  "rotas": [
+   "/unidades/cidade-continental/",
+   "/unidades/novo-horizonte-av-brasil/",
+   "/unidades/novo-horizonte-av-industrial/"
+  ],
+  "arquivos": [
+   "fonte/prototipo/site-config.js:64",
+   "fonte/prototipo/site-config.js:69",
+   "fonte/prototipo/site-config.js:74",
+   "fonte/prototipo/site-config.js:95",
+   "fonte/scripts/find-google-place-ids.mjs"
+  ],
+  "evidencia": "`googleProfile: null` nas tres unidades (site-config.js linhas 64, 69, 74). Por causa disso, `l.rota` cai no fallback de busca por endereco (linha 95) e nenhuma das tres paginas tem link para o Perfil da Empresa. No JSON-LD das tres nao existe `sameAs` nem `geo`. O repositorio ja tem a ferramenta pronta para resolver metade disso: fonte/scripts/find-google-place-ids.mjs (`npm run find:google-places`), que usa a Text Search (New) oficial, nao escolhe candidato sozinho e imprime os candidatos com endereco para conferencia - so falta a GOOGLE_MAPS_API_KEY. Nao consegui validar nenhum perfil daqui (sem acesso de rede aos dominios do cliente).",
+  "impacto": "Hoje a diferenca e grande e vale explicar ao cliente: um link `maps/search/?api=1&query=<endereco>` manda o Google resolver um texto na hora do clique - o visitante cai na via ou numa lista de resultados, sem o cartao da loja, sem horario, sem fotos, sem avaliacoes e sem o botao de rotas; um link do Perfil da Empresa (ou o mesmo link com `query_place_id=<PLACE_ID>`) abre o cartao daquela loja. Para o buscador a diferenca e de identidade: um link de busca por texto nao diz a qual ficha a pagina se refere, enquanto `sameAs` apontando para o perfil, somado a um NAP igual nos dois lados, declara que a pagina e aquela loja. Sem isso, cada uma das tres paginas e, para o Google, um endereco solto que ele precisa adivinhar - e as duas de Novo Horizonte sao as mais faceis de confundir entre si.",
+  "correcao": "Pedir ao cliente os tres links do Perfil da Empresa (o 'Compartilhar' do proprio perfil, ou o link curto g.page/maps.app.goo.gl), ou rodar `GOOGLE_MAPS_API_KEY=... npm run find:google-places` e conferir os candidatos pelo endereco antes de adotar. Com eles: preencher `googleProfile` em `C.locations` (o `l.rota` ja passa a usa-lo automaticamente, linha 95), acrescentar `sameAs` com o link do perfil no HairSalon das tres paginas e, se o Place ID vier junto, usar `maps/dir/?api=1&destination=...&destination_place_id=...` no botao 'Como chegar'. Isso ja esta no checklist como 'Google Business <unidade>' - o que acrescento e que o mesmo dado resolve de uma vez o link do mapa, o `sameAs` e o destino da rota."
+ },
+ {
+  "prioridade": "P1",
+  "tipo": "depende_do_cliente",
+  "titulo": "O que falta em cada unidade, separado por endereco",
+  "rotas": [
+   "/unidades/cidade-continental/",
+   "/unidades/novo-horizonte-av-brasil/",
+   "/unidades/novo-horizonte-av-industrial/"
+  ],
+  "arquivos": [
+   "fonte/prototipo/site-config.js:58",
+   "fonte/MIGRATION-CHECKLIST.md"
+  ],
+  "evidencia": "Inventario feito lendo `C.locations` e conferindo no DOM renderizado das tres rotas o que de fato chega a tela. CIDADE CONTINENTAL: tem foto de fachada identificada (`fotoConfirmada: true`), bairro detalhado ('Cidade Continental - Setor Asia') e uma frase de referencia real ('A unidade fica no Setor Asia'); falta numero do imovel (`numero: null`), telefone, horario proprio, lista de servicos, bookingUrl e googleProfile. AV. BRASIL: e a mais pobre das tres - `numero: null`, `fotoConfirmada: false` (hero cai em foto-atendimento-2, generica), e a unica referencia de localizacao no texto e 'Atencao: a outra unidade do bairro fica na Avenida Industrial', ou seja, nenhuma orientacao positiva; falta tudo o que falta nas outras mais o numero e a foto. AV. INDUSTRIAL: e a unica com numero e complemento ('Avenida Industrial, 830 - Loja 3'), mas `fotoConfirmada: false` (hero cai em foto-atendimento) e a referencia tambem e so a negativa ('nao confunda com a Avenida Brasil'); falta foto do endereco, telefone, horario proprio, servicos, bookingUrl e googleProfile. Nas tres: nenhuma secao de equipe, nenhuma avaliacao (as tres avaliacoes reais ficaram so na Home), nada sobre estacionamento ou acessibilidade.",
+  "impacto": "Serve para a conversa com o cliente nao ser uma lista generica: a Av. Brasil e a unidade que mais perde hoje (sem numero, sem foto propria, sem ponto de referencia, com link de mapa que so resolve a avenida) e deveria ser a primeira da fila; a Av. Industrial precisa basicamente de foto e dos itens de rede; Cidade Continental so precisa do numero e dos itens de rede.",
+  "correcao": "Levar ao cliente em tres blocos, nesta ordem de urgencia. (1) Av. Brasil: numero do imovel e complemento, uma foto da fachada e um ponto de referencia ('em frente a X', 'ao lado de Y'). (2) Av. Industrial: foto da fachada daquele endereco e um ponto de referencia. (3) Cidade Continental: numero do imovel. (4) Para as tres, de uma vez: telefone (ou confirmacao de que o WhatsApp e central), horario de cada endereco incluindo domingo, lista de servicos de cada endereco, link de agendamento de cada endereco e link do Perfil da Empresa de cada endereco - e a resposta sobre equipe, estacionamento e acessibilidade, que decidem a visita e hoje nao existem em nenhuma das tres. Quase tudo isso ja consta de fonte/MIGRATION-CHECKLIST.md como lista unica; a sugestao e reorganizar aquela secao por unidade, porque a prioridade e bem diferente entre as tres."
+ }
+]
