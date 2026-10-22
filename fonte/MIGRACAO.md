@@ -87,6 +87,8 @@ Regras para decidir as linhas "DECIDIR":
    - `node fonte/testes/arquitetura.mjs public`
    - `node fonte/testes/grades.mjs public` — nenhuma galeria ou grade de
      cartões com célula vazia, em nove larguras de tela.
+   - O roteiro de Search Console (propriedade, sitemap, redirecionamentos e os
+     30 dias seguintes) está em `fonte/SEARCH-CONSOLE.md`.
    - Conferir que `public/robots.txt` libera o rastreio e declara o sitemap do
      domínio final, e que `public/sitemap.xml` só tem URL do domínio final.
 2. **Fazer backup do WordPress** (arquivos + banco) antes de qualquer coisa.

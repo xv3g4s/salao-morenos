@@ -43,9 +43,13 @@ Vitória como localização, John Six, Curitiba, Ecoville, telefones DDD 41, "ma
 ## Produção (Claude Code)
 
 - [ ] pré-renderizar as páginas (o protótipo monta o conteúdo no navegador; robôs que não executam JS veem os marcadores `{{ }}`)
-- [ ] rotas finais: ver `C.paths` em `site-config.js` e `seo/sitemap.xml`
-- [ ] `seo/robots.txt` no domínio principal; `seo/robots-homologacao.txt` no novosite
-- [ ] `C.env.stage` aplica noindex,nofollow automaticamente em novosite.*
+- [ ] rotas finais: ver `C.paths` em `site-config.js`; o `sitemap.xml` e **gerado**
+      pelo build de producao (`fonte/build.py`), nao e arquivo escrito a mao
+- [ ] `robots.txt` tambem e gerado pelo build, um por ambiente: producao declara
+      o `Sitemap:` do dominio final, homologacao libera o rastreio e nao declara sitemap
+- [ ] o `noindex` de homologacao e escrito no `<head>` pelo build e repetido no
+      `X-Robots-Tag` do `.htaccess` — **nao** depende de JavaScript. `C.env.stage`
+      em `site-config.js` so marca o ambiente para o analytics
 - [ ] 404 servido com status HTTP 404 (`404.dc.html`)
 - [ ] GTM/GA4: preencher `C.analytics`; eventos já disparam em `window.dataLayer`
 - [ ] JSON-LD LocalBusiness por unidade só com dados confirmados
