@@ -191,6 +191,10 @@ site não.
       para a Política de Privacidade e os Termos (revisão jurídica).
 - [ ] **Instagram e Facebook oficiais** (hoje o site não publica nenhum perfil;
       sem eles, o `sameAs` do JSON-LD fica de fora).
+- [ ] **Autorização de uso de imagem** das pessoas que aparecem nas fotos e nos
+      dois clipes enviados em out/2026 (rosto identificável, publicação no site).
+- [ ] **Reenviar `IMG_2019.HEIC` em JPEG**: o arquivo veio corrompido e nenhum
+      conversor abre.
 - [ ] **Vaga aberta?** A página Trabalhe Conosco hoje diz, no FAQ, que não
       anuncia vaga e que o envio segue pelo WhatsApp. Se houver vaga, muda.
 

@@ -316,13 +316,26 @@
         </div>
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));grid-auto-rows:clamp(200px,22vw,280px);gap:16px">
           <sc-for list="{{ grade }}" as="g" hint-placeholder-count="4">
+            <sc-if value="{{ g.ehVideo }}">
+              <div style="position:relative;overflow:hidden;border-radius:16px;background:#EDEAE4;grid-column:span {{ g.span }};box-shadow:0 20px 40px -32px rgba(11,11,11,.6)">
+                <img decoding="async" src="{{ g.src }}" alt="{{ g.alt }}" width="720" height="1280" loading="lazy" draggable="false" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:{{ g.foco }}" />
+                <video data-clipe="1" autoplay="" muted="" loop="" playsinline="" preload="none" disablepictureinpicture="" disableremoteplayback="" controlslist="nodownload noplaybackrate nofullscreen" data-cartaz="{{ g.src }}" data-webm="{{ g.webm }}" data-mp4="{{ g.mp4 }}" aria-label="{{ g.alt }}" width="720" height="1280" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:{{ g.foco }};pointer-events:none">
+                </video>
+              <span style="position:absolute;inset:0;display:flex;flex-direction:column;justify-content:flex-end;gap:4px;padding:20px;text-align:left;background:linear-gradient(180deg,transparent 40%,rgba(11,11,11,.85) 100%);opacity:0;transition:opacity .5s ease" style-hover="opacity:1">
+                <span style="font-size:16px;font-weight:700;color:#F6F4EF">{{ g.titulo }}</span>
+                <span style="font-size:12px;color:#D6D3CC">{{ g.desc }}</span>
+              </span>
+              </div>
+            </sc-if>
+            <sc-if value="{{ g.ehFoto }}">
             <button type="button" onClick="{{ g.open }}" aria-label="Ampliar: {{ g.titulo }}" style="font-family:inherit;position:relative;overflow:hidden;border:0;padding:0;cursor:pointer;border-radius:16px;background:#EDEAE4;grid-column:span {{ g.span }};box-shadow:0 20px 40px -32px rgba(11,11,11,.6);transition:transform .6s cubic-bezier(.22,1,.36,1),box-shadow .6s ease" style-hover="transform:translateY(-4px);box-shadow:0 28px 50px -28px rgba(11,11,11,.55)">
-              <img decoding="async" src="{{ g.src }}" alt="{{ g.alt }}" width="900" height="1100" loading="lazy" draggable="false" sizes="(max-width:900px) 100vw, 420px" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 30%" />
+              <img decoding="async" src="{{ g.src }}" alt="{{ g.alt }}" width="840" height="1050" loading="lazy" draggable="false" sizes="(max-width:900px) 100vw, 420px" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 30%" />
               <span style="position:absolute;inset:0;display:flex;flex-direction:column;justify-content:flex-end;gap:4px;padding:20px;text-align:left;background:linear-gradient(180deg,transparent 40%,rgba(11,11,11,.85) 100%);opacity:0;transition:opacity .5s ease" style-hover="opacity:1">
                 <span style="font-size:16px;font-weight:700;color:#F6F4EF">{{ g.titulo }}</span>
                 <span style="font-size:12px;color:#D6D3CC">{{ g.desc }}</span>
               </span>
             </button>
+            </sc-if>
           </sc-for>
         </div>
       </div>
@@ -391,6 +404,7 @@ class Component extends DCLogic {
 
   componentDidMount() {
     if (!window.MORENOS) this.esperaCfg = setInterval(() => { if (window.MORENOS) { clearInterval(this.esperaCfg); this.forceUpdate(); } }, 60);
+    this.ligarClipes();
     this.ligarReveal();
     this.ligarScrollSuave();
 
@@ -575,15 +589,11 @@ class Component extends DCLogic {
   ];
 
   galeriaData = [
-    { src: 'img/foto-atendimento.webp', alt: 'Barbeiro cortando o cabelo de um cliente no Salão Morenos', titulo: 'Corte em andamento', desc: 'Registro feito em uma das unidades.', rows: 2, w: 'clamp(280px,34vw,420px)' },
-    { src: 'img/foto-barba.webp', alt: 'Detalhe do acabamento de barba com máquina', titulo: 'Acabamento de barba', desc: 'Detalhe da máquina no contorno.', rows: 1, w: 'clamp(220px,24vw,300px)' },
-    { src: 'img/foto-corte.webp', alt: 'Barbeiro ajustando o corte com pente e máquina', titulo: 'Na cadeira', desc: 'Atendimento no salão.', rows: 1, w: 'clamp(220px,24vw,300px)' },
-    { src: 'img/foto-salao.webp', alt: 'Salão cheio, com barbeiros atendendo em várias cadeiras', titulo: 'O salão cheio', desc: 'Movimento em dia de pico.', rows: 2, w: 'clamp(300px,36vw,460px)' },
-    { src: 'img/foto-atendimento-2.webp', alt: 'Atendimento em andamento no salão', titulo: 'Detalhe do corte', desc: 'Acabamento conferido no espelho.', rows: 1, w: 'clamp(220px,24vw,300px)' },
-    { src: 'img/foto-crianca.webp', alt: 'Barbeiro da Morenos com uma criança no colo dentro do salão', titulo: 'Corte infantil', desc: 'A criançada também senta na cadeira.', rows: 1, w: 'clamp(220px,24vw,300px)' },
-    { src: 'img/unidade-cidade-continental.webp', alt: 'Placa do Salão Morenos em Cidade Continental', titulo: 'Cidade Continental', desc: 'Fachada da unidade da Avenida Terceiro Mundo.', rows: 2, w: 'clamp(260px,30vw,380px)' },
-    { src: 'img/unidade-av-brasil.webp', alt: 'Vitrine de uma unidade da Morenos com o quadro de planos', titulo: 'Na porta', desc: 'Vitrine de uma das unidades em Serra.', rows: 1, w: 'clamp(220px,24vw,300px)' },
-    { src: 'img/fachada-noite.webp', alt: 'Fachada iluminada de uma unidade do Salão Morenos à noite', titulo: 'Aberto à noite', desc: 'Fachada iluminada no fim do dia.', rows: 1, w: 'clamp(220px,24vw,300px)' },
+    { src: 'img/corte-crespo-degrade.webp', alt: 'Cabelo crespo com degradê alto nas laterais, finalizado na barbearia', titulo: 'Degradê alto', desc: 'Volume no topo, laterais rebaixadas.', rows: 2, w: 'clamp(280px,34vw,420px)' },
+    { src: 'img/corte-degrade-baixo.webp', alt: 'Corte masculino com degradê baixo e contorno marcado', titulo: 'Degradê baixo', desc: 'Transição começando perto da orelha.', rows: 1, w: 'clamp(220px,24vw,300px)' },
+    { src: 'img/corte-texturizado.webp', alt: 'Corte masculino texturizado no topo, com degradê nas laterais', titulo: 'Texturizado', desc: 'Movimento no topo, lateral limpa.', rows: 1, w: 'clamp(220px,24vw,300px)' },
+    { src: 'img/corte-infantil-degrade.webp', alt: 'Corte infantil com degradê e desenho na lateral', titulo: 'Corte infantil', desc: 'A criançada também senta na cadeira.', rows: 1, w: 'clamp(220px,24vw,300px)' },
+    { src: 'img/corte-quiff-loiro-poster.webp', video: 'img/corte-quiff-loiro', alt: 'Corte com topo volumoso e mechas claras, visto de perfil', titulo: 'Topo com volume', desc: 'Mechas claras e laterais rebaixadas.', rows: 1, w: 'clamp(220px,24vw,300px)' },
   ];
 
   cardRef = (el) => { this.cineCard = el; };
@@ -645,6 +655,50 @@ class Component extends DCLogic {
     });
   };
 
+  // Clipe de galeria: sem som, em laco, sem controle nenhum. Quem pede menos
+  // movimento ve o cartaz parado (regra no <head>, aplicada pelo build).
+  ligarClipes() {
+    const parado = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    setTimeout(() => {
+      document.querySelectorAll('video[data-clipe]').forEach((v) => {
+        if (v.__clipeLigado) return;
+        v.__clipeLigado = true;
+        // `muted`, `loop` e `controls` sao propriedades para o React: sem isto
+        // o clipe pode nascer com som e o navegador recusa o autoplay
+        v.muted = true; v.defaultMuted = true; v.volume = 0; v.loop = true; v.controls = false;
+        // o cartaz entra ja; o video, so quando a galeria chega perto da tela.
+        // O endereco vem do data-*, nao do template: no HTML cru o marcador
+        // {{ }} viraria uma requisicao literal, e 404.
+        if (!v.getAttribute('poster') && v.dataset.cartaz) v.setAttribute('poster', v.dataset.cartaz);
+        if (parado) return;
+
+        const carregar = () => {
+          if (v.getAttribute('src')) return;
+          const webm = v.dataset.webm, mp4 = v.dataset.mp4;
+          const fonte = (webm && v.canPlayType('video/webm; codecs="vp9"')) ? webm : (mp4 || webm);
+          if (!fonte) return;
+          v.preload = 'metadata';
+          v.setAttribute('src', fonte);
+          const tocar = () => v.play().catch(() => {});
+          if (v.readyState >= 2) tocar(); else v.addEventListener('loadeddata', tocar, { once: true });
+        };
+
+        // Sem IntersectionObserver (ou no build, que captura a pagina pronta),
+        // carrega direto: o clipe nunca pode simplesmente nao existir.
+        if (typeof IntersectionObserver === 'undefined') { carregar(); return; }
+        const obs = new IntersectionObserver((ents) => {
+          ents.forEach((e) => {
+            if (e.isIntersecting) { carregar(); if (v.paused) v.play().catch(() => {}); }
+            else if (!v.paused) { try { v.pause(); } catch (er) {} }
+          });
+        }, { rootMargin: '200px 0px' });
+        obs.observe(v);
+      });
+    }, 0);
+  }
+
+  componentDidUpdate() { this.ligarClipes(); }
+
   galeriaUnica() {
     const vistas = new Set();
     const fora = [];
@@ -653,7 +707,7 @@ class Component extends DCLogic {
       vistas.add(g.src);
       fora.push(g);
     }
-    return fora.slice(0, 6);
+    return fora;
   }
 
   scrollerRef = (el) => {
@@ -773,7 +827,12 @@ class Component extends DCLogic {
       ],
       grade: this.galeriaUnica().map((g, i) => ({
         ...g,
-        span: (i === 0 || i === 5) ? '2' : '1',
+        span: i === 0 ? '2' : '1',
+        foco: g.foco || '50% 30%',
+        ehVideo: !!g.video,
+        ehFoto: !g.video,
+        webm: g.video ? g.video + '.webm' : '',
+        mp4: g.video ? g.video + '.mp4' : '',
         open: () => this.setState({ light: i }),
       })),
       lightbox: this.state.light === null ? null : this.galeriaUnica()[this.state.light],

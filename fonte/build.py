@@ -196,7 +196,8 @@ ALTURA_LIVRE = ("<style>html,body{height:auto !important}"
 
 MENOS_MOVIMENTO = """<style>@media (prefers-reduced-motion: reduce){
 *,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;
-transition-duration:.01ms !important;scroll-behavior:auto !important}}</style>"""
+transition-duration:.01ms !important;scroll-behavior:auto !important}
+video[data-clipe]{display:none !important}}</style>"""
 
 
 # site-config.js e site-loader.js precisam rodar ANTES do primeiro quadro (a

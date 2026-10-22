@@ -31,3 +31,6 @@ deploy-key*
 .env
 .env.*
 !.env.example
+
+# scripts de diagnostico de sessao (medicao, grafo de links, capturas)
+.*.mjs

@@ -306,9 +306,18 @@
         <h2 style="margin:0 0 clamp(24px,3vw,40px);font-size:clamp(32px,4.2vw,54px);line-height:1;font-weight:700;letter-spacing:-.03em">{{ s.h2 }}</h2>
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));grid-auto-rows:clamp(220px,24vw,320px);gap:14px">
           <sc-for list="{{ s.fotos }}" as="f" hint-placeholder-count="4">
+            <sc-if value="{{ f.ehVideo }}">
+              <div data-rv="1" style="position:relative;overflow:hidden;border-radius:18px;background:#EDEAE4;grid-column:{{ f.coluna }};box-shadow:0 18px 40px -30px rgba(11,11,11,.5)">
+                <img src="{{ f.src }}" alt="{{ f.alt }}" width="720" height="1280" loading="lazy" decoding="async" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:{{ f.foco }}">
+                <video data-clipe="1" autoplay="" muted="" loop="" playsinline="" preload="none" disablepictureinpicture="" disableremoteplayback="" controlslist="nodownload noplaybackrate nofullscreen" data-cartaz="{{ f.src }}" data-webm="{{ f.webm }}" data-mp4="{{ f.mp4 }}" aria-label="{{ f.alt }}" width="720" height="1280" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:{{ f.foco }};pointer-events:none">
+                </video>
+              </div>
+            </sc-if>
+            <sc-if value="{{ f.ehFoto }}">
             <button data-rv="1" type="button" onClick="{{ f.abrir }}" aria-label="Ampliar foto: {{ f.alt }}" style="font-family:inherit;cursor:zoom-in;border:0;padding:0;margin:0;position:relative;border-radius:20px;overflow:hidden;background:#EDEAE4;grid-column:{{ f.coluna }};box-shadow:0 20px 40px -32px rgba(11,11,11,.6);transition:transform .6s cubic-bezier(.22,1,.36,1),box-shadow .6s ease" style-hover="transform:translateY(-4px);box-shadow:0 28px 50px -28px rgba(11,11,11,.55)">
               <img src="{{ f.src }}" alt="{{ f.alt }}" width="900" height="900" loading="lazy" decoding="async" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 30%;transition:transform 1.2s cubic-bezier(.22,1,.36,1)" style-hover="transform:scale(1.05)">
             </button>
+            </sc-if>
           </sc-for>
         </div>
       </div>
@@ -574,7 +583,50 @@ class Component extends DCLogic {
       this.obs.observe(n);
     });
   }
-  componentDidUpdate() { this.revelar(); }
+  componentDidUpdate() { this.revelar(); this.ligarClipes(); }
+
+  // Clipe de galeria: sem som, em laco, sem controle. React trata `muted`
+  // como propriedade e nao como atributo — sem isto o navegador recusa o
+  // autoplay. Quem pede menos movimento ve o cartaz parado.
+  ligarClipes() {
+    const parado = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    setTimeout(() => {
+      document.querySelectorAll('video[data-clipe]').forEach((v) => {
+        if (v.__clipeLigado) return;
+        v.__clipeLigado = true;
+        // `muted`, `loop` e `controls` sao propriedades para o React: sem isto
+        // o clipe pode nascer com som e o navegador recusa o autoplay
+        v.muted = true; v.defaultMuted = true; v.volume = 0; v.loop = true; v.controls = false;
+        // o cartaz entra ja; o video, so quando a galeria chega perto da tela.
+        // O endereco vem do data-*, nao do template: no HTML cru o marcador
+        // {{ }} viraria uma requisicao literal, e 404.
+        if (!v.getAttribute('poster') && v.dataset.cartaz) v.setAttribute('poster', v.dataset.cartaz);
+        if (parado) return;
+
+        const carregar = () => {
+          if (v.getAttribute('src')) return;
+          const webm = v.dataset.webm, mp4 = v.dataset.mp4;
+          const fonte = (webm && v.canPlayType('video/webm; codecs="vp9"')) ? webm : (mp4 || webm);
+          if (!fonte) return;
+          v.preload = 'metadata';
+          v.setAttribute('src', fonte);
+          const tocar = () => v.play().catch(() => {});
+          if (v.readyState >= 2) tocar(); else v.addEventListener('loadeddata', tocar, { once: true });
+        };
+
+        // Sem IntersectionObserver (ou no build, que captura a pagina pronta),
+        // carrega direto: o clipe nunca pode simplesmente nao existir.
+        if (typeof IntersectionObserver === 'undefined') { carregar(); return; }
+        const obs = new IntersectionObserver((ents) => {
+          ents.forEach((e) => {
+            if (e.isIntersecting) { carregar(); if (v.paused) v.play().catch(() => {}); }
+            else if (!v.paused) { try { v.pause(); } catch (er) {} }
+          });
+        }, { rootMargin: '200px 0px' });
+        obs.observe(v);
+      });
+    }, 0);
+  }
 
   // --- maquete do celular (recorte da Home, injetado no build) ---
   cardRef = (el) => { this.cineCard = el; };
@@ -637,6 +689,7 @@ class Component extends DCLogic {
   };
 
   componentDidMount() {
+    this.ligarClipes();
     // Quem esta na pagina de uma unidade ja escolheu o endereco: o "Agendar"
     // do cabecalho nao deve perguntar de novo.
     const Mx = this.M();
@@ -743,11 +796,21 @@ class Component extends DCLogic {
       { titulo: 'Visagismo', desc: 'Corte e barba pensados a partir das suas características.', foto: '/img/foto-visagismo.webp', alt: 'Barbeiro avaliando o corte de um cliente', href: R.visagismo, cta: 'Conhecer serviço' },
       { titulo: 'Dia do Noivo', desc: 'Preparação para o casamento, com atendimento reservado.', foto: '/img/foto-salao.webp', alt: 'Ambiente interno do Salão Morenos', href: R['dia-do-noivo'], cta: 'Conhecer serviço' },
     ];
-    const galeriaBase = [
-      { src: '/img/foto-atendimento.webp', alt: 'Barbeiro cortando o cabelo de um cliente', span: 2 },
-      { src: '/img/foto-barba.webp', alt: 'Detalhe do acabamento de barba', span: 1 },
-      { src: '/img/foto-corte.webp', alt: 'Corte em andamento com pente e máquina', span: 1 },
+    // Duas galerias, sem nenhuma foto em comum — nem entre elas, nem com a
+    // galeria da Home. Antes era uma lista so, repetida em todas as paginas
+    // que tinham galeria.
+    const galeriaCortes = [
+      { src: '/img/corte-penteado-para-tras.webp', alt: 'Corte masculino com volume penteado para trás, finalizado na barbearia', span: 2 },
+      { src: '/img/corte-maquina-risco.webp', alt: 'Corte na máquina com risco marcado na lateral', span: 1 },
+      { src: '/img/corte-volume-barba.webp', alt: 'Corte com volume no topo e barba aparada e alinhada', span: 1 },
+      { src: '/img/cabelo-longo-barba.webp', alt: 'Cabelo longo penteado para trás, com barba aparada', span: 1 },
+      { src: '/img/corte-cacheado-poster.webp', video: '/img/corte-cacheado', alt: 'Corte em cabelo cacheado, visto de perfil dentro da barbearia', span: 2, foco: '50% 55%' },
+    ];
+    const galeriaDiaADia = [
       { src: '/img/foto-salao.webp', alt: 'Ambiente interno do Salão Morenos', span: 2 },
+      { src: '/img/foto-barba.webp', alt: 'Detalhe do acabamento de barba', span: 1 },
+      { src: '/img/foto-visagismo.webp', alt: 'Barbeiro conversando com um cliente antes do corte', span: 1 },
+      { src: '/img/foto-crianca.webp', alt: 'Barbeiro da Morenos com uma criança no colo dentro do salão', span: 2 },
     ];
     const faqUnidade = (l) => [
       { q: 'Como agendo nesta unidade?', a: 'Toque em Agendar nesta unidade. Você segue para a agenda online da Morenos e escolhe o horário.' },
@@ -771,7 +834,7 @@ class Component extends DCLogic {
         { tipo: 'mapa', h2: l.curto, texto: l.enderecoLinha + '. ' + o.referencia, mapa: l.mapaEmbed, mapaTitulo: 'Mapa da unidade ' + l.curto, rota: l.rota, onRota: () => M.track('route_click', { unit: id }) },
         { tipo: 'faq', id: 'duvidas', h2: 'Dúvidas sobre esta unidade.', perguntas: faqUnidade(l) },
         { tipo: 'unidades', id: 'outras', label: 'Outras unidades', h2: 'Mais dois endereços em Serra.', texto: 'Se outro caminho for mais prático, a Morenos também atende aqui.', lista: this.unidades(outras) },
-        this.ctaFinal({ h2: 'Pronto para marcar seu horário?', texto: 'Agende nesta unidade ou, se outro endereço for mais prático, compare as três.',
+        this.ctaFinal({ h2: 'Pronto para marcar seu horário?', texto: 'Agende nesta unidade ou, se outro endereço for mais prático, compare as três.', foto: l.foto,
           ctas: [this.cta('Agendar nesta unidade', l.agendar, true, true, () => { M.setUnit(id); M.track('booking_click', { unit: id, destino: 'cashbarber' }); }), this.cta('Ver as três unidades', R.unidades, false)] }),
       ];
     };
@@ -844,7 +907,7 @@ class Component extends DCLogic {
           { n: '02', t: 'Estilo', d: 'O barbeiro sugere ajustes de altura, volume e contorno para o seu cabelo.' },
           { n: '03', t: 'Execução', d: 'Máquina, tesoura e pente, conferindo com você ao longo do corte.' },
           { n: '04', t: 'Acabamento', d: 'Contornos e finalização, com dicas para manter o resultado.' } ] },
-        { tipo: 'galeria', h2: 'Cortes feitos na Morenos.', fotos: galeriaBase },
+        { tipo: 'galeria', h2: 'Cortes feitos na Morenos.', fotos: galeriaCortes },
         { tipo: 'unidades', id: 'onde', label: 'Onde fazer', h2: 'Escolha a unidade.', texto: 'O corte masculino é o serviço principal da Morenos.', lista: this.unidades() },
         { tipo: 'faq', id: 'duvidas', h2: 'Dúvidas sobre o corte.', perguntas: [
           { q: 'Preciso levar uma referência?', a: 'Não é obrigatório, mas ajuda. Uma foto no celular já é suficiente.' },
@@ -925,7 +988,7 @@ class Component extends DCLogic {
         // /corporativo/ e /trabalhe-conosco/ so eram alcancaveis pelo rodape:
         // a pagina que conta quem e a marca e o lugar certo para elas.
         this.texto({ label: 'Além da cadeira', h2: 'Empresas e quem quer trabalhar com a gente.', paragrafos: ['A Morenos também atende empresas que querem oferecer corte e barba como benefício, e recebe o interesse de barbeiros que querem fazer parte do time.'], links: [{ label: 'Morenos para empresas', href: R.corporativo }, { label: 'Trabalhe conosco', href: R['trabalhe-conosco'] }], foto: null }),
-        { tipo: 'galeria', h2: 'O dia a dia na Morenos.', fotos: galeriaBase },
+        { tipo: 'galeria', h2: 'O dia a dia na Morenos.', fotos: galeriaDiaADia },
         { tipo: 'unidades', id: 'unidades', label: 'Onde estamos', h2: 'Três endereços em Serra.', texto: 'Cidade Continental e duas unidades em Novo Horizonte.', lista: this.unidades() },
         this.ctaFinal({ h2: 'Conheceu a Morenos. Agora escolha a sua.', texto: 'Agende em uma das três unidades de Serra.' }),
       ],
@@ -1089,7 +1152,11 @@ class Component extends DCLogic {
         x.cards = x.cards.map((d, j) => ({ ...d, coluna: w >= 1100 ? spans[j % 4] : 'auto' }));
       }
       if (x.isGaleria) {
-        x.fotos = x.fotos.map(f => ({ ...f, coluna: st.w >= 700 && f.span === 2 ? 'span 2' : 'auto', abrir: () => this.setState({ light: { src: f.src, alt: f.alt }, lightSaindo: false }) }));
+        x.fotos = x.fotos.map(f => ({ ...f,
+          coluna: st.w >= 700 && f.span === 2 ? 'span 2' : 'auto',
+          ehVideo: !!f.video, ehFoto: !f.video, foco: f.foco || '50% 30%',
+          webm: f.video ? f.video + '.webm' : '', mp4: f.video ? f.video + '.mp4' : '',
+          abrir: () => this.setState({ light: { src: f.src, alt: f.alt }, lightSaindo: false }) }));
       }
     });
     if (st.light) {

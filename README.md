@@ -41,7 +41,7 @@ fonte/             nunca publicado
   avaliacoes/        integração opcional do Google (script + rota PHP)
   scripts/           utilitários (descobrir Place IDs)
   testes/            arquitetura de conteúdo, SEO e avaliações
-  HANDOFF.md  ARQUITETURA.md  AUDITORIA-SEO.md  DESEMPENHO.md
+  HANDOFF.md  ARQUITETURA.md  AUDITORIA-SEO.md  DESEMPENHO.md  MIDIA.md
   MIGRACAO.md  MIGRATION-CHECKLIST.md  PERFIS-GOOGLE.md  PAUTA-CONTEUDO.md
 ```
 

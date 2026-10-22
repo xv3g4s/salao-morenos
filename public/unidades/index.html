@@ -56,7 +56,8 @@
 <style>html,body{height:auto !important}#dc-root,#dc-root>.sc-host{height:auto !important}</style>
 <style>@media (prefers-reduced-motion: reduce){
 *,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;
-transition-duration:.01ms !important;scroll-behavior:auto !important}}</style>
+transition-duration:.01ms !important;scroll-behavior:auto !important}
+video[data-clipe]{display:none !important}}</style>
 <style>html,body{background:#080908}</style>
 <link rel="preload" as="image" href="/assets/morenos-loader-outline-white.webp">
 <script>/* site-config.js embutido no build */
@@ -576,25 +577,25 @@ html,body{background:#080908}
   @keyframes pmMetal { 0% { background-position:0% 50%; } 100% { background-position:200% 50%; } }
 </style>
 <style data-runtime-css="">/* regras que o runtime cria via CSSOM */
-.scp0:hover { color: rgb(183, 154, 106) !important; }
-.scp1:hover { filter: brightness(1.08) !important; transform: translateY(-2px) !important; }
-.scp2:hover { filter: brightness(1.2) !important; transform: translateY(-2px) !important; }
-.scp3:hover { background: rgb(27, 27, 27) !important; }
-.scp4:hover { color: rgb(246, 244, 239) !important; }
-.scp5:hover { transform: translateY(-4px) !important; }
+.scp0:focus { left: 12px !important; top: 12px !important; }
+.scp1:hover { color: rgb(183, 154, 106) !important; }
+.scp2:hover { filter: brightness(1.2) !important; }
+.scp3:hover { filter: brightness(1.08) !important; }
+.scp4:hover { background: rgba(246, 244, 239, 0.07) !important; }
+.scp5:hover { border-color: rgb(183, 154, 106) !important; }
 .scp6:hover { background: rgb(183, 154, 106) !important; color: rgb(11, 11, 11) !important; }
 .scp7:hover { border-color: rgb(183, 154, 106) !important; color: rgb(183, 154, 106) !important; }
-.scp8:hover { transform: translateY(-4px) !important; color: rgb(246, 244, 239) !important; }
-.scp9:hover { color: rgb(11, 11, 11) !important; }
-.scpa:hover { transform: translateY(-4px) !important; box-shadow: rgba(11, 11, 11, 0.5) 0px 28px 50px -30px !important; }
-.scpb:hover { border-color: rgb(183, 154, 106) !important; transform: translateY(-4px) !important; }
-.scpc:hover { transform: translateY(-4px) !important; box-shadow: rgba(11, 11, 11, 0.55) 0px 28px 50px -28px !important; }
-.scpd:hover { transform: scale(1.05) !important; }
-.scpe:hover { filter: brightness(1.08) !important; }
-.scpf:hover { filter: brightness(1.2) !important; }
-.scpg:focus { left: 12px !important; top: 12px !important; }
-.scph:hover { background: rgba(246, 244, 239, 0.07) !important; }
-.scpi:hover { border-color: rgb(183, 154, 106) !important; }</style>
+.scp8:hover { filter: brightness(1.08) !important; transform: translateY(-2px) !important; }
+.scp9:hover { filter: brightness(1.2) !important; transform: translateY(-2px) !important; }
+.scpa:hover { background: rgb(27, 27, 27) !important; }
+.scpb:hover { color: rgb(246, 244, 239) !important; }
+.scpc:hover { transform: translateY(-4px) !important; }
+.scpd:hover { transform: translateY(-4px) !important; color: rgb(246, 244, 239) !important; }
+.scpe:hover { color: rgb(11, 11, 11) !important; }
+.scpf:hover { transform: translateY(-4px) !important; box-shadow: rgba(11, 11, 11, 0.5) 0px 28px 50px -30px !important; }
+.scpg:hover { border-color: rgb(183, 154, 106) !important; transform: translateY(-4px) !important; }
+.scph:hover { transform: translateY(-4px) !important; box-shadow: rgba(11, 11, 11, 0.55) 0px 28px 50px -28px !important; }
+.scpi:hover { transform: scale(1.05) !important; }</style>
 <style id="mo-troca">
   x-dc { display: none !important; }
   #dc-root { display: none; }
@@ -605,7 +606,7 @@ html,body{background:#080908}
 <body>
 <div id="mo-estatico">
 <div class="sc-host" data-sc-name="unidades"><div data-dc-tpl="18" style="background: rgb(11, 11, 11); min-height: 100vh;">
-  <div class="sc-host" data-sc-name="SiteHeader" data-dc-tpl="19" style="position: sticky; top: 0px; z-index: 60;"><a data-dc-tpl="2" href="#conteudo" class="scpg" style="position: absolute; left: -9999px; top: 0px; z-index: 100; background: rgb(246, 244, 239); color: rgb(11, 11, 11); padding: 14px 20px; font-size: 14px; font-weight: 700;">Pular para o conteúdo</a><header data-dc-tpl="3" style="position: sticky; top: 0px; z-index: 60; background: rgba(11, 11, 11, 0.94); backdrop-filter: blur(8px); border-bottom: 1px solid rgba(246, 244, 239, 0.1); font-family: Poppins, system-ui, sans-serif; color: rgb(246, 244, 239);">
+  <div class="sc-host" data-sc-name="SiteHeader" data-dc-tpl="19" style="position: sticky; top: 0px; z-index: 60;"><a data-dc-tpl="2" href="#conteudo" class="scp0" style="position: absolute; left: -9999px; top: 0px; z-index: 100; background: rgb(246, 244, 239); color: rgb(11, 11, 11); padding: 14px 20px; font-size: 14px; font-weight: 700;">Pular para o conteúdo</a><header data-dc-tpl="3" style="position: sticky; top: 0px; z-index: 60; background: rgba(11, 11, 11, 0.94); backdrop-filter: blur(8px); border-bottom: 1px solid rgba(246, 244, 239, 0.1); font-family: Poppins, system-ui, sans-serif; color: rgb(246, 244, 239);">
   <div data-dc-tpl="4" style="max-width: 1480px; margin: 0px auto; padding: clamp(6px, 1.4vw, 10px) clamp(12px, 3vw, 36px); display: flex; align-items: center; justify-content: space-between; gap: clamp(10px, 2vw, 24px);">
     <a data-dc-tpl="5" href="/" aria-label="Salão Morenos, página inicial" style="display: flex; align-items: center; flex-shrink: 0;">
       <img data-dc-tpl="6" decoding="async" src="/img/logo.webp" alt="Salão Morenos" width="624" height="624" style="height: clamp(54px, 13vw, 82px); width: auto;">
@@ -635,7 +636,7 @@ html,body{background:#080908}
           <ol data-dc-tpl="10" style="list-style: none; margin: 0px; padding: 0px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center;">
             
               <li data-dc-tpl="12" style="display: flex; gap: 8px; align-items: center;">
-                <a data-dc-tpl="14" href="/" class="scp0" style="color: rgb(197, 194, 187); text-decoration: none;"><span class="sc-interp">Início</span></a><span data-dc-tpl="15" aria-hidden="true" style="color: rgb(124, 121, 117);">/</span>
+                <a data-dc-tpl="14" href="/" class="scp1" style="color: rgb(197, 194, 187); text-decoration: none;"><span class="sc-interp">Início</span></a><span data-dc-tpl="15" aria-hidden="true" style="color: rgb(124, 121, 117);">/</span>
                 
               </li>
             
@@ -651,11 +652,11 @@ html,body{background:#080908}
         <p data-dc-tpl="20" style="margin: 0px; max-width: 52ch; font-size: clamp(16px, 1.4vw, 19px); line-height: 1.6; color: rgb(214, 211, 204);"><span class="sc-interp">Três endereços em Serra. Compare as unidades e escolha a que faz parte do seu caminho.</span></p>
         <div data-dc-tpl="21" style="display: flex; flex-wrap: wrap; gap: 12px; margin-top: 6px;">
           
-            <a data-dc-tpl="24" href="https://cashbarber.com.br/salaomorenos/inicio" target="_self" rel="" class="scp1" style="display: inline-flex; padding: 1.5px; border-radius: 100px; background: linear-gradient(100deg, rgb(138, 131, 120) 0%, rgb(58, 58, 58) 16%, rgb(207, 201, 190) 30%, rgb(255, 255, 255) 42%, rgb(207, 201, 190) 54%, rgb(58, 58, 58) 70%, rgb(138, 131, 120) 100%) 0% 0% / 200% 100%; animation: 7s linear 0s infinite normal none running metal; box-shadow: rgba(0, 0, 0, 0.6) 0px 12px 26px -10px; text-decoration: none; transition: filter 0.45s, transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);"><span data-dc-tpl="25" style="display: flex; align-items: center; justify-content: center; border-radius: 100px; background: linear-gradient(rgb(255, 255, 255) 0%, rgb(232, 229, 223) 100%); color: rgb(11, 11, 11); font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; padding: 16px 26px; min-height: 50px; font-size: 13px;"><span class="sc-interp">Escolher unidade</span></span></a>
+            <a data-dc-tpl="24" href="https://cashbarber.com.br/salaomorenos/inicio" target="_self" rel="" class="scp8" style="display: inline-flex; padding: 1.5px; border-radius: 100px; background: linear-gradient(100deg, rgb(138, 131, 120) 0%, rgb(58, 58, 58) 16%, rgb(207, 201, 190) 30%, rgb(255, 255, 255) 42%, rgb(207, 201, 190) 54%, rgb(58, 58, 58) 70%, rgb(138, 131, 120) 100%) 0% 0% / 200% 100%; animation: 7s linear 0s infinite normal none running metal; box-shadow: rgba(0, 0, 0, 0.6) 0px 12px 26px -10px; text-decoration: none; transition: filter 0.45s, transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);"><span data-dc-tpl="25" style="display: flex; align-items: center; justify-content: center; border-radius: 100px; background: linear-gradient(rgb(255, 255, 255) 0%, rgb(232, 229, 223) 100%); color: rgb(11, 11, 11); font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; padding: 16px 26px; min-height: 50px; font-size: 13px;"><span class="sc-interp">Escolher unidade</span></span></a>
             
           
             
-            <a data-dc-tpl="27" href="/servicos/" target="_self" rel="" class="scp2" style="display: inline-flex; padding: 1.5px; border-radius: 100px; background: linear-gradient(100deg, rgb(11, 11, 11) 0%, rgb(58, 58, 58) 18%, rgb(156, 150, 140) 32%, rgb(243, 239, 232) 42%, rgb(156, 150, 140) 52%, rgb(58, 58, 58) 68%, rgb(11, 11, 11) 100%) 0% 0% / 200% 100%; animation: 7s linear 0s infinite normal none running metal; box-shadow: rgba(0, 0, 0, 0.85) 0px 12px 26px -10px; text-decoration: none; transition: filter 0.45s, transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);"><span data-dc-tpl="28" style="display: flex; align-items: center; justify-content: center; border-radius: 100px; background: linear-gradient(rgb(32, 32, 32) 0%, rgb(0, 0, 0) 100%); color: rgb(232, 229, 223); font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; padding: 16px 26px; min-height: 50px; font-size: 13px;"><span class="sc-interp">Conhecer serviços</span></span></a>
+            <a data-dc-tpl="27" href="/servicos/" target="_self" rel="" class="scp9" style="display: inline-flex; padding: 1.5px; border-radius: 100px; background: linear-gradient(100deg, rgb(11, 11, 11) 0%, rgb(58, 58, 58) 18%, rgb(156, 150, 140) 32%, rgb(243, 239, 232) 42%, rgb(156, 150, 140) 52%, rgb(58, 58, 58) 68%, rgb(11, 11, 11) 100%) 0% 0% / 200% 100%; animation: 7s linear 0s infinite normal none running metal; box-shadow: rgba(0, 0, 0, 0.85) 0px 12px 26px -10px; text-decoration: none; transition: filter 0.45s, transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);"><span data-dc-tpl="28" style="display: flex; align-items: center; justify-content: center; border-radius: 100px; background: linear-gradient(rgb(32, 32, 32) 0%, rgb(0, 0, 0) 100%); color: rgb(232, 229, 223); font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; padding: 16px 26px; min-height: 50px; font-size: 13px;"><span class="sc-interp">Conhecer serviços</span></span></a>
           
         </div>
       </div>
@@ -714,7 +715,7 @@ html,body{background:#080908}
         </div>
         <div data-dc-tpl="78" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); gap: 16px;">
           
-            <article data-dc-tpl="80" data-rv="1" class="scp5" style="position: relative; min-height: clamp(460px, 48vw, 600px); border-radius: 28px; overflow: hidden; display: flex; flex-direction: column; justify-content: flex-end; background: rgb(23, 23, 23); transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);">
+            <article data-dc-tpl="80" data-rv="1" class="scpc" style="position: relative; min-height: clamp(460px, 48vw, 600px); border-radius: 28px; overflow: hidden; display: flex; flex-direction: column; justify-content: flex-end; background: rgb(23, 23, 23); transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);">
               <img data-dc-tpl="81" src="/img/unidade-cidade-continental.webp" alt="Fachada do Salão Morenos com a placa Cidade Continental" width="750" height="1000" loading="lazy" decoding="async" style="position: absolute; inset: 0px; width: 100%; height: 100%; object-fit: cover;">
               <div data-dc-tpl="82" aria-hidden="true" style="position: absolute; inset: 0px; background: linear-gradient(rgba(8, 8, 8, 0.45) 0%, rgba(8, 8, 8, 0.78) 44%, rgba(8, 8, 8, 0.97) 100%);"></div>
               <div data-dc-tpl="83" style="position: relative; padding: clamp(22px, 2.4vw, 32px); display: flex; flex-direction: column; gap: 12px;">
@@ -724,12 +725,12 @@ html,body{background:#080908}
                 <div data-dc-tpl="87" style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px;">
                   <a data-dc-tpl="88" href="/unidades/cidade-continental/" aria-label="Conhecer a unidade Cidade Continental" class="scp6" style="display: inline-flex; align-items: center; justify-content: center; min-height: 46px; padding: 12px 18px; border-radius: 100px; background: rgb(246, 244, 239); color: rgb(11, 11, 11); font-size: 12px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; text-decoration: none; transition: background 0.35s;">Conhecer unidade</a>
                   <a data-dc-tpl="89" href="https://cashbarber.com.br/salaomorenos/inicio" aria-label="Agendar na unidade Cidade Continental" target="_blank" rel="noopener noreferrer" class="scp7" style="display: inline-flex; align-items: center; justify-content: center; min-height: 46px; padding: 12px 18px; border-radius: 100px; border: 1px solid rgba(246, 244, 239, 0.42); color: rgb(246, 244, 239); font-size: 12px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; text-decoration: none; transition: border-color 0.35s, color 0.35s;">Agendar</a>
-                  <a data-dc-tpl="90" href="https://www.google.com/maps/dir/?api=1&amp;destination=Avenida%20Terceiro%20Mundo%2C%20Cidade%20Continental%20%E2%80%94%20Setor%20%C3%81sia%2C%20Serra%20-%20ES%2C%2029163-603" aria-label="Como chegar à unidade Cidade Continental" target="_blank" rel="noopener noreferrer" class="scp0" style="display: inline-flex; align-items: center; justify-content: center; min-height: 46px; padding: 12px 14px; color: rgb(197, 194, 187); font-size: 12px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; text-decoration: none;">Como chegar</a>
+                  <a data-dc-tpl="90" href="https://www.google.com/maps/dir/?api=1&amp;destination=Avenida%20Terceiro%20Mundo%2C%20Cidade%20Continental%20%E2%80%94%20Setor%20%C3%81sia%2C%20Serra%20-%20ES%2C%2029163-603" aria-label="Como chegar à unidade Cidade Continental" target="_blank" rel="noopener noreferrer" class="scp1" style="display: inline-flex; align-items: center; justify-content: center; min-height: 46px; padding: 12px 14px; color: rgb(197, 194, 187); font-size: 12px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; text-decoration: none;">Como chegar</a>
                 </div>
               </div>
             </article>
           
-            <article data-dc-tpl="80" data-rv="1" class="scp5" style="position: relative; min-height: clamp(460px, 48vw, 600px); border-radius: 28px; overflow: hidden; display: flex; flex-direction: column; justify-content: flex-end; background: rgb(23, 23, 23); transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);">
+            <article data-dc-tpl="80" data-rv="1" class="scpc" style="position: relative; min-height: clamp(460px, 48vw, 600px); border-radius: 28px; overflow: hidden; display: flex; flex-direction: column; justify-content: flex-end; background: rgb(23, 23, 23); transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);">
               <img data-dc-tpl="81" src="/img/foto-atendimento-2.webp" alt="Ambiente do Salão Morenos durante o atendimento" width="750" height="1000" loading="lazy" decoding="async" style="position: absolute; inset: 0px; width: 100%; height: 100%; object-fit: cover;">
               <div data-dc-tpl="82" aria-hidden="true" style="position: absolute; inset: 0px; background: linear-gradient(rgba(8, 8, 8, 0.45) 0%, rgba(8, 8, 8, 0.78) 44%, rgba(8, 8, 8, 0.97) 100%);"></div>
               <div data-dc-tpl="83" style="position: relative; padding: clamp(22px, 2.4vw, 32px); display: flex; flex-direction: column; gap: 12px;">
@@ -739,12 +740,12 @@ html,body{background:#080908}
                 <div data-dc-tpl="87" style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px;">
                   <a data-dc-tpl="88" href="/unidades/novo-horizonte-av-brasil/" aria-label="Conhecer a unidade Novo Horizonte — Av. Brasil" class="scp6" style="display: inline-flex; align-items: center; justify-content: center; min-height: 46px; padding: 12px 18px; border-radius: 100px; background: rgb(246, 244, 239); color: rgb(11, 11, 11); font-size: 12px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; text-decoration: none; transition: background 0.35s;">Conhecer unidade</a>
                   <a data-dc-tpl="89" href="https://cashbarber.com.br/salaomorenos/inicio" aria-label="Agendar na unidade Novo Horizonte — Av. Brasil" target="_blank" rel="noopener noreferrer" class="scp7" style="display: inline-flex; align-items: center; justify-content: center; min-height: 46px; padding: 12px 18px; border-radius: 100px; border: 1px solid rgba(246, 244, 239, 0.42); color: rgb(246, 244, 239); font-size: 12px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; text-decoration: none; transition: border-color 0.35s, color 0.35s;">Agendar</a>
-                  <a data-dc-tpl="90" href="https://www.google.com/maps/dir/?api=1&amp;destination=Avenida%20Brasil%2C%20Novo%20Horizonte%2C%20Serra%20-%20ES%2C%2029163-331" aria-label="Como chegar à unidade Novo Horizonte — Av. Brasil" target="_blank" rel="noopener noreferrer" class="scp0" style="display: inline-flex; align-items: center; justify-content: center; min-height: 46px; padding: 12px 14px; color: rgb(197, 194, 187); font-size: 12px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; text-decoration: none;">Como chegar</a>
+                  <a data-dc-tpl="90" href="https://www.google.com/maps/dir/?api=1&amp;destination=Avenida%20Brasil%2C%20Novo%20Horizonte%2C%20Serra%20-%20ES%2C%2029163-331" aria-label="Como chegar à unidade Novo Horizonte — Av. Brasil" target="_blank" rel="noopener noreferrer" class="scp1" style="display: inline-flex; align-items: center; justify-content: center; min-height: 46px; padding: 12px 14px; color: rgb(197, 194, 187); font-size: 12px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; text-decoration: none;">Como chegar</a>
                 </div>
               </div>
             </article>
           
-            <article data-dc-tpl="80" data-rv="1" class="scp5" style="position: relative; min-height: clamp(460px, 48vw, 600px); border-radius: 28px; overflow: hidden; display: flex; flex-direction: column; justify-content: flex-end; background: rgb(23, 23, 23); transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);">
+            <article data-dc-tpl="80" data-rv="1" class="scpc" style="position: relative; min-height: clamp(460px, 48vw, 600px); border-radius: 28px; overflow: hidden; display: flex; flex-direction: column; justify-content: flex-end; background: rgb(23, 23, 23); transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);">
               <img data-dc-tpl="81" src="/img/foto-atendimento.webp" alt="Ambiente do Salão Morenos durante o atendimento" width="750" height="1000" loading="lazy" decoding="async" style="position: absolute; inset: 0px; width: 100%; height: 100%; object-fit: cover;">
               <div data-dc-tpl="82" aria-hidden="true" style="position: absolute; inset: 0px; background: linear-gradient(rgba(8, 8, 8, 0.45) 0%, rgba(8, 8, 8, 0.78) 44%, rgba(8, 8, 8, 0.97) 100%);"></div>
               <div data-dc-tpl="83" style="position: relative; padding: clamp(22px, 2.4vw, 32px); display: flex; flex-direction: column; gap: 12px;">
@@ -754,7 +755,7 @@ html,body{background:#080908}
                 <div data-dc-tpl="87" style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px;">
                   <a data-dc-tpl="88" href="/unidades/novo-horizonte-av-industrial/" aria-label="Conhecer a unidade Novo Horizonte — Av. Industrial" class="scp6" style="display: inline-flex; align-items: center; justify-content: center; min-height: 46px; padding: 12px 18px; border-radius: 100px; background: rgb(246, 244, 239); color: rgb(11, 11, 11); font-size: 12px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; text-decoration: none; transition: background 0.35s;">Conhecer unidade</a>
                   <a data-dc-tpl="89" href="https://cashbarber.com.br/salaomorenos/inicio" aria-label="Agendar na unidade Novo Horizonte — Av. Industrial" target="_blank" rel="noopener noreferrer" class="scp7" style="display: inline-flex; align-items: center; justify-content: center; min-height: 46px; padding: 12px 18px; border-radius: 100px; border: 1px solid rgba(246, 244, 239, 0.42); color: rgb(246, 244, 239); font-size: 12px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; text-decoration: none; transition: border-color 0.35s, color 0.35s;">Agendar</a>
-                  <a data-dc-tpl="90" href="https://www.google.com/maps/dir/?api=1&amp;destination=Avenida%20Industrial%2C%20830%20%E2%80%94%20Loja%203%2C%20Novo%20Horizonte%2C%20Serra%20-%20ES%2C%2029163-357" aria-label="Como chegar à unidade Novo Horizonte — Av. Industrial" target="_blank" rel="noopener noreferrer" class="scp0" style="display: inline-flex; align-items: center; justify-content: center; min-height: 46px; padding: 12px 14px; color: rgb(197, 194, 187); font-size: 12px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; text-decoration: none;">Como chegar</a>
+                  <a data-dc-tpl="90" href="https://www.google.com/maps/dir/?api=1&amp;destination=Avenida%20Industrial%2C%20830%20%E2%80%94%20Loja%203%2C%20Novo%20Horizonte%2C%20Serra%20-%20ES%2C%2029163-357" aria-label="Como chegar à unidade Novo Horizonte — Av. Industrial" target="_blank" rel="noopener noreferrer" class="scp1" style="display: inline-flex; align-items: center; justify-content: center; min-height: 46px; padding: 12px 14px; color: rgb(197, 194, 187); font-size: 12px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; text-decoration: none;">Como chegar</a>
                 </div>
               </div>
             </article>
@@ -802,7 +803,7 @@ html,body{background:#080908}
         <h2 data-dc-tpl="61" style="margin: 0px 0px 22px; font-size: 12px; font-weight: 700; letter-spacing: 0.3em; text-transform: uppercase; color: rgb(183, 154, 106);"><span class="sc-interp">Funcionamento</span></h2>
         <dl data-dc-tpl="62" style="margin: 0px; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: 2px; border-radius: 24px; overflow: hidden; border: 1px solid rgba(246, 244, 239, 0.12);">
           
-            <div data-dc-tpl="64" data-rv="1" class="scp3" style="background: rgb(20, 20, 20); padding: 24px; display: flex; flex-direction: column; gap: 10px; transition: background 0.45s;">
+            <div data-dc-tpl="64" data-rv="1" class="scpa" style="background: rgb(20, 20, 20); padding: 24px; display: flex; flex-direction: column; gap: 10px; transition: background 0.45s;">
               <dt data-dc-tpl="65" style="font-size: 11px; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: rgb(169, 166, 159);"><span class="sc-interp">Horário</span></dt>
               
                 <dd data-dc-tpl="67" style="margin: 0px; font-size: 16px; line-height: 1.5; color: rgb(246, 244, 239);"><span class="sc-interp">Segunda a sexta: 08:00 – 20:00</span></dd>
@@ -812,20 +813,20 @@ html,body{background:#080908}
               
             </div>
           
-            <div data-dc-tpl="64" data-rv="1" class="scp3" style="background: rgb(20, 20, 20); padding: 24px; display: flex; flex-direction: column; gap: 10px; transition: background 0.45s;">
+            <div data-dc-tpl="64" data-rv="1" class="scpa" style="background: rgb(20, 20, 20); padding: 24px; display: flex; flex-direction: column; gap: 10px; transition: background 0.45s;">
               <dt data-dc-tpl="65" style="font-size: 11px; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: rgb(169, 166, 159);"><span class="sc-interp">Agendamento</span></dt>
               
                 <dd data-dc-tpl="67" style="margin: 0px; font-size: 16px; line-height: 1.5; color: rgb(246, 244, 239);"><span class="sc-interp">Online, escolhendo a unidade.</span></dd>
               
-              <a data-dc-tpl="69" href="https://cashbarber.com.br/salaomorenos/inicio" target="_blank" rel="noopener noreferrer" class="scp4" style="margin-top: auto; font-size: 12px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: rgb(183, 154, 106); text-decoration: none; min-height: 32px; display: inline-flex; align-items: center;"><span class="sc-interp">Agendar</span> →</a>
+              <a data-dc-tpl="69" href="https://cashbarber.com.br/salaomorenos/inicio" target="_blank" rel="noopener noreferrer" class="scpb" style="margin-top: auto; font-size: 12px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: rgb(183, 154, 106); text-decoration: none; min-height: 32px; display: inline-flex; align-items: center;"><span class="sc-interp">Agendar</span> →</a>
             </div>
           
-            <div data-dc-tpl="64" data-rv="1" class="scp3" style="background: rgb(20, 20, 20); padding: 24px; display: flex; flex-direction: column; gap: 10px; transition: background 0.45s;">
+            <div data-dc-tpl="64" data-rv="1" class="scpa" style="background: rgb(20, 20, 20); padding: 24px; display: flex; flex-direction: column; gap: 10px; transition: background 0.45s;">
               <dt data-dc-tpl="65" style="font-size: 11px; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: rgb(169, 166, 159);"><span class="sc-interp">WhatsApp</span></dt>
               
                 <dd data-dc-tpl="67" style="margin: 0px; font-size: 16px; line-height: 1.5; color: rgb(246, 244, 239);"><span class="sc-interp">+55 27 99871-3993</span></dd>
               
-              <a data-dc-tpl="69" href="https://wa.me/5527998713993?text=Ol%C3%A1!%20Vim%20pelo%20seu%20site%20e%20quero%20agendar%20um%20corte%20como%20visitante" target="_blank" rel="noopener noreferrer" class="scp4" style="margin-top: auto; font-size: 12px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: rgb(183, 154, 106); text-decoration: none; min-height: 32px; display: inline-flex; align-items: center;"><span class="sc-interp">Conversar</span> →</a>
+              <a data-dc-tpl="69" href="https://wa.me/5527998713993?text=Ol%C3%A1!%20Vim%20pelo%20seu%20site%20e%20quero%20agendar%20um%20corte%20como%20visitante" target="_blank" rel="noopener noreferrer" class="scpb" style="margin-top: auto; font-size: 12px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: rgb(183, 154, 106); text-decoration: none; min-height: 32px; display: inline-flex; align-items: center;"><span class="sc-interp">Conversar</span> →</a>
             </div>
           
         </dl>
@@ -890,77 +891,77 @@ html,body{background:#080908}
   
 
   
-    <section data-dc-tpl="247" id="duvidas" aria-label="Dúvidas sobre as unidades." style="background: rgb(255, 255, 255); color: rgb(11, 11, 11); padding: clamp(56px, 7vw, 104px) clamp(16px, 3vw, 36px);">
-      <div data-dc-tpl="248" style="max-width: 900px; margin: 0px auto; display: flex; flex-direction: column; gap: 10px;">
-        <span data-dc-tpl="249" style="font-size: 12px; font-weight: 700; letter-spacing: 0.3em; text-transform: uppercase; color: rgb(138, 111, 62); text-align: center;">Dúvidas</span>
-        <h2 data-dc-tpl="250" style="margin: 0px 0px clamp(22px, 3vw, 36px); font-size: clamp(30px, 3.8vw, 48px); line-height: 1.04; font-weight: 700; letter-spacing: -0.03em; text-align: center;"><span class="sc-interp">Dúvidas sobre as unidades.</span></h2>
+    <section data-dc-tpl="252" id="duvidas" aria-label="Dúvidas sobre as unidades." style="background: rgb(255, 255, 255); color: rgb(11, 11, 11); padding: clamp(56px, 7vw, 104px) clamp(16px, 3vw, 36px);">
+      <div data-dc-tpl="253" style="max-width: 900px; margin: 0px auto; display: flex; flex-direction: column; gap: 10px;">
+        <span data-dc-tpl="254" style="font-size: 12px; font-weight: 700; letter-spacing: 0.3em; text-transform: uppercase; color: rgb(138, 111, 62); text-align: center;">Dúvidas</span>
+        <h2 data-dc-tpl="255" style="margin: 0px 0px clamp(22px, 3vw, 36px); font-size: clamp(30px, 3.8vw, 48px); line-height: 1.04; font-weight: 700; letter-spacing: -0.03em; text-align: center;"><span class="sc-interp">Dúvidas sobre as unidades.</span></h2>
         
-          <div data-dc-tpl="252" style="background: rgb(11, 11, 11); color: rgb(246, 244, 239); border-radius: 20px; overflow: hidden; transition: background 0.5s cubic-bezier(0.22, 1, 0.36, 1), color 0.4s;">
-            <h3 data-dc-tpl="253" style="margin: 0px;">
-              <button data-dc-tpl="254" type="button" aria-expanded="false" style="font-family: inherit; cursor: pointer; width: 100%; text-align: left; background: transparent; border: 0px; color: inherit; padding: 22px 24px; display: flex; gap: 18px; align-items: center; justify-content: space-between; font-size: 17px; font-weight: 600; min-height: 64px;">
-                <span data-dc-tpl="255"><span class="sc-interp">Como faço para agendar?</span></span>
-                <span data-dc-tpl="256" aria-hidden="true" style="flex-shrink: 0; width: 32px; height: 32px; border-radius: 50%; border: 1px solid rgb(183, 154, 106); display: flex; align-items: center; justify-content: center; font-size: 18px; transform: rotate(45deg); transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);">+</span>
+          <div data-dc-tpl="257" style="background: rgb(11, 11, 11); color: rgb(246, 244, 239); border-radius: 20px; overflow: hidden; transition: background 0.5s cubic-bezier(0.22, 1, 0.36, 1), color 0.4s;">
+            <h3 data-dc-tpl="258" style="margin: 0px;">
+              <button data-dc-tpl="259" type="button" aria-expanded="false" style="font-family: inherit; cursor: pointer; width: 100%; text-align: left; background: transparent; border: 0px; color: inherit; padding: 22px 24px; display: flex; gap: 18px; align-items: center; justify-content: space-between; font-size: 17px; font-weight: 600; min-height: 64px;">
+                <span data-dc-tpl="260"><span class="sc-interp">Como faço para agendar?</span></span>
+                <span data-dc-tpl="261" aria-hidden="true" style="flex-shrink: 0; width: 32px; height: 32px; border-radius: 50%; border: 1px solid rgb(183, 154, 106); display: flex; align-items: center; justify-content: center; font-size: 18px; transform: rotate(45deg); transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);">+</span>
               </button>
             </h3>
-            <div data-dc-tpl="257" style="display: grid; grid-template-rows: 1fr; transition: grid-template-rows 0.58s cubic-bezier(0.22, 1, 0.36, 1);">
-              <div data-dc-tpl="258" style="overflow: hidden; min-height: 0px;">
-                <p data-dc-tpl="259" style="margin: 0px; padding: 0px 24px 24px; font-size: 16px; line-height: 1.7; color: rgb(197, 194, 187); max-width: 66ch; opacity: 1; transition: opacity 0.5s 0.05s;"><span class="sc-interp">Toque em Agendar, escolha a unidade e continue para a agenda online da Morenos, onde você marca o horário. Não é preciso criar cadastro para ver unidades e serviços.</span></p>
+            <div data-dc-tpl="262" style="display: grid; grid-template-rows: 1fr; transition: grid-template-rows 0.58s cubic-bezier(0.22, 1, 0.36, 1);">
+              <div data-dc-tpl="263" style="overflow: hidden; min-height: 0px;">
+                <p data-dc-tpl="264" style="margin: 0px; padding: 0px 24px 24px; font-size: 16px; line-height: 1.7; color: rgb(197, 194, 187); max-width: 66ch; opacity: 1; transition: opacity 0.5s 0.05s;"><span class="sc-interp">Toque em Agendar, escolha a unidade e continue para a agenda online da Morenos, onde você marca o horário. Não é preciso criar cadastro para ver unidades e serviços.</span></p>
               </div>
             </div>
           </div>
         
-          <div data-dc-tpl="252" style="background: rgb(246, 244, 239); color: rgb(11, 11, 11); border-radius: 20px; overflow: hidden; transition: background 0.5s cubic-bezier(0.22, 1, 0.36, 1), color 0.4s;">
-            <h3 data-dc-tpl="253" style="margin: 0px;">
-              <button data-dc-tpl="254" type="button" aria-expanded="false" style="font-family: inherit; cursor: pointer; width: 100%; text-align: left; background: transparent; border: 0px; color: inherit; padding: 22px 24px; display: flex; gap: 18px; align-items: center; justify-content: space-between; font-size: 17px; font-weight: 600; min-height: 64px;">
-                <span data-dc-tpl="255"><span class="sc-interp">Posso ir sem agendar?</span></span>
-                <span data-dc-tpl="256" aria-hidden="true" style="flex-shrink: 0; width: 32px; height: 32px; border-radius: 50%; border: 1px solid rgba(11, 11, 11, 0.25); display: flex; align-items: center; justify-content: center; font-size: 18px; transform: rotate(0deg); transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);">+</span>
+          <div data-dc-tpl="257" style="background: rgb(246, 244, 239); color: rgb(11, 11, 11); border-radius: 20px; overflow: hidden; transition: background 0.5s cubic-bezier(0.22, 1, 0.36, 1), color 0.4s;">
+            <h3 data-dc-tpl="258" style="margin: 0px;">
+              <button data-dc-tpl="259" type="button" aria-expanded="false" style="font-family: inherit; cursor: pointer; width: 100%; text-align: left; background: transparent; border: 0px; color: inherit; padding: 22px 24px; display: flex; gap: 18px; align-items: center; justify-content: space-between; font-size: 17px; font-weight: 600; min-height: 64px;">
+                <span data-dc-tpl="260"><span class="sc-interp">Posso ir sem agendar?</span></span>
+                <span data-dc-tpl="261" aria-hidden="true" style="flex-shrink: 0; width: 32px; height: 32px; border-radius: 50%; border: 1px solid rgba(11, 11, 11, 0.25); display: flex; align-items: center; justify-content: center; font-size: 18px; transform: rotate(0deg); transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);">+</span>
               </button>
             </h3>
-            <div data-dc-tpl="257" style="display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.58s cubic-bezier(0.22, 1, 0.36, 1);">
-              <div data-dc-tpl="258" style="overflow: hidden; min-height: 0px;">
-                <p data-dc-tpl="259" style="margin: 0px; padding: 0px 24px 24px; font-size: 16px; line-height: 1.7; color: rgb(95, 92, 87); max-width: 66ch; transition: opacity 0.5s 0.05s;"><span class="sc-interp">O mais seguro é agendar antes, para garantir o horário. Se preferir, fale pelo WhatsApp.</span></p>
+            <div data-dc-tpl="262" style="display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.58s cubic-bezier(0.22, 1, 0.36, 1);">
+              <div data-dc-tpl="263" style="overflow: hidden; min-height: 0px;">
+                <p data-dc-tpl="264" style="margin: 0px; padding: 0px 24px 24px; font-size: 16px; line-height: 1.7; color: rgb(95, 92, 87); max-width: 66ch; transition: opacity 0.5s 0.05s;"><span class="sc-interp">O mais seguro é agendar antes, para garantir o horário. Se preferir, fale pelo WhatsApp.</span></p>
               </div>
             </div>
           </div>
         
-          <div data-dc-tpl="252" style="background: rgb(246, 244, 239); color: rgb(11, 11, 11); border-radius: 20px; overflow: hidden; transition: background 0.5s cubic-bezier(0.22, 1, 0.36, 1), color 0.4s;">
-            <h3 data-dc-tpl="253" style="margin: 0px;">
-              <button data-dc-tpl="254" type="button" aria-expanded="false" style="font-family: inherit; cursor: pointer; width: 100%; text-align: left; background: transparent; border: 0px; color: inherit; padding: 22px 24px; display: flex; gap: 18px; align-items: center; justify-content: space-between; font-size: 17px; font-weight: 600; min-height: 64px;">
-                <span data-dc-tpl="255"><span class="sc-interp">Qual a diferença entre as duas unidades de Novo Horizonte?</span></span>
-                <span data-dc-tpl="256" aria-hidden="true" style="flex-shrink: 0; width: 32px; height: 32px; border-radius: 50%; border: 1px solid rgba(11, 11, 11, 0.25); display: flex; align-items: center; justify-content: center; font-size: 18px; transform: rotate(0deg); transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);">+</span>
+          <div data-dc-tpl="257" style="background: rgb(246, 244, 239); color: rgb(11, 11, 11); border-radius: 20px; overflow: hidden; transition: background 0.5s cubic-bezier(0.22, 1, 0.36, 1), color 0.4s;">
+            <h3 data-dc-tpl="258" style="margin: 0px;">
+              <button data-dc-tpl="259" type="button" aria-expanded="false" style="font-family: inherit; cursor: pointer; width: 100%; text-align: left; background: transparent; border: 0px; color: inherit; padding: 22px 24px; display: flex; gap: 18px; align-items: center; justify-content: space-between; font-size: 17px; font-weight: 600; min-height: 64px;">
+                <span data-dc-tpl="260"><span class="sc-interp">Qual a diferença entre as duas unidades de Novo Horizonte?</span></span>
+                <span data-dc-tpl="261" aria-hidden="true" style="flex-shrink: 0; width: 32px; height: 32px; border-radius: 50%; border: 1px solid rgba(11, 11, 11, 0.25); display: flex; align-items: center; justify-content: center; font-size: 18px; transform: rotate(0deg); transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);">+</span>
               </button>
             </h3>
-            <div data-dc-tpl="257" style="display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.58s cubic-bezier(0.22, 1, 0.36, 1);">
-              <div data-dc-tpl="258" style="overflow: hidden; min-height: 0px;">
-                <p data-dc-tpl="259" style="margin: 0px; padding: 0px 24px 24px; font-size: 16px; line-height: 1.7; color: rgb(95, 92, 87); max-width: 66ch; transition: opacity 0.5s 0.05s;"><span class="sc-interp">São endereços diferentes no mesmo bairro: uma fica na Avenida Brasil e a outra na Avenida Industrial, 830 — Loja 3. Confira o endereço antes de sair de casa.</span></p>
+            <div data-dc-tpl="262" style="display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.58s cubic-bezier(0.22, 1, 0.36, 1);">
+              <div data-dc-tpl="263" style="overflow: hidden; min-height: 0px;">
+                <p data-dc-tpl="264" style="margin: 0px; padding: 0px 24px 24px; font-size: 16px; line-height: 1.7; color: rgb(95, 92, 87); max-width: 66ch; transition: opacity 0.5s 0.05s;"><span class="sc-interp">São endereços diferentes no mesmo bairro: uma fica na Avenida Brasil e a outra na Avenida Industrial, 830 — Loja 3. Confira o endereço antes de sair de casa.</span></p>
               </div>
             </div>
           </div>
         
-          <div data-dc-tpl="252" style="background: rgb(246, 244, 239); color: rgb(11, 11, 11); border-radius: 20px; overflow: hidden; transition: background 0.5s cubic-bezier(0.22, 1, 0.36, 1), color 0.4s;">
-            <h3 data-dc-tpl="253" style="margin: 0px;">
-              <button data-dc-tpl="254" type="button" aria-expanded="false" style="font-family: inherit; cursor: pointer; width: 100%; text-align: left; background: transparent; border: 0px; color: inherit; padding: 22px 24px; display: flex; gap: 18px; align-items: center; justify-content: space-between; font-size: 17px; font-weight: 600; min-height: 64px;">
-                <span data-dc-tpl="255"><span class="sc-interp">Os serviços são os mesmos em todas as unidades?</span></span>
-                <span data-dc-tpl="256" aria-hidden="true" style="flex-shrink: 0; width: 32px; height: 32px; border-radius: 50%; border: 1px solid rgba(11, 11, 11, 0.25); display: flex; align-items: center; justify-content: center; font-size: 18px; transform: rotate(0deg); transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);">+</span>
+          <div data-dc-tpl="257" style="background: rgb(246, 244, 239); color: rgb(11, 11, 11); border-radius: 20px; overflow: hidden; transition: background 0.5s cubic-bezier(0.22, 1, 0.36, 1), color 0.4s;">
+            <h3 data-dc-tpl="258" style="margin: 0px;">
+              <button data-dc-tpl="259" type="button" aria-expanded="false" style="font-family: inherit; cursor: pointer; width: 100%; text-align: left; background: transparent; border: 0px; color: inherit; padding: 22px 24px; display: flex; gap: 18px; align-items: center; justify-content: space-between; font-size: 17px; font-weight: 600; min-height: 64px;">
+                <span data-dc-tpl="260"><span class="sc-interp">Os serviços são os mesmos em todas as unidades?</span></span>
+                <span data-dc-tpl="261" aria-hidden="true" style="flex-shrink: 0; width: 32px; height: 32px; border-radius: 50%; border: 1px solid rgba(11, 11, 11, 0.25); display: flex; align-items: center; justify-content: center; font-size: 18px; transform: rotate(0deg); transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);">+</span>
               </button>
             </h3>
-            <div data-dc-tpl="257" style="display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.58s cubic-bezier(0.22, 1, 0.36, 1);">
-              <div data-dc-tpl="258" style="overflow: hidden; min-height: 0px;">
-                <p data-dc-tpl="259" style="margin: 0px; padding: 0px 24px 24px; font-size: 16px; line-height: 1.7; color: rgb(95, 92, 87); max-width: 66ch; transition: opacity 0.5s 0.05s;"><span class="sc-interp">A maior parte dos serviços é oferecida nas três. Confira o serviço na agenda ao escolher a unidade.</span></p>
+            <div data-dc-tpl="262" style="display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.58s cubic-bezier(0.22, 1, 0.36, 1);">
+              <div data-dc-tpl="263" style="overflow: hidden; min-height: 0px;">
+                <p data-dc-tpl="264" style="margin: 0px; padding: 0px 24px 24px; font-size: 16px; line-height: 1.7; color: rgb(95, 92, 87); max-width: 66ch; transition: opacity 0.5s 0.05s;"><span class="sc-interp">A maior parte dos serviços é oferecida nas três. Confira o serviço na agenda ao escolher a unidade.</span></p>
               </div>
             </div>
           </div>
         
-          <div data-dc-tpl="252" style="background: rgb(246, 244, 239); color: rgb(11, 11, 11); border-radius: 20px; overflow: hidden; transition: background 0.5s cubic-bezier(0.22, 1, 0.36, 1), color 0.4s;">
-            <h3 data-dc-tpl="253" style="margin: 0px;">
-              <button data-dc-tpl="254" type="button" aria-expanded="false" style="font-family: inherit; cursor: pointer; width: 100%; text-align: left; background: transparent; border: 0px; color: inherit; padding: 22px 24px; display: flex; gap: 18px; align-items: center; justify-content: space-between; font-size: 17px; font-weight: 600; min-height: 64px;">
-                <span data-dc-tpl="255"><span class="sc-interp">Qual o horário de funcionamento?</span></span>
-                <span data-dc-tpl="256" aria-hidden="true" style="flex-shrink: 0; width: 32px; height: 32px; border-radius: 50%; border: 1px solid rgba(11, 11, 11, 0.25); display: flex; align-items: center; justify-content: center; font-size: 18px; transform: rotate(0deg); transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);">+</span>
+          <div data-dc-tpl="257" style="background: rgb(246, 244, 239); color: rgb(11, 11, 11); border-radius: 20px; overflow: hidden; transition: background 0.5s cubic-bezier(0.22, 1, 0.36, 1), color 0.4s;">
+            <h3 data-dc-tpl="258" style="margin: 0px;">
+              <button data-dc-tpl="259" type="button" aria-expanded="false" style="font-family: inherit; cursor: pointer; width: 100%; text-align: left; background: transparent; border: 0px; color: inherit; padding: 22px 24px; display: flex; gap: 18px; align-items: center; justify-content: space-between; font-size: 17px; font-weight: 600; min-height: 64px;">
+                <span data-dc-tpl="260"><span class="sc-interp">Qual o horário de funcionamento?</span></span>
+                <span data-dc-tpl="261" aria-hidden="true" style="flex-shrink: 0; width: 32px; height: 32px; border-radius: 50%; border: 1px solid rgba(11, 11, 11, 0.25); display: flex; align-items: center; justify-content: center; font-size: 18px; transform: rotate(0deg); transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);">+</span>
               </button>
             </h3>
-            <div data-dc-tpl="257" style="display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.58s cubic-bezier(0.22, 1, 0.36, 1);">
-              <div data-dc-tpl="258" style="overflow: hidden; min-height: 0px;">
-                <p data-dc-tpl="259" style="margin: 0px; padding: 0px 24px 24px; font-size: 16px; line-height: 1.7; color: rgb(95, 92, 87); max-width: 66ch; transition: opacity 0.5s 0.05s;"><span class="sc-interp">Segunda a sexta: 08:00 – 20:00. Sábado: 09:00 – 18:00.</span></p>
+            <div data-dc-tpl="262" style="display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.58s cubic-bezier(0.22, 1, 0.36, 1);">
+              <div data-dc-tpl="263" style="overflow: hidden; min-height: 0px;">
+                <p data-dc-tpl="264" style="margin: 0px; padding: 0px 24px 24px; font-size: 16px; line-height: 1.7; color: rgb(95, 92, 87); max-width: 66ch; transition: opacity 0.5s 0.05s;"><span class="sc-interp">Segunda a sexta: 08:00 – 20:00. Sábado: 09:00 – 18:00.</span></p>
               </div>
             </div>
           </div>
@@ -1006,19 +1007,19 @@ html,body{background:#080908}
   
 
   
-    <section data-dc-tpl="261" aria-label="Escolheu o endereço? Agende seu horário." style="position: relative; overflow: hidden; background: rgb(11, 11, 11);">
-      <img data-dc-tpl="262" src="/img/foto-atendimento-2.webp" alt="" aria-hidden="true" width="1600" height="1000" loading="lazy" decoding="async" style="position: absolute; inset: 0px; width: 100%; height: 100%; object-fit: cover; opacity: 0.32;">
-      <div data-dc-tpl="263" aria-hidden="true" style="position: absolute; inset: 0px; background: linear-gradient(rgb(11, 11, 11) 4%, rgba(11, 11, 11, 0.72) 50%, rgb(11, 11, 11) 100%);"></div>
-      <div data-dc-tpl="264" style="position: relative; max-width: 1480px; margin: 0px auto; padding: clamp(52px, 6.5vw, 92px) clamp(16px, 3vw, 36px); display: flex; flex-direction: column; align-items: center; text-align: center; gap: 20px;">
-        <h2 data-dc-tpl="265" style="margin: 0px; font-size: clamp(34px, 5vw, 68px); line-height: 1; font-weight: 700; letter-spacing: -0.035em; max-width: 18ch; text-wrap: balance;"><span class="sc-interp">Escolheu o endereço? Agende seu horário.</span></h2>
-        <p data-dc-tpl="266" style="margin: 0px; max-width: 52ch; font-size: clamp(16px, 1.4vw, 19px); line-height: 1.6; color: rgb(197, 194, 187);"><span class="sc-interp">Escolha a unidade e continue para a agenda online da Morenos.</span></p>
-        <div data-dc-tpl="267" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin-top: 10px;">
+    <section data-dc-tpl="266" aria-label="Escolheu o endereço? Agende seu horário." style="position: relative; overflow: hidden; background: rgb(11, 11, 11);">
+      <img data-dc-tpl="267" src="/img/foto-atendimento-2.webp" alt="" aria-hidden="true" width="1600" height="1000" loading="lazy" decoding="async" style="position: absolute; inset: 0px; width: 100%; height: 100%; object-fit: cover; opacity: 0.32;">
+      <div data-dc-tpl="268" aria-hidden="true" style="position: absolute; inset: 0px; background: linear-gradient(rgb(11, 11, 11) 4%, rgba(11, 11, 11, 0.72) 50%, rgb(11, 11, 11) 100%);"></div>
+      <div data-dc-tpl="269" style="position: relative; max-width: 1480px; margin: 0px auto; padding: clamp(52px, 6.5vw, 92px) clamp(16px, 3vw, 36px); display: flex; flex-direction: column; align-items: center; text-align: center; gap: 20px;">
+        <h2 data-dc-tpl="270" style="margin: 0px; font-size: clamp(34px, 5vw, 68px); line-height: 1; font-weight: 700; letter-spacing: -0.035em; max-width: 18ch; text-wrap: balance;"><span class="sc-interp">Escolheu o endereço? Agende seu horário.</span></h2>
+        <p data-dc-tpl="271" style="margin: 0px; max-width: 52ch; font-size: clamp(16px, 1.4vw, 19px); line-height: 1.6; color: rgb(197, 194, 187);"><span class="sc-interp">Escolha a unidade e continue para a agenda online da Morenos.</span></p>
+        <div data-dc-tpl="272" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin-top: 10px;">
           
-            <a data-dc-tpl="270" href="https://cashbarber.com.br/salaomorenos/inicio" target="_self" rel="" class="scp1" style="display: inline-flex; padding: 1.5px; border-radius: 100px; background: linear-gradient(100deg, rgb(138, 131, 120) 0%, rgb(58, 58, 58) 16%, rgb(207, 201, 190) 30%, rgb(255, 255, 255) 42%, rgb(207, 201, 190) 54%, rgb(58, 58, 58) 70%, rgb(138, 131, 120) 100%) 0% 0% / 200% 100%; animation: 7s linear 0s infinite normal none running metal; box-shadow: rgba(0, 0, 0, 0.6) 0px 12px 26px -10px; text-decoration: none; transition: filter 0.45s, transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);"><span data-dc-tpl="271" style="display: flex; align-items: center; justify-content: center; border-radius: 100px; background: linear-gradient(rgb(255, 255, 255) 0%, rgb(232, 229, 223) 100%); color: rgb(11, 11, 11); font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; padding: 16px 26px; min-height: 50px; font-size: 13px;"><span class="sc-interp">Escolher unidade e agendar</span></span></a>
+            <a data-dc-tpl="275" href="https://cashbarber.com.br/salaomorenos/inicio" target="_self" rel="" class="scp8" style="display: inline-flex; padding: 1.5px; border-radius: 100px; background: linear-gradient(100deg, rgb(138, 131, 120) 0%, rgb(58, 58, 58) 16%, rgb(207, 201, 190) 30%, rgb(255, 255, 255) 42%, rgb(207, 201, 190) 54%, rgb(58, 58, 58) 70%, rgb(138, 131, 120) 100%) 0% 0% / 200% 100%; animation: 7s linear 0s infinite normal none running metal; box-shadow: rgba(0, 0, 0, 0.6) 0px 12px 26px -10px; text-decoration: none; transition: filter 0.45s, transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);"><span data-dc-tpl="276" style="display: flex; align-items: center; justify-content: center; border-radius: 100px; background: linear-gradient(rgb(255, 255, 255) 0%, rgb(232, 229, 223) 100%); color: rgb(11, 11, 11); font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; padding: 16px 26px; min-height: 50px; font-size: 13px;"><span class="sc-interp">Escolher unidade e agendar</span></span></a>
             
           
             
-            <a data-dc-tpl="273" href="https://wa.me/5527998713993?text=Ol%C3%A1!%20Vim%20pelo%20site%20da%20Morenos%20e%20gostaria%20de%20ajuda%20para%20escolher%20a%20unidade." target="_blank" rel="noopener noreferrer" class="scp2" style="display: inline-flex; padding: 1.5px; border-radius: 100px; background: linear-gradient(100deg, rgb(11, 11, 11) 0%, rgb(58, 58, 58) 18%, rgb(156, 150, 140) 32%, rgb(243, 239, 232) 42%, rgb(156, 150, 140) 52%, rgb(58, 58, 58) 68%, rgb(11, 11, 11) 100%) 0% 0% / 200% 100%; animation: 7s linear 0s infinite normal none running metal; box-shadow: rgba(0, 0, 0, 0.85) 0px 12px 26px -10px; text-decoration: none; transition: filter 0.45s, transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);"><span data-dc-tpl="274" style="display: flex; align-items: center; justify-content: center; border-radius: 100px; background: linear-gradient(rgb(32, 32, 32) 0%, rgb(0, 0, 0) 100%); color: rgb(232, 229, 223); font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; padding: 16px 26px; min-height: 50px; font-size: 13px;"><span class="sc-interp">Falar pelo WhatsApp</span></span></a>
+            <a data-dc-tpl="278" href="https://wa.me/5527998713993?text=Ol%C3%A1!%20Vim%20pelo%20site%20da%20Morenos%20e%20gostaria%20de%20ajuda%20para%20escolher%20a%20unidade." target="_blank" rel="noopener noreferrer" class="scp9" style="display: inline-flex; padding: 1.5px; border-radius: 100px; background: linear-gradient(100deg, rgb(11, 11, 11) 0%, rgb(58, 58, 58) 18%, rgb(156, 150, 140) 32%, rgb(243, 239, 232) 42%, rgb(156, 150, 140) 52%, rgb(58, 58, 58) 68%, rgb(11, 11, 11) 100%) 0% 0% / 200% 100%; animation: 7s linear 0s infinite normal none running metal; box-shadow: rgba(0, 0, 0, 0.85) 0px 12px 26px -10px; text-decoration: none; transition: filter 0.45s, transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);"><span data-dc-tpl="279" style="display: flex; align-items: center; justify-content: center; border-radius: 100px; background: linear-gradient(rgb(32, 32, 32) 0%, rgb(0, 0, 0) 100%); color: rgb(232, 229, 223); font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; padding: 16px 26px; min-height: 50px; font-size: 13px;"><span class="sc-interp">Falar pelo WhatsApp</span></span></a>
           
         </div>
         
@@ -1045,50 +1046,50 @@ html,body{background:#080908}
           <nav data-dc-tpl="11" aria-label="Morenos" style="flex: 1 1 160px; display: flex; flex-direction: column; gap: 12px;">
             <span data-dc-tpl="12" style="font-size: 11px; font-weight: 700; letter-spacing: 0.24em; text-transform: uppercase; color: rgb(183, 154, 106); margin-bottom: 4px;"><span class="sc-interp">Morenos</span></span>
             
-              <a data-dc-tpl="14" href="/cultura/" target="_self" rel="" class="scp4" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Sobre a Morenos</span></a>
+              <a data-dc-tpl="14" href="/cultura/" target="_self" rel="" class="scpb" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Sobre a Morenos</span></a>
             
-              <a data-dc-tpl="14" href="/corporativo/" target="_self" rel="" class="scp4" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Corporativo</span></a>
+              <a data-dc-tpl="14" href="/corporativo/" target="_self" rel="" class="scpb" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Corporativo</span></a>
             
-              <a data-dc-tpl="14" href="/trabalhe-conosco/" target="_self" rel="" class="scp4" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Trabalhe Conosco</span></a>
+              <a data-dc-tpl="14" href="/trabalhe-conosco/" target="_self" rel="" class="scpb" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Trabalhe Conosco</span></a>
             
           </nav>
         
           <nav data-dc-tpl="11" aria-label="Serviços" style="flex: 1 1 160px; display: flex; flex-direction: column; gap: 12px;">
             <span data-dc-tpl="12" style="font-size: 11px; font-weight: 700; letter-spacing: 0.24em; text-transform: uppercase; color: rgb(183, 154, 106); margin-bottom: 4px;"><span class="sc-interp">Serviços</span></span>
             
-              <a data-dc-tpl="14" href="/servicos/corte-masculino/" target="_self" rel="" class="scp4" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Corte Masculino</span></a>
+              <a data-dc-tpl="14" href="/servicos/corte-masculino/" target="_self" rel="" class="scpb" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Corte Masculino</span></a>
             
-              <a data-dc-tpl="14" href="/servicos/barboterapia/" target="_self" rel="" class="scp4" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Barboterapia</span></a>
+              <a data-dc-tpl="14" href="/servicos/barboterapia/" target="_self" rel="" class="scpb" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Barboterapia</span></a>
             
-              <a data-dc-tpl="14" href="/visagismo/" target="_self" rel="" class="scp4" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Visagismo</span></a>
+              <a data-dc-tpl="14" href="/visagismo/" target="_self" rel="" class="scpb" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Visagismo</span></a>
             
-              <a data-dc-tpl="14" href="/dia-do-noivo/" target="_self" rel="" class="scp4" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Dia do Noivo</span></a>
+              <a data-dc-tpl="14" href="/dia-do-noivo/" target="_self" rel="" class="scpb" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Dia do Noivo</span></a>
             
-              <a data-dc-tpl="14" href="/servicos/" target="_self" rel="" class="scp4" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Todos os serviços</span></a>
+              <a data-dc-tpl="14" href="/servicos/" target="_self" rel="" class="scpb" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Todos os serviços</span></a>
             
           </nav>
         
           <nav data-dc-tpl="11" aria-label="Unidades" style="flex: 1 1 160px; display: flex; flex-direction: column; gap: 12px;">
             <span data-dc-tpl="12" style="font-size: 11px; font-weight: 700; letter-spacing: 0.24em; text-transform: uppercase; color: rgb(183, 154, 106); margin-bottom: 4px;"><span class="sc-interp">Unidades</span></span>
             
-              <a data-dc-tpl="14" href="/unidades/" target="_self" rel="" class="scp4" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Todas as unidades</span></a>
+              <a data-dc-tpl="14" href="/unidades/" target="_self" rel="" class="scpb" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Todas as unidades</span></a>
             
-              <a data-dc-tpl="14" href="/unidades/cidade-continental/" target="_self" rel="" class="scp4" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Cidade Continental</span></a>
+              <a data-dc-tpl="14" href="/unidades/cidade-continental/" target="_self" rel="" class="scpb" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Cidade Continental</span></a>
             
-              <a data-dc-tpl="14" href="/unidades/novo-horizonte-av-brasil/" target="_self" rel="" class="scp4" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Novo Horizonte — Av. Brasil</span></a>
+              <a data-dc-tpl="14" href="/unidades/novo-horizonte-av-brasil/" target="_self" rel="" class="scpb" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Novo Horizonte — Av. Brasil</span></a>
             
-              <a data-dc-tpl="14" href="/unidades/novo-horizonte-av-industrial/" target="_self" rel="" class="scp4" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Novo Horizonte — Av. Industrial</span></a>
+              <a data-dc-tpl="14" href="/unidades/novo-horizonte-av-industrial/" target="_self" rel="" class="scpb" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Novo Horizonte — Av. Industrial</span></a>
             
           </nav>
         
           <nav data-dc-tpl="11" aria-label="Clube" style="flex: 1 1 160px; display: flex; flex-direction: column; gap: 12px;">
             <span data-dc-tpl="12" style="font-size: 11px; font-weight: 700; letter-spacing: 0.24em; text-transform: uppercase; color: rgb(183, 154, 106); margin-bottom: 4px;"><span class="sc-interp">Clube</span></span>
             
-              <a data-dc-tpl="14" href="/o-clube/" target="_self" rel="" class="scp4" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Conhecer o Clube</span></a>
+              <a data-dc-tpl="14" href="/o-clube/" target="_self" rel="" class="scpb" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Conhecer o Clube</span></a>
             
-              <a data-dc-tpl="14" href="/o-clube/#planos" target="_self" rel="" class="scp4" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Planos</span></a>
+              <a data-dc-tpl="14" href="/o-clube/#planos" target="_self" rel="" class="scpb" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Planos</span></a>
             
-              <a data-dc-tpl="14" href="https://cashbarber.com.br/salaomorenos" target="_blank" rel="noopener noreferrer" class="scp4" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Assinar</span></a>
+              <a data-dc-tpl="14" href="https://cashbarber.com.br/salaomorenos" target="_blank" rel="noopener noreferrer" class="scpb" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Assinar</span></a>
             
           </nav>
         
@@ -1097,10 +1098,10 @@ html,body{background:#080908}
     <div data-dc-tpl="15" style="margin-top: clamp(32px, 4vw, 56px); padding-top: 24px; border-top: 1px solid rgba(246, 244, 239, 0.12); display: flex; flex-wrap: wrap; gap: 12px; justify-content: space-between;">
       <span data-dc-tpl="16" style="font-size: 12px; color: rgb(124, 121, 117);">Serra — Espírito Santo · Cidade Continental · Novo Horizonte — Av. Brasil · Novo Horizonte — Av. Industrial</span>
       <span data-dc-tpl="17" style="display: flex; flex-wrap: wrap; gap: 18px;">
-        <a data-dc-tpl="18" href="/politica-de-privacidade/" class="scp0" style="font-size: 12px; color: rgb(197, 194, 187); text-decoration: none;">Política de Privacidade</a>
-        <a data-dc-tpl="19" href="/termos-de-uso/" class="scp0" style="font-size: 12px; color: rgb(197, 194, 187); text-decoration: none;">Termos de Uso</a>
+        <a data-dc-tpl="18" href="/politica-de-privacidade/" class="scp1" style="font-size: 12px; color: rgb(197, 194, 187); text-decoration: none;">Política de Privacidade</a>
+        <a data-dc-tpl="19" href="/termos-de-uso/" class="scp1" style="font-size: 12px; color: rgb(197, 194, 187); text-decoration: none;">Termos de Uso</a>
       </span>
-      <a data-dc-tpl="20" href="https://wa.me/5527998713993?text=Ol%C3%A1!%20Vim%20pelo%20seu%20site%20e%20quero%20agendar%20um%20corte%20como%20visitante" target="_blank" rel="noopener noreferrer" class="scp0" style="font-size: 12px; color: rgb(197, 194, 187); text-decoration: none;">WhatsApp <span class="sc-interp">+55 27 99871-3993</span></a>
+      <a data-dc-tpl="20" href="https://wa.me/5527998713993?text=Ol%C3%A1!%20Vim%20pelo%20seu%20site%20e%20quero%20agendar%20um%20corte%20como%20visitante" target="_blank" rel="noopener noreferrer" class="scp1" style="font-size: 12px; color: rgb(197, 194, 187); text-decoration: none;">WhatsApp <span class="sc-interp">+55 27 99871-3993</span></a>
     </div>
   </footer></div></div></div></div>
 </div>

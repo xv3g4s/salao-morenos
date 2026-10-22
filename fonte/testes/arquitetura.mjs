@@ -137,6 +137,36 @@ for (const rota of ROTAS) {
     checa(valido, `${rota}: JSON-LD invalido no DOM`);
   }
 
+  // Clipes de galeria: tem que se comportar como GIF — sem som, em laco, sem
+  // controle e sem reagir ao clique. Um `controls` que escape aqui vira um
+  // player com botao de play no meio da galeria.
+  const clipes = await pagina.evaluate(async () => {
+    const vs = [...document.querySelectorAll('video[data-clipe]')];
+    if (!vs.length) return [];
+    // o clipe so carrega quando chega perto da tela: leva ele ate la
+    vs[0].scrollIntoView({ block: 'center' });
+    await new Promise((r) => setTimeout(r, 1800));
+    const antes = vs.map((v) => v.currentTime);
+    await new Promise((r) => setTimeout(r, 700));
+    return vs.map((v, i) => ({
+      fonte: (v.currentSrc || '').split('/').pop(),
+      mudo: v.muted && v.volume === 0,
+      laco: v.loop,
+      semControle: !v.controls && !v.hasAttribute('controls'),
+      semClique: getComputedStyle(v).pointerEvents === 'none',
+      andou: v.currentTime !== antes[i],
+      temCartaz: !!v.getAttribute('poster'),
+    }));
+  });
+  for (const c of clipes) {
+    checa(c.mudo, `${rota}: clipe ${c.fonte} nao esta mudo`);
+    checa(c.laco, `${rota}: clipe ${c.fonte} nao esta em laco`);
+    checa(c.semControle, `${rota}: clipe ${c.fonte} mostra controle de player`);
+    checa(c.semClique, `${rota}: clipe ${c.fonte} aceita clique (deveria ser inerte)`);
+    checa(c.andou, `${rota}: clipe ${c.fonte} nao esta rodando sozinho`);
+    checa(c.temCartaz, `${rota}: clipe ${c.fonte} sem poster (quadro em branco enquanto carrega)`);
+  }
+
   mapa[rota] = dados;
   checa(dados.h1.length === 1, `${rota}: ${dados.h1.length} <h1>`);
   checa(!RECADOS.test(dados.texto) && !RECADOS_I.test(dados.texto),
@@ -190,6 +220,12 @@ const parado = await pParado.evaluate(() => {
 });
 checa(parado.loaderFora, 'reduced-motion: a tela de abertura nao saiu');
 checa(parado.infinitas === 0, `reduced-motion: ${parado.infinitas} animacoes continuam em loop`);
+const clipesParados = await pParado.evaluate(() =>
+  [...document.querySelectorAll('video[data-clipe]')].map((v) => ({
+    escondido: getComputedStyle(v).display === 'none', pausado: v.paused })));
+for (const c of clipesParados) {
+  checa(c.escondido && c.pausado, 'reduced-motion: o clipe continua rodando');
+}
 checa(parado.palavras > 200, `reduced-motion: a Home ficou com ${parado.palavras} palavras`);
 
 await navegador.close();
