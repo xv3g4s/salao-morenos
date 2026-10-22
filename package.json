@@ -10,8 +10,10 @@
     "check": "node fonte/checar.mjs public",
     "test:arquitetura": "node fonte/testes/arquitetura.mjs public",
     "test:seo": "node fonte/testes/seo.mjs public",
+    "test:grades": "node fonte/testes/grades.mjs public",
     "test:avaliacoes": "node fonte/testes/avaliacoes.mjs",
     "mapa": "node fonte/testes/arquitetura.mjs public --mapa",
+    "mapa:grades": "node fonte/testes/grades.mjs public --mapa",
     "auditar:site-antigo": "node fonte/scripts/auditar-site-antigo.mjs",
     "find:google-places": "node fonte/scripts/find-google-place-ids.mjs"
   },

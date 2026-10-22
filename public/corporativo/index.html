@@ -243,6 +243,56 @@ video[data-clipe]{display:none !important}}</style>
     logo: '/assets/morenos-loader-outline-white.webp', logoW: 720, logoH: 669,
   };
 
+  // Grades que fecham: nenhuma linha termina com célula vazia.
+  //
+  // Com repeat(auto-fit, minmax(...)) a última linha quase sempre sobra —
+  // cinco fotos em quatro colunas deixam um buraco no canto — e um item com
+  // span 2 numa tela estreita cai numa coluna implícita de 0px e some.
+  // C.grade() resolve os dois lados de uma vez:
+  //
+  //   - escolhe quantos cartões cabem lado a lado na largura atual;
+  //   - reparte os itens entre as linhas e divide a linha em frações (o mmc
+  //     da quantidade de itens de cada linha), dizendo quantas frações cada
+  //     item ocupa: toda linha fecha certinho e os itens de uma mesma linha
+  //     ficam do mesmo tamanho.
+  //
+  // Cinco itens em quatro colunas viram duas linhas de 3 e 2, não 4 + 1 + buraco.
+  //
+  //   const g = M.grade(fotos.length, janelaW, { minimo: 240 });
+  //   grid-template-columns: repeat(g.unidades, minmax(0,1fr))
+  //   grid-column: span g.spans[i]
+  //
+  // Devolve também util e gap, para quem precisar da largura em px de uma
+  // célula: span * (util + gap) / unidades - gap.
+  //
+  // opcoes: minimo (largura alvo do cartão), maximo (teto de colunas),
+  //         caixa (max-width do contêiner), gap, recuo (padding interno).
+  function mmc(a, b) {
+    var x = a, y = b, r;
+    while (y) { r = x % y; x = y; y = r; }
+    return (a / x) * b;
+  }
+  C.grade = function (total, largura, opcoes) {
+    var o = opcoes || {};
+    var respiro = Math.min(36, Math.max(16, largura * 0.03));
+    var util = Math.max(240, Math.min(o.caixa || 1480, largura - respiro * 2) - (o.recuo || 0));
+    var gap = o.gap == null ? 16 : o.gap;
+    var colunas = Math.max(1, Math.floor((util + gap) / ((o.minimo || 260) + gap)));
+    colunas = Math.min(colunas, o.maximo || 4, Math.max(1, total));
+    // quantos itens em cada linha, o mais parelho possível
+    var porLinha = [], linhas = Math.ceil(total / colunas);
+    for (var l = 0, base = Math.floor(total / linhas), resto = total % linhas; l < linhas; l++) {
+      porLinha.push(base + (l < resto ? 1 : 0));
+    }
+    // a linha é dividida no mmc desses números, para que uma linha de 3 e uma
+    // de 2 caibam no mesmo trilho e os itens de cada linha fiquem iguais
+    var unidades = porLinha.reduce(mmc, 1), spans = [];
+    porLinha.forEach(function (n) {
+      for (var i = 0; i < n; i++) spans.push(unidades / n);
+    });
+    return { colunas: colunas, unidades: unidades, spans: spans, util: util, gap: gap };
+  };
+
   C.selectedUnitKey = 'morenos_selected_unit';
   C.getUnit = function () { try { return localStorage.getItem(C.selectedUnitKey); } catch (e) { return null; } };
   C.setUnit = function (id) { try { localStorage.setItem(C.selectedUnitKey, id); } catch (e) {} C.track('unit_select', { unit: id }); };
@@ -585,10 +635,10 @@ html,body{background:#080908}
 .scp5:hover { border-color: rgb(183, 154, 106) !important; }
 .scp6:hover { background: rgb(183, 154, 106) !important; color: rgb(11, 11, 11) !important; }
 .scp7:hover { border-color: rgb(183, 154, 106) !important; color: rgb(183, 154, 106) !important; }
-.scp8:hover { filter: brightness(1.08) !important; transform: translateY(-2px) !important; }
-.scp9:hover { filter: brightness(1.2) !important; transform: translateY(-2px) !important; }
-.scpa:hover { background: rgb(27, 27, 27) !important; }
-.scpb:hover { color: rgb(246, 244, 239) !important; }
+.scp8:hover { color: rgb(246, 244, 239) !important; }
+.scp9:hover { filter: brightness(1.08) !important; transform: translateY(-2px) !important; }
+.scpa:hover { filter: brightness(1.2) !important; transform: translateY(-2px) !important; }
+.scpb:hover { background: rgb(27, 27, 27) !important; }
 .scpc:hover { transform: translateY(-4px) !important; }
 .scpd:hover { transform: translateY(-4px) !important; color: rgb(246, 244, 239) !important; }
 .scpe:hover { color: rgb(11, 11, 11) !important; }
@@ -653,11 +703,11 @@ html,body{background:#080908}
             <p data-dc-tpl="44" style="margin: 0px; max-width: 52ch; font-size: clamp(16px, 1.4vw, 19px); line-height: 1.6; color: rgb(214, 211, 204);"><span class="sc-interp">Planos de corte e barba para colaboradores e atendimento para eventos da sua empresa.</span></p>
             <div data-dc-tpl="45" style="display: flex; flex-wrap: wrap; gap: 12px; margin-top: 6px;">
               
-                <a data-dc-tpl="48" href="#proposta" target="_self" rel="" class="scp8" style="display: inline-flex; padding: 1.5px; border-radius: 100px; background: linear-gradient(100deg, rgb(138, 131, 120) 0%, rgb(58, 58, 58) 16%, rgb(207, 201, 190) 30%, rgb(255, 255, 255) 42%, rgb(207, 201, 190) 54%, rgb(58, 58, 58) 70%, rgb(138, 131, 120) 100%) 0% 0% / 200% 100%; animation: 7s linear 0s infinite normal none running metal; box-shadow: rgba(0, 0, 0, 0.6) 0px 12px 26px -10px; text-decoration: none; transition: filter 0.45s, transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);"><span data-dc-tpl="49" style="display: flex; align-items: center; justify-content: center; border-radius: 100px; background: linear-gradient(rgb(255, 255, 255) 0%, rgb(232, 229, 223) 100%); color: rgb(11, 11, 11); font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; padding: 16px 26px; min-height: 50px; font-size: 13px;"><span class="sc-interp">Solicitar proposta</span></span></a>
+                <a data-dc-tpl="48" href="#proposta" target="_self" rel="" class="scp9" style="display: inline-flex; padding: 1.5px; border-radius: 100px; background: linear-gradient(100deg, rgb(138, 131, 120) 0%, rgb(58, 58, 58) 16%, rgb(207, 201, 190) 30%, rgb(255, 255, 255) 42%, rgb(207, 201, 190) 54%, rgb(58, 58, 58) 70%, rgb(138, 131, 120) 100%) 0% 0% / 200% 100%; animation: 7s linear 0s infinite normal none running metal; box-shadow: rgba(0, 0, 0, 0.6) 0px 12px 26px -10px; text-decoration: none; transition: filter 0.45s, transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);"><span data-dc-tpl="49" style="display: flex; align-items: center; justify-content: center; border-radius: 100px; background: linear-gradient(rgb(255, 255, 255) 0%, rgb(232, 229, 223) 100%); color: rgb(11, 11, 11); font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; padding: 16px 26px; min-height: 50px; font-size: 13px;"><span class="sc-interp">Solicitar proposta</span></span></a>
                 
               
                 
-                <a data-dc-tpl="51" href="https://wa.me/5527998713993?text=Ol%C3%A1!%20Vim%20pelo%20site%20da%20Morenos%20e%20gostaria%20de%20informa%C3%A7%C3%B5es%20sobre%20os%20planos%20corporativos." target="_blank" rel="noopener noreferrer" class="scp9" style="display: inline-flex; padding: 1.5px; border-radius: 100px; background: linear-gradient(100deg, rgb(11, 11, 11) 0%, rgb(58, 58, 58) 18%, rgb(156, 150, 140) 32%, rgb(243, 239, 232) 42%, rgb(156, 150, 140) 52%, rgb(58, 58, 58) 68%, rgb(11, 11, 11) 100%) 0% 0% / 200% 100%; animation: 7s linear 0s infinite normal none running metal; box-shadow: rgba(0, 0, 0, 0.85) 0px 12px 26px -10px; text-decoration: none; transition: filter 0.45s, transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);"><span data-dc-tpl="52" style="display: flex; align-items: center; justify-content: center; border-radius: 100px; background: linear-gradient(rgb(32, 32, 32) 0%, rgb(0, 0, 0) 100%); color: rgb(232, 229, 223); font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; padding: 16px 26px; min-height: 50px; font-size: 13px;"><span class="sc-interp">Falar pelo WhatsApp</span></span></a>
+                <a data-dc-tpl="51" href="https://wa.me/5527998713993?text=Ol%C3%A1!%20Vim%20pelo%20site%20da%20Morenos%20e%20gostaria%20de%20informa%C3%A7%C3%B5es%20sobre%20os%20planos%20corporativos." target="_blank" rel="noopener noreferrer" class="scpa" style="display: inline-flex; padding: 1.5px; border-radius: 100px; background: linear-gradient(100deg, rgb(11, 11, 11) 0%, rgb(58, 58, 58) 18%, rgb(156, 150, 140) 32%, rgb(243, 239, 232) 42%, rgb(156, 150, 140) 52%, rgb(58, 58, 58) 68%, rgb(11, 11, 11) 100%) 0% 0% / 200% 100%; animation: 7s linear 0s infinite normal none running metal; box-shadow: rgba(0, 0, 0, 0.85) 0px 12px 26px -10px; text-decoration: none; transition: filter 0.45s, transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);"><span data-dc-tpl="52" style="display: flex; align-items: center; justify-content: center; border-radius: 100px; background: linear-gradient(rgb(32, 32, 32) 0%, rgb(0, 0, 0) 100%); color: rgb(232, 229, 223); font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; padding: 16px 26px; min-height: 50px; font-size: 13px;"><span class="sc-interp">Falar pelo WhatsApp</span></span></a>
               
             </div>
         </div>
@@ -797,27 +847,27 @@ html,body{background:#080908}
       <div data-dc-tpl="195" style="max-width: 1480px; margin: 0px auto;">
         <span data-dc-tpl="196" style="font-size: 12px; font-weight: 700; letter-spacing: 0.3em; text-transform: uppercase; color: rgb(183, 154, 106);"><span class="sc-interp">Planos</span></span>
         <h2 data-dc-tpl="197" style="margin: 12px 0px clamp(26px, 3.5vw, 44px); font-size: clamp(32px, 4.2vw, 54px); line-height: 1.02; font-weight: 700; letter-spacing: -0.03em; max-width: 20ch;"><span class="sc-interp">Formatos para cada empresa.</span></h2>
-        <div data-dc-tpl="198" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); gap: 16px;">
+        <div data-dc-tpl="198" style="display: grid; grid-template-columns: repeat(1, minmax(0px, 1fr)); gap: 16px;">
           
-            <article data-dc-tpl="200" data-rv="1" class="scpg" style="border: 1px solid rgba(246, 244, 239, 0.14); border-radius: 24px; padding: 28px; display: flex; flex-direction: column; gap: 14px; background: rgb(20, 20, 20); transition: border-color 0.45s, transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);">
+            <article data-dc-tpl="200" data-rv="1" class="scpg" style="grid-column: span 1; border: 1px solid rgba(246, 244, 239, 0.14); border-radius: 24px; padding: 28px; display: flex; flex-direction: column; gap: 14px; background: rgb(20, 20, 20); transition: border-color 0.45s, transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);">
               <h3 data-dc-tpl="201" style="margin: 0px; font-size: 20px; font-weight: 700;"><span class="sc-interp">Business Essential</span></h3>
               <span data-dc-tpl="202" style="font-size: clamp(20px, 1.8vw, 24px); font-weight: 700; color: rgb(183, 154, 106); letter-spacing: -0.01em;"><span class="sc-interp">A partir de R$ 89/mês</span></span>
               <p data-dc-tpl="203" style="margin: 0px; font-size: 15px; line-height: 1.6; color: rgb(197, 194, 187);"><span class="sc-interp">1 corte por mês por colaborador.</span></p>
             </article>
           
-            <article data-dc-tpl="200" data-rv="1" class="scpg" style="border: 1px solid rgba(246, 244, 239, 0.14); border-radius: 24px; padding: 28px; display: flex; flex-direction: column; gap: 14px; background: rgb(20, 20, 20); transition: border-color 0.45s, transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);">
+            <article data-dc-tpl="200" data-rv="1" class="scpg" style="grid-column: span 1; border: 1px solid rgba(246, 244, 239, 0.14); border-radius: 24px; padding: 28px; display: flex; flex-direction: column; gap: 14px; background: rgb(20, 20, 20); transition: border-color 0.45s, transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);">
               <h3 data-dc-tpl="201" style="margin: 0px; font-size: 20px; font-weight: 700;"><span class="sc-interp">Business Premium</span></h3>
               <span data-dc-tpl="202" style="font-size: clamp(20px, 1.8vw, 24px); font-weight: 700; color: rgb(183, 154, 106); letter-spacing: -0.01em;"><span class="sc-interp">A partir de R$ 169/mês</span></span>
               <p data-dc-tpl="203" style="margin: 0px; font-size: 15px; line-height: 1.6; color: rgb(197, 194, 187);"><span class="sc-interp">Corte e barba mensais.</span></p>
             </article>
           
-            <article data-dc-tpl="200" data-rv="1" class="scpg" style="border: 1px solid rgba(246, 244, 239, 0.14); border-radius: 24px; padding: 28px; display: flex; flex-direction: column; gap: 14px; background: rgb(20, 20, 20); transition: border-color 0.45s, transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);">
+            <article data-dc-tpl="200" data-rv="1" class="scpg" style="grid-column: span 1; border: 1px solid rgba(246, 244, 239, 0.14); border-radius: 24px; padding: 28px; display: flex; flex-direction: column; gap: 14px; background: rgb(20, 20, 20); transition: border-color 0.45s, transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);">
               <h3 data-dc-tpl="201" style="margin: 0px; font-size: 20px; font-weight: 700;"><span class="sc-interp">Business Unlimited</span></h3>
               <span data-dc-tpl="202" style="font-size: clamp(20px, 1.8vw, 24px); font-weight: 700; color: rgb(183, 154, 106); letter-spacing: -0.01em;"><span class="sc-interp">Sob consulta</span></span>
               <p data-dc-tpl="203" style="margin: 0px; font-size: 15px; line-height: 1.6; color: rgb(197, 194, 187);"><span class="sc-interp">Corte e barba ilimitados.</span></p>
             </article>
           
-            <article data-dc-tpl="200" data-rv="1" class="scpg" style="border: 1px solid rgba(246, 244, 239, 0.14); border-radius: 24px; padding: 28px; display: flex; flex-direction: column; gap: 14px; background: rgb(20, 20, 20); transition: border-color 0.45s, transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);">
+            <article data-dc-tpl="200" data-rv="1" class="scpg" style="grid-column: span 1; border: 1px solid rgba(246, 244, 239, 0.14); border-radius: 24px; padding: 28px; display: flex; flex-direction: column; gap: 14px; background: rgb(20, 20, 20); transition: border-color 0.45s, transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);">
               <h3 data-dc-tpl="201" style="margin: 0px; font-size: 20px; font-weight: 700;"><span class="sc-interp">Eventos e convenções</span></h3>
               <span data-dc-tpl="202" style="font-size: clamp(20px, 1.8vw, 24px); font-weight: 700; color: rgb(183, 154, 106); letter-spacing: -0.01em;"><span class="sc-interp">Sob consulta</span></span>
               <p data-dc-tpl="203" style="margin: 0px; font-size: 15px; line-height: 1.6; color: rgb(197, 194, 187);"><span class="sc-interp">Atendimento em grupo, sob demanda.</span></p>
@@ -859,21 +909,21 @@ html,body{background:#080908}
       <div data-dc-tpl="123" style="max-width: 1480px; margin: 0px auto;">
         <span data-dc-tpl="124" style="font-size: 12px; font-weight: 700; letter-spacing: 0.3em; text-transform: uppercase; color: rgb(138, 111, 62);"><span class="sc-interp">Como funciona</span></span>
         <h2 data-dc-tpl="125" style="margin: 12px 0px clamp(28px, 4vw, 52px); font-size: clamp(32px, 4.2vw, 54px); line-height: 1.02; font-weight: 700; letter-spacing: -0.03em; max-width: 20ch; text-wrap: balance;"><span class="sc-interp">Da proposta ao primeiro corte.</span></h2>
-        <ol data-dc-tpl="126" style="list-style: none; margin: 0px; padding: 0px; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: clamp(18px, 2.4vw, 32px);">
+        <ol data-dc-tpl="126" style="list-style: none; margin: 0px; padding: 0px; display: grid; grid-template-columns: repeat(1, minmax(0px, 1fr)); gap: clamp(18px, 2.4vw, 32px);">
           
-            <li data-dc-tpl="128" data-rv="1" style="border-top: 1px solid rgba(11, 11, 11, 0.2); padding-top: 22px; display: flex; flex-direction: column; gap: 12px;">
+            <li data-dc-tpl="128" data-rv="1" style="grid-column: span 1; border-top: 1px solid rgba(11, 11, 11, 0.2); padding-top: 22px; display: flex; flex-direction: column; gap: 12px;">
               <span data-dc-tpl="129" aria-hidden="true" style="font-size: clamp(40px, 4vw, 56px); font-weight: 700; line-height: 1; letter-spacing: -0.04em; color: rgb(183, 154, 106);"><span class="sc-interp">01</span></span>
               <h3 data-dc-tpl="130" style="margin: 0px; font-size: clamp(19px, 1.6vw, 22px); font-weight: 600; line-height: 1.25;"><span class="sc-interp">Contato</span></h3>
               <p data-dc-tpl="131" style="margin: 0px; font-size: 15px; line-height: 1.65; color: rgb(95, 92, 87);"><span class="sc-interp">Envie os dados da empresa e o número aproximado de colaboradores.</span></p>
             </li>
           
-            <li data-dc-tpl="128" data-rv="1" style="border-top: 1px solid rgba(11, 11, 11, 0.2); padding-top: 22px; display: flex; flex-direction: column; gap: 12px;">
+            <li data-dc-tpl="128" data-rv="1" style="grid-column: span 1; border-top: 1px solid rgba(11, 11, 11, 0.2); padding-top: 22px; display: flex; flex-direction: column; gap: 12px;">
               <span data-dc-tpl="129" aria-hidden="true" style="font-size: clamp(40px, 4vw, 56px); font-weight: 700; line-height: 1; letter-spacing: -0.04em; color: rgb(183, 154, 106);"><span class="sc-interp">02</span></span>
               <h3 data-dc-tpl="130" style="margin: 0px; font-size: clamp(19px, 1.6vw, 22px); font-weight: 600; line-height: 1.25;"><span class="sc-interp">Proposta</span></h3>
               <p data-dc-tpl="131" style="margin: 0px; font-size: 15px; line-height: 1.65; color: rgb(95, 92, 87);"><span class="sc-interp">A Morenos responde com o formato mais adequado.</span></p>
             </li>
           
-            <li data-dc-tpl="128" data-rv="1" style="border-top: 1px solid rgba(11, 11, 11, 0.2); padding-top: 22px; display: flex; flex-direction: column; gap: 12px;">
+            <li data-dc-tpl="128" data-rv="1" style="grid-column: span 1; border-top: 1px solid rgba(11, 11, 11, 0.2); padding-top: 22px; display: flex; flex-direction: column; gap: 12px;">
               <span data-dc-tpl="129" aria-hidden="true" style="font-size: clamp(40px, 4vw, 56px); font-weight: 700; line-height: 1; letter-spacing: -0.04em; color: rgb(183, 154, 106);"><span class="sc-interp">03</span></span>
               <h3 data-dc-tpl="130" style="margin: 0px; font-size: clamp(19px, 1.6vw, 22px); font-weight: 600; line-height: 1.25;"><span class="sc-interp">Uso</span></h3>
               <p data-dc-tpl="131" style="margin: 0px; font-size: 15px; line-height: 1.65; color: rgb(95, 92, 87);"><span class="sc-interp">Os colaboradores agendam nas unidades.</span></p>
@@ -1120,11 +1170,11 @@ html,body{background:#080908}
         <p data-dc-tpl="271" style="margin: 0px; max-width: 52ch; font-size: clamp(16px, 1.4vw, 19px); line-height: 1.6; color: rgb(197, 194, 187);"><span class="sc-interp">Conte o tamanho do time e o formato que você precisa. A proposta segue pelo WhatsApp.</span></p>
         <div data-dc-tpl="272" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin-top: 10px;">
           
-            <a data-dc-tpl="275" href="#proposta" target="_self" rel="" class="scp8" style="display: inline-flex; padding: 1.5px; border-radius: 100px; background: linear-gradient(100deg, rgb(138, 131, 120) 0%, rgb(58, 58, 58) 16%, rgb(207, 201, 190) 30%, rgb(255, 255, 255) 42%, rgb(207, 201, 190) 54%, rgb(58, 58, 58) 70%, rgb(138, 131, 120) 100%) 0% 0% / 200% 100%; animation: 7s linear 0s infinite normal none running metal; box-shadow: rgba(0, 0, 0, 0.6) 0px 12px 26px -10px; text-decoration: none; transition: filter 0.45s, transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);"><span data-dc-tpl="276" style="display: flex; align-items: center; justify-content: center; border-radius: 100px; background: linear-gradient(rgb(255, 255, 255) 0%, rgb(232, 229, 223) 100%); color: rgb(11, 11, 11); font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; padding: 16px 26px; min-height: 50px; font-size: 13px;"><span class="sc-interp">Solicitar proposta</span></span></a>
+            <a data-dc-tpl="275" href="#proposta" target="_self" rel="" class="scp9" style="display: inline-flex; padding: 1.5px; border-radius: 100px; background: linear-gradient(100deg, rgb(138, 131, 120) 0%, rgb(58, 58, 58) 16%, rgb(207, 201, 190) 30%, rgb(255, 255, 255) 42%, rgb(207, 201, 190) 54%, rgb(58, 58, 58) 70%, rgb(138, 131, 120) 100%) 0% 0% / 200% 100%; animation: 7s linear 0s infinite normal none running metal; box-shadow: rgba(0, 0, 0, 0.6) 0px 12px 26px -10px; text-decoration: none; transition: filter 0.45s, transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);"><span data-dc-tpl="276" style="display: flex; align-items: center; justify-content: center; border-radius: 100px; background: linear-gradient(rgb(255, 255, 255) 0%, rgb(232, 229, 223) 100%); color: rgb(11, 11, 11); font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; padding: 16px 26px; min-height: 50px; font-size: 13px;"><span class="sc-interp">Solicitar proposta</span></span></a>
             
           
             
-            <a data-dc-tpl="278" href="https://wa.me/5527998713993?text=Ol%C3%A1!%20Vim%20pelo%20site%20da%20Morenos%20e%20gostaria%20de%20informa%C3%A7%C3%B5es%20sobre%20os%20planos%20corporativos." target="_blank" rel="noopener noreferrer" class="scp9" style="display: inline-flex; padding: 1.5px; border-radius: 100px; background: linear-gradient(100deg, rgb(11, 11, 11) 0%, rgb(58, 58, 58) 18%, rgb(156, 150, 140) 32%, rgb(243, 239, 232) 42%, rgb(156, 150, 140) 52%, rgb(58, 58, 58) 68%, rgb(11, 11, 11) 100%) 0% 0% / 200% 100%; animation: 7s linear 0s infinite normal none running metal; box-shadow: rgba(0, 0, 0, 0.85) 0px 12px 26px -10px; text-decoration: none; transition: filter 0.45s, transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);"><span data-dc-tpl="279" style="display: flex; align-items: center; justify-content: center; border-radius: 100px; background: linear-gradient(rgb(32, 32, 32) 0%, rgb(0, 0, 0) 100%); color: rgb(232, 229, 223); font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; padding: 16px 26px; min-height: 50px; font-size: 13px;"><span class="sc-interp">Falar pelo WhatsApp</span></span></a>
+            <a data-dc-tpl="278" href="https://wa.me/5527998713993?text=Ol%C3%A1!%20Vim%20pelo%20site%20da%20Morenos%20e%20gostaria%20de%20informa%C3%A7%C3%B5es%20sobre%20os%20planos%20corporativos." target="_blank" rel="noopener noreferrer" class="scpa" style="display: inline-flex; padding: 1.5px; border-radius: 100px; background: linear-gradient(100deg, rgb(11, 11, 11) 0%, rgb(58, 58, 58) 18%, rgb(156, 150, 140) 32%, rgb(243, 239, 232) 42%, rgb(156, 150, 140) 52%, rgb(58, 58, 58) 68%, rgb(11, 11, 11) 100%) 0% 0% / 200% 100%; animation: 7s linear 0s infinite normal none running metal; box-shadow: rgba(0, 0, 0, 0.85) 0px 12px 26px -10px; text-decoration: none; transition: filter 0.45s, transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);"><span data-dc-tpl="279" style="display: flex; align-items: center; justify-content: center; border-radius: 100px; background: linear-gradient(rgb(32, 32, 32) 0%, rgb(0, 0, 0) 100%); color: rgb(232, 229, 223); font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; padding: 16px 26px; min-height: 50px; font-size: 13px;"><span class="sc-interp">Falar pelo WhatsApp</span></span></a>
           
         </div>
         
@@ -1151,50 +1201,50 @@ html,body{background:#080908}
           <nav data-dc-tpl="11" aria-label="Morenos" style="flex: 1 1 160px; display: flex; flex-direction: column; gap: 12px;">
             <span data-dc-tpl="12" style="font-size: 11px; font-weight: 700; letter-spacing: 0.24em; text-transform: uppercase; color: rgb(183, 154, 106); margin-bottom: 4px;"><span class="sc-interp">Morenos</span></span>
             
-              <a data-dc-tpl="14" href="/cultura/" target="_self" rel="" class="scpb" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Sobre a Morenos</span></a>
+              <a data-dc-tpl="14" href="/cultura/" target="_self" rel="" class="scp8" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Sobre a Morenos</span></a>
             
-              <a data-dc-tpl="14" href="/corporativo/" target="_self" rel="" class="scpb" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Corporativo</span></a>
+              <a data-dc-tpl="14" href="/corporativo/" target="_self" rel="" class="scp8" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Corporativo</span></a>
             
-              <a data-dc-tpl="14" href="/trabalhe-conosco/" target="_self" rel="" class="scpb" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Trabalhe Conosco</span></a>
+              <a data-dc-tpl="14" href="/trabalhe-conosco/" target="_self" rel="" class="scp8" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Trabalhe Conosco</span></a>
             
           </nav>
         
           <nav data-dc-tpl="11" aria-label="Serviços" style="flex: 1 1 160px; display: flex; flex-direction: column; gap: 12px;">
             <span data-dc-tpl="12" style="font-size: 11px; font-weight: 700; letter-spacing: 0.24em; text-transform: uppercase; color: rgb(183, 154, 106); margin-bottom: 4px;"><span class="sc-interp">Serviços</span></span>
             
-              <a data-dc-tpl="14" href="/servicos/corte-masculino/" target="_self" rel="" class="scpb" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Corte Masculino</span></a>
+              <a data-dc-tpl="14" href="/servicos/corte-masculino/" target="_self" rel="" class="scp8" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Corte Masculino</span></a>
             
-              <a data-dc-tpl="14" href="/servicos/barboterapia/" target="_self" rel="" class="scpb" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Barboterapia</span></a>
+              <a data-dc-tpl="14" href="/servicos/barboterapia/" target="_self" rel="" class="scp8" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Barboterapia</span></a>
             
-              <a data-dc-tpl="14" href="/visagismo/" target="_self" rel="" class="scpb" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Visagismo</span></a>
+              <a data-dc-tpl="14" href="/visagismo/" target="_self" rel="" class="scp8" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Visagismo</span></a>
             
-              <a data-dc-tpl="14" href="/dia-do-noivo/" target="_self" rel="" class="scpb" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Dia do Noivo</span></a>
+              <a data-dc-tpl="14" href="/dia-do-noivo/" target="_self" rel="" class="scp8" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Dia do Noivo</span></a>
             
-              <a data-dc-tpl="14" href="/servicos/" target="_self" rel="" class="scpb" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Todos os serviços</span></a>
+              <a data-dc-tpl="14" href="/servicos/" target="_self" rel="" class="scp8" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Todos os serviços</span></a>
             
           </nav>
         
           <nav data-dc-tpl="11" aria-label="Unidades" style="flex: 1 1 160px; display: flex; flex-direction: column; gap: 12px;">
             <span data-dc-tpl="12" style="font-size: 11px; font-weight: 700; letter-spacing: 0.24em; text-transform: uppercase; color: rgb(183, 154, 106); margin-bottom: 4px;"><span class="sc-interp">Unidades</span></span>
             
-              <a data-dc-tpl="14" href="/unidades/" target="_self" rel="" class="scpb" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Todas as unidades</span></a>
+              <a data-dc-tpl="14" href="/unidades/" target="_self" rel="" class="scp8" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Todas as unidades</span></a>
             
-              <a data-dc-tpl="14" href="/unidades/cidade-continental/" target="_self" rel="" class="scpb" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Cidade Continental</span></a>
+              <a data-dc-tpl="14" href="/unidades/cidade-continental/" target="_self" rel="" class="scp8" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Cidade Continental</span></a>
             
-              <a data-dc-tpl="14" href="/unidades/novo-horizonte-av-brasil/" target="_self" rel="" class="scpb" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Novo Horizonte — Av. Brasil</span></a>
+              <a data-dc-tpl="14" href="/unidades/novo-horizonte-av-brasil/" target="_self" rel="" class="scp8" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Novo Horizonte — Av. Brasil</span></a>
             
-              <a data-dc-tpl="14" href="/unidades/novo-horizonte-av-industrial/" target="_self" rel="" class="scpb" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Novo Horizonte — Av. Industrial</span></a>
+              <a data-dc-tpl="14" href="/unidades/novo-horizonte-av-industrial/" target="_self" rel="" class="scp8" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Novo Horizonte — Av. Industrial</span></a>
             
           </nav>
         
           <nav data-dc-tpl="11" aria-label="Clube" style="flex: 1 1 160px; display: flex; flex-direction: column; gap: 12px;">
             <span data-dc-tpl="12" style="font-size: 11px; font-weight: 700; letter-spacing: 0.24em; text-transform: uppercase; color: rgb(183, 154, 106); margin-bottom: 4px;"><span class="sc-interp">Clube</span></span>
             
-              <a data-dc-tpl="14" href="/o-clube/" target="_self" rel="" class="scpb" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Conhecer o Clube</span></a>
+              <a data-dc-tpl="14" href="/o-clube/" target="_self" rel="" class="scp8" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Conhecer o Clube</span></a>
             
-              <a data-dc-tpl="14" href="/o-clube/#planos" target="_self" rel="" class="scpb" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Planos</span></a>
+              <a data-dc-tpl="14" href="/o-clube/#planos" target="_self" rel="" class="scp8" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Planos</span></a>
             
-              <a data-dc-tpl="14" href="https://cashbarber.com.br/salaomorenos" target="_blank" rel="noopener noreferrer" class="scpb" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Assinar</span></a>
+              <a data-dc-tpl="14" href="https://cashbarber.com.br/salaomorenos" target="_blank" rel="noopener noreferrer" class="scp8" style="font-size: 14px; line-height: 1.4; color: rgb(197, 194, 187); text-decoration: none; transition: color 0.3s;"><span class="sc-interp">Assinar</span></a>
             
           </nav>
         

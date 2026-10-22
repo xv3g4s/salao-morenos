@@ -243,6 +243,56 @@ video[data-clipe]{display:none !important}}</style>
     logo: '/assets/morenos-loader-outline-white.webp', logoW: 720, logoH: 669,
   };
 
+  // Grades que fecham: nenhuma linha termina com célula vazia.
+  //
+  // Com repeat(auto-fit, minmax(...)) a última linha quase sempre sobra —
+  // cinco fotos em quatro colunas deixam um buraco no canto — e um item com
+  // span 2 numa tela estreita cai numa coluna implícita de 0px e some.
+  // C.grade() resolve os dois lados de uma vez:
+  //
+  //   - escolhe quantos cartões cabem lado a lado na largura atual;
+  //   - reparte os itens entre as linhas e divide a linha em frações (o mmc
+  //     da quantidade de itens de cada linha), dizendo quantas frações cada
+  //     item ocupa: toda linha fecha certinho e os itens de uma mesma linha
+  //     ficam do mesmo tamanho.
+  //
+  // Cinco itens em quatro colunas viram duas linhas de 3 e 2, não 4 + 1 + buraco.
+  //
+  //   const g = M.grade(fotos.length, janelaW, { minimo: 240 });
+  //   grid-template-columns: repeat(g.unidades, minmax(0,1fr))
+  //   grid-column: span g.spans[i]
+  //
+  // Devolve também util e gap, para quem precisar da largura em px de uma
+  // célula: span * (util + gap) / unidades - gap.
+  //
+  // opcoes: minimo (largura alvo do cartão), maximo (teto de colunas),
+  //         caixa (max-width do contêiner), gap, recuo (padding interno).
+  function mmc(a, b) {
+    var x = a, y = b, r;
+    while (y) { r = x % y; x = y; y = r; }
+    return (a / x) * b;
+  }
+  C.grade = function (total, largura, opcoes) {
+    var o = opcoes || {};
+    var respiro = Math.min(36, Math.max(16, largura * 0.03));
+    var util = Math.max(240, Math.min(o.caixa || 1480, largura - respiro * 2) - (o.recuo || 0));
+    var gap = o.gap == null ? 16 : o.gap;
+    var colunas = Math.max(1, Math.floor((util + gap) / ((o.minimo || 260) + gap)));
+    colunas = Math.min(colunas, o.maximo || 4, Math.max(1, total));
+    // quantos itens em cada linha, o mais parelho possível
+    var porLinha = [], linhas = Math.ceil(total / colunas);
+    for (var l = 0, base = Math.floor(total / linhas), resto = total % linhas; l < linhas; l++) {
+      porLinha.push(base + (l < resto ? 1 : 0));
+    }
+    // a linha é dividida no mmc desses números, para que uma linha de 3 e uma
+    // de 2 caibam no mesmo trilho e os itens de cada linha fiquem iguais
+    var unidades = porLinha.reduce(mmc, 1), spans = [];
+    porLinha.forEach(function (n) {
+      for (var i = 0; i < n; i++) spans.push(unidades / n);
+    });
+    return { colunas: colunas, unidades: unidades, spans: spans, util: util, gap: gap };
+  };
+
   C.selectedUnitKey = 'morenos_selected_unit';
   C.getUnit = function () { try { return localStorage.getItem(C.selectedUnitKey); } catch (e) { return null; } };
   C.setUnit = function (id) { try { localStorage.setItem(C.selectedUnitKey, id); } catch (e) {} C.track('unit_select', { unit: id }); };
@@ -715,9 +765,9 @@ html,body{background:#080908}
     <section data-dc-tpl="59" aria-label="Informações da unidade" style="background: rgb(11, 11, 11); padding: clamp(36px, 5vw, 64px) clamp(16px, 3vw, 36px);">
       <div data-dc-tpl="60" style="max-width: 1480px; margin: 0px auto;">
         <h2 data-dc-tpl="61" style="margin: 0px 0px 22px; font-size: 12px; font-weight: 700; letter-spacing: 0.3em; text-transform: uppercase; color: rgb(183, 154, 106);"><span class="sc-interp">Informações da unidade</span></h2>
-        <dl data-dc-tpl="62" style="margin: 0px; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: 2px; border-radius: 24px; overflow: hidden; border: 1px solid rgba(246, 244, 239, 0.12);">
+        <dl data-dc-tpl="62" style="margin: 0px; display: grid; grid-template-columns: repeat(1, minmax(0px, 1fr)); gap: 2px; border-radius: 24px; overflow: hidden; border: 1px solid rgba(246, 244, 239, 0.12);">
           
-            <div data-dc-tpl="64" data-rv="1" class="scpa" style="background: rgb(20, 20, 20); padding: 24px; display: flex; flex-direction: column; gap: 10px; transition: background 0.45s;">
+            <div data-dc-tpl="64" data-rv="1" class="scpa" style="grid-column: span 1; background: rgb(20, 20, 20); padding: 24px; display: flex; flex-direction: column; gap: 10px; transition: background 0.45s;">
               <dt data-dc-tpl="65" style="font-size: 11px; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: rgb(169, 166, 159);"><span class="sc-interp">Endereço</span></dt>
               
                 <dd data-dc-tpl="67" style="margin: 0px; font-size: 16px; line-height: 1.5; color: rgb(246, 244, 239);"><span class="sc-interp">Avenida Industrial, 830 — Loja 3</span></dd>
@@ -731,7 +781,7 @@ html,body{background:#080908}
               
             </div>
           
-            <div data-dc-tpl="64" data-rv="1" class="scpa" style="background: rgb(20, 20, 20); padding: 24px; display: flex; flex-direction: column; gap: 10px; transition: background 0.45s;">
+            <div data-dc-tpl="64" data-rv="1" class="scpa" style="grid-column: span 1; background: rgb(20, 20, 20); padding: 24px; display: flex; flex-direction: column; gap: 10px; transition: background 0.45s;">
               <dt data-dc-tpl="65" style="font-size: 11px; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: rgb(169, 166, 159);"><span class="sc-interp">Horário</span></dt>
               
                 <dd data-dc-tpl="67" style="margin: 0px; font-size: 16px; line-height: 1.5; color: rgb(246, 244, 239);"><span class="sc-interp">Segunda a sexta: 08:00 – 20:00</span></dd>
@@ -743,7 +793,7 @@ html,body{background:#080908}
               
             </div>
           
-            <div data-dc-tpl="64" data-rv="1" class="scpa" style="background: rgb(20, 20, 20); padding: 24px; display: flex; flex-direction: column; gap: 10px; transition: background 0.45s;">
+            <div data-dc-tpl="64" data-rv="1" class="scpa" style="grid-column: span 1; background: rgb(20, 20, 20); padding: 24px; display: flex; flex-direction: column; gap: 10px; transition: background 0.45s;">
               <dt data-dc-tpl="65" style="font-size: 11px; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: rgb(169, 166, 159);"><span class="sc-interp">Agendamento</span></dt>
               
                 <dd data-dc-tpl="67" style="margin: 0px; font-size: 16px; line-height: 1.5; color: rgb(246, 244, 239);"><span class="sc-interp">Online, pela agenda da Morenos.</span></dd>
@@ -751,7 +801,7 @@ html,body{background:#080908}
               <a data-dc-tpl="69" href="https://cashbarber.com.br/salaomorenos/inicio" target="_blank" rel="noopener noreferrer" class="scpb" style="margin-top: auto; font-size: 12px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: rgb(183, 154, 106); text-decoration: none; min-height: 32px; display: inline-flex; align-items: center;"><span class="sc-interp">Agendar</span> →</a>
             </div>
           
-            <div data-dc-tpl="64" data-rv="1" class="scpa" style="background: rgb(20, 20, 20); padding: 24px; display: flex; flex-direction: column; gap: 10px; transition: background 0.45s;">
+            <div data-dc-tpl="64" data-rv="1" class="scpa" style="grid-column: span 1; background: rgb(20, 20, 20); padding: 24px; display: flex; flex-direction: column; gap: 10px; transition: background 0.45s;">
               <dt data-dc-tpl="65" style="font-size: 11px; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: rgb(169, 166, 159);"><span class="sc-interp">WhatsApp</span></dt>
               
                 <dd data-dc-tpl="67" style="margin: 0px; font-size: 16px; line-height: 1.5; color: rgb(246, 244, 239);"><span class="sc-interp">+55 27 99871-3993</span></dd>
@@ -1004,9 +1054,9 @@ html,body{background:#080908}
           </div>
           <p data-dc-tpl="77" style="margin: 0px; max-width: 42ch; font-size: 16px; line-height: 1.65; color: rgb(169, 166, 159);"><span class="sc-interp">Se outro caminho for mais prático, a Morenos também atende aqui.</span></p>
         </div>
-        <div data-dc-tpl="78" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); gap: 16px;">
+        <div data-dc-tpl="78" style="display: grid; grid-template-columns: repeat(1, minmax(0px, 1fr)); gap: 16px;">
           
-            <article data-dc-tpl="80" data-rv="1" class="scpc" style="position: relative; min-height: clamp(460px, 48vw, 600px); border-radius: 28px; overflow: hidden; display: flex; flex-direction: column; justify-content: flex-end; background: rgb(23, 23, 23); transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);">
+            <article data-dc-tpl="80" data-rv="1" class="scpc" style="grid-column: span 1; position: relative; min-height: clamp(460px, 48vw, 600px); border-radius: 28px; overflow: hidden; display: flex; flex-direction: column; justify-content: flex-end; background: rgb(23, 23, 23); transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);">
               <img data-dc-tpl="81" src="/img/unidade-cidade-continental.webp" alt="Fachada do Salão Morenos com a placa Cidade Continental" width="750" height="1000" loading="lazy" decoding="async" style="position: absolute; inset: 0px; width: 100%; height: 100%; object-fit: cover;">
               <div data-dc-tpl="82" aria-hidden="true" style="position: absolute; inset: 0px; background: linear-gradient(rgba(8, 8, 8, 0.45) 0%, rgba(8, 8, 8, 0.78) 44%, rgba(8, 8, 8, 0.97) 100%);"></div>
               <div data-dc-tpl="83" style="position: relative; padding: clamp(22px, 2.4vw, 32px); display: flex; flex-direction: column; gap: 12px;">
@@ -1021,7 +1071,7 @@ html,body{background:#080908}
               </div>
             </article>
           
-            <article data-dc-tpl="80" data-rv="1" class="scpc" style="position: relative; min-height: clamp(460px, 48vw, 600px); border-radius: 28px; overflow: hidden; display: flex; flex-direction: column; justify-content: flex-end; background: rgb(23, 23, 23); transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);">
+            <article data-dc-tpl="80" data-rv="1" class="scpc" style="grid-column: span 1; position: relative; min-height: clamp(460px, 48vw, 600px); border-radius: 28px; overflow: hidden; display: flex; flex-direction: column; justify-content: flex-end; background: rgb(23, 23, 23); transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);">
               <img data-dc-tpl="81" src="/img/foto-atendimento-2.webp" alt="Ambiente do Salão Morenos durante o atendimento" width="750" height="1000" loading="lazy" decoding="async" style="position: absolute; inset: 0px; width: 100%; height: 100%; object-fit: cover;">
               <div data-dc-tpl="82" aria-hidden="true" style="position: absolute; inset: 0px; background: linear-gradient(rgba(8, 8, 8, 0.45) 0%, rgba(8, 8, 8, 0.78) 44%, rgba(8, 8, 8, 0.97) 100%);"></div>
               <div data-dc-tpl="83" style="position: relative; padding: clamp(22px, 2.4vw, 32px); display: flex; flex-direction: column; gap: 12px;">

@@ -243,6 +243,56 @@ video[data-clipe]{display:none !important}}</style>
     logo: '/assets/morenos-loader-outline-white.webp', logoW: 720, logoH: 669,
   };
 
+  // Grades que fecham: nenhuma linha termina com célula vazia.
+  //
+  // Com repeat(auto-fit, minmax(...)) a última linha quase sempre sobra —
+  // cinco fotos em quatro colunas deixam um buraco no canto — e um item com
+  // span 2 numa tela estreita cai numa coluna implícita de 0px e some.
+  // C.grade() resolve os dois lados de uma vez:
+  //
+  //   - escolhe quantos cartões cabem lado a lado na largura atual;
+  //   - reparte os itens entre as linhas e divide a linha em frações (o mmc
+  //     da quantidade de itens de cada linha), dizendo quantas frações cada
+  //     item ocupa: toda linha fecha certinho e os itens de uma mesma linha
+  //     ficam do mesmo tamanho.
+  //
+  // Cinco itens em quatro colunas viram duas linhas de 3 e 2, não 4 + 1 + buraco.
+  //
+  //   const g = M.grade(fotos.length, janelaW, { minimo: 240 });
+  //   grid-template-columns: repeat(g.unidades, minmax(0,1fr))
+  //   grid-column: span g.spans[i]
+  //
+  // Devolve também util e gap, para quem precisar da largura em px de uma
+  // célula: span * (util + gap) / unidades - gap.
+  //
+  // opcoes: minimo (largura alvo do cartão), maximo (teto de colunas),
+  //         caixa (max-width do contêiner), gap, recuo (padding interno).
+  function mmc(a, b) {
+    var x = a, y = b, r;
+    while (y) { r = x % y; x = y; y = r; }
+    return (a / x) * b;
+  }
+  C.grade = function (total, largura, opcoes) {
+    var o = opcoes || {};
+    var respiro = Math.min(36, Math.max(16, largura * 0.03));
+    var util = Math.max(240, Math.min(o.caixa || 1480, largura - respiro * 2) - (o.recuo || 0));
+    var gap = o.gap == null ? 16 : o.gap;
+    var colunas = Math.max(1, Math.floor((util + gap) / ((o.minimo || 260) + gap)));
+    colunas = Math.min(colunas, o.maximo || 4, Math.max(1, total));
+    // quantos itens em cada linha, o mais parelho possível
+    var porLinha = [], linhas = Math.ceil(total / colunas);
+    for (var l = 0, base = Math.floor(total / linhas), resto = total % linhas; l < linhas; l++) {
+      porLinha.push(base + (l < resto ? 1 : 0));
+    }
+    // a linha é dividida no mmc desses números, para que uma linha de 3 e uma
+    // de 2 caibam no mesmo trilho e os itens de cada linha fiquem iguais
+    var unidades = porLinha.reduce(mmc, 1), spans = [];
+    porLinha.forEach(function (n) {
+      for (var i = 0; i < n; i++) spans.push(unidades / n);
+    });
+    return { colunas: colunas, unidades: unidades, spans: spans, util: util, gap: gap };
+  };
+
   C.selectedUnitKey = 'morenos_selected_unit';
   C.getUnit = function () { try { return localStorage.getItem(C.selectedUnitKey); } catch (e) { return null; } };
   C.setUnit = function (id) { try { localStorage.setItem(C.selectedUnitKey, id); } catch (e) {} C.track('unit_select', { unit: id }); };
@@ -872,7 +922,7 @@ html,body{background:#080908}
               
             </div>
           
-            <div data-dc-tpl="236" style="display: flex; flex-direction: column; gap: 8px; grid-column: auto;">
+            <div data-dc-tpl="236" style="display: flex; flex-direction: column; gap: 8px; grid-column: 1 / -1;">
               <label data-dc-tpl="237" for="f-3-instagram" style="font-size: 13px; font-weight: 600;"><span class="sc-interp">Instagram profissional (opcional)</span></label>
               
               <input data-dc-tpl="241" id="f-3-instagram" name="instagram" type="text" inputmode="text" autocomplete="off" aria-invalid="false" style="font-family: inherit; font-size: 16px; padding: 14px 16px; min-height: 52px; border-radius: 14px; border: 1px solid rgba(11, 11, 11, 0.18); background: rgb(251, 250, 247); color: rgb(11, 11, 11);">

@@ -243,6 +243,56 @@ video[data-clipe]{display:none !important}}</style>
     logo: '/assets/morenos-loader-outline-white.webp', logoW: 720, logoH: 669,
   };
 
+  // Grades que fecham: nenhuma linha termina com célula vazia.
+  //
+  // Com repeat(auto-fit, minmax(...)) a última linha quase sempre sobra —
+  // cinco fotos em quatro colunas deixam um buraco no canto — e um item com
+  // span 2 numa tela estreita cai numa coluna implícita de 0px e some.
+  // C.grade() resolve os dois lados de uma vez:
+  //
+  //   - escolhe quantos cartões cabem lado a lado na largura atual;
+  //   - reparte os itens entre as linhas e divide a linha em frações (o mmc
+  //     da quantidade de itens de cada linha), dizendo quantas frações cada
+  //     item ocupa: toda linha fecha certinho e os itens de uma mesma linha
+  //     ficam do mesmo tamanho.
+  //
+  // Cinco itens em quatro colunas viram duas linhas de 3 e 2, não 4 + 1 + buraco.
+  //
+  //   const g = M.grade(fotos.length, janelaW, { minimo: 240 });
+  //   grid-template-columns: repeat(g.unidades, minmax(0,1fr))
+  //   grid-column: span g.spans[i]
+  //
+  // Devolve também util e gap, para quem precisar da largura em px de uma
+  // célula: span * (util + gap) / unidades - gap.
+  //
+  // opcoes: minimo (largura alvo do cartão), maximo (teto de colunas),
+  //         caixa (max-width do contêiner), gap, recuo (padding interno).
+  function mmc(a, b) {
+    var x = a, y = b, r;
+    while (y) { r = x % y; x = y; y = r; }
+    return (a / x) * b;
+  }
+  C.grade = function (total, largura, opcoes) {
+    var o = opcoes || {};
+    var respiro = Math.min(36, Math.max(16, largura * 0.03));
+    var util = Math.max(240, Math.min(o.caixa || 1480, largura - respiro * 2) - (o.recuo || 0));
+    var gap = o.gap == null ? 16 : o.gap;
+    var colunas = Math.max(1, Math.floor((util + gap) / ((o.minimo || 260) + gap)));
+    colunas = Math.min(colunas, o.maximo || 4, Math.max(1, total));
+    // quantos itens em cada linha, o mais parelho possível
+    var porLinha = [], linhas = Math.ceil(total / colunas);
+    for (var l = 0, base = Math.floor(total / linhas), resto = total % linhas; l < linhas; l++) {
+      porLinha.push(base + (l < resto ? 1 : 0));
+    }
+    // a linha é dividida no mmc desses números, para que uma linha de 3 e uma
+    // de 2 caibam no mesmo trilho e os itens de cada linha fiquem iguais
+    var unidades = porLinha.reduce(mmc, 1), spans = [];
+    porLinha.forEach(function (n) {
+      for (var i = 0; i < n; i++) spans.push(unidades / n);
+    });
+    return { colunas: colunas, unidades: unidades, spans: spans, util: util, gap: gap };
+  };
+
   C.selectedUnitKey = 'morenos_selected_unit';
   C.getUnit = function () { try { return localStorage.getItem(C.selectedUnitKey); } catch (e) { return null; } };
   C.setUnit = function (id) { try { localStorage.setItem(C.selectedUnitKey, id); } catch (e) {} C.track('unit_select', { unit: id }); };
@@ -746,9 +796,9 @@ html,body{background:#080908}
           <a data-dc-tpl="78" href="/servicos/" class="scp5" style="font-size: 13px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; border-bottom: 1px solid rgb(183, 154, 106); padding-bottom: 6px; margin-left: auto; margin-right: auto; transition: color 0.3s;">Ver todos os serviços →</a>
         </div>
 
-        <div data-dc-tpl="79" style="display: flex; flex-wrap: wrap; justify-content: center; gap: clamp(28px, 3.4vw, 54px); padding-top: 10px;">
+        <div data-dc-tpl="79" style="display: grid; grid-template-columns: repeat(1, minmax(0px, 320px)); justify-content: center; gap: clamp(28px, 3.4vw, 54px); padding-top: 10px;">
           
-            <div data-dc-tpl="81" style="position: relative; flex: 0 1 320px; width: 320px; max-width: 100%; height: 400px;">
+            <div data-dc-tpl="81" style="position: relative; width: 100%; height: 400px;">
               <span data-dc-tpl="82" aria-hidden="true" style="position: absolute; top: 0px; left: 50px; width: 50%; height: 100%; border-radius: 10px; background: linear-gradient(315deg, rgb(183, 154, 106) 0%, rgb(58, 47, 31) 55%, rgb(11, 11, 11) 100%); transform: skewX(15deg); transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1), left 0.7s cubic-bezier(0.22, 1, 0.36, 1), width 0.7s cubic-bezier(0.22, 1, 0.36, 1), padding 0.7s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.7s, top 0.7s cubic-bezier(0.22, 1, 0.36, 1), bottom 0.7s cubic-bezier(0.22, 1, 0.36, 1), height 0.7s cubic-bezier(0.22, 1, 0.36, 1);"></span>
               <span data-dc-tpl="83" aria-hidden="true" style="position: absolute; top: 0px; left: 50px; width: 50%; height: 100%; border-radius: 10px; background: linear-gradient(315deg, rgba(183, 154, 106, 0.55), rgba(11, 11, 11, 0.9)); filter: blur(30px); transform: skewX(15deg); transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1), left 0.7s cubic-bezier(0.22, 1, 0.36, 1), width 0.7s cubic-bezier(0.22, 1, 0.36, 1), padding 0.7s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.7s, top 0.7s cubic-bezier(0.22, 1, 0.36, 1), bottom 0.7s cubic-bezier(0.22, 1, 0.36, 1), height 0.7s cubic-bezier(0.22, 1, 0.36, 1);"></span>
               <span data-dc-tpl="84" aria-hidden="true" style="position: absolute; top: 10px; left: 30px; width: 30px; height: 30px; opacity: 0; border-radius: 10px; background: rgba(246, 244, 239, 0.07); backdrop-filter: blur(14px); box-shadow: rgba(0, 0, 0, 0.22) 0px 5px 18px; transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1), left 0.7s cubic-bezier(0.22, 1, 0.36, 1), width 0.7s cubic-bezier(0.22, 1, 0.36, 1), padding 0.7s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.7s, top 0.7s cubic-bezier(0.22, 1, 0.36, 1), bottom 0.7s cubic-bezier(0.22, 1, 0.36, 1), height 0.7s cubic-bezier(0.22, 1, 0.36, 1);"></span>
@@ -761,7 +811,7 @@ html,body{background:#080908}
               </div>
             </div>
           
-            <div data-dc-tpl="81" style="position: relative; flex: 0 1 320px; width: 320px; max-width: 100%; height: 400px;">
+            <div data-dc-tpl="81" style="position: relative; width: 100%; height: 400px;">
               <span data-dc-tpl="82" aria-hidden="true" style="position: absolute; top: 0px; left: 50px; width: 50%; height: 100%; border-radius: 10px; background: linear-gradient(315deg, rgb(183, 154, 106) 0%, rgb(58, 47, 31) 55%, rgb(11, 11, 11) 100%); transform: skewX(15deg); transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1), left 0.7s cubic-bezier(0.22, 1, 0.36, 1), width 0.7s cubic-bezier(0.22, 1, 0.36, 1), padding 0.7s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.7s, top 0.7s cubic-bezier(0.22, 1, 0.36, 1), bottom 0.7s cubic-bezier(0.22, 1, 0.36, 1), height 0.7s cubic-bezier(0.22, 1, 0.36, 1);"></span>
               <span data-dc-tpl="83" aria-hidden="true" style="position: absolute; top: 0px; left: 50px; width: 50%; height: 100%; border-radius: 10px; background: linear-gradient(315deg, rgba(183, 154, 106, 0.55), rgba(11, 11, 11, 0.9)); filter: blur(30px); transform: skewX(15deg); transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1), left 0.7s cubic-bezier(0.22, 1, 0.36, 1), width 0.7s cubic-bezier(0.22, 1, 0.36, 1), padding 0.7s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.7s, top 0.7s cubic-bezier(0.22, 1, 0.36, 1), bottom 0.7s cubic-bezier(0.22, 1, 0.36, 1), height 0.7s cubic-bezier(0.22, 1, 0.36, 1);"></span>
               <span data-dc-tpl="84" aria-hidden="true" style="position: absolute; top: 10px; left: 30px; width: 30px; height: 30px; opacity: 0; border-radius: 10px; background: rgba(246, 244, 239, 0.07); backdrop-filter: blur(14px); box-shadow: rgba(0, 0, 0, 0.22) 0px 5px 18px; transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1), left 0.7s cubic-bezier(0.22, 1, 0.36, 1), width 0.7s cubic-bezier(0.22, 1, 0.36, 1), padding 0.7s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.7s, top 0.7s cubic-bezier(0.22, 1, 0.36, 1), bottom 0.7s cubic-bezier(0.22, 1, 0.36, 1), height 0.7s cubic-bezier(0.22, 1, 0.36, 1);"></span>
@@ -774,7 +824,7 @@ html,body{background:#080908}
               </div>
             </div>
           
-            <div data-dc-tpl="81" style="position: relative; flex: 0 1 320px; width: 320px; max-width: 100%; height: 400px;">
+            <div data-dc-tpl="81" style="position: relative; width: 100%; height: 400px;">
               <span data-dc-tpl="82" aria-hidden="true" style="position: absolute; top: 0px; left: 50px; width: 50%; height: 100%; border-radius: 10px; background: linear-gradient(315deg, rgb(183, 154, 106) 0%, rgb(58, 47, 31) 55%, rgb(11, 11, 11) 100%); transform: skewX(15deg); transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1), left 0.7s cubic-bezier(0.22, 1, 0.36, 1), width 0.7s cubic-bezier(0.22, 1, 0.36, 1), padding 0.7s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.7s, top 0.7s cubic-bezier(0.22, 1, 0.36, 1), bottom 0.7s cubic-bezier(0.22, 1, 0.36, 1), height 0.7s cubic-bezier(0.22, 1, 0.36, 1);"></span>
               <span data-dc-tpl="83" aria-hidden="true" style="position: absolute; top: 0px; left: 50px; width: 50%; height: 100%; border-radius: 10px; background: linear-gradient(315deg, rgba(183, 154, 106, 0.55), rgba(11, 11, 11, 0.9)); filter: blur(30px); transform: skewX(15deg); transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1), left 0.7s cubic-bezier(0.22, 1, 0.36, 1), width 0.7s cubic-bezier(0.22, 1, 0.36, 1), padding 0.7s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.7s, top 0.7s cubic-bezier(0.22, 1, 0.36, 1), bottom 0.7s cubic-bezier(0.22, 1, 0.36, 1), height 0.7s cubic-bezier(0.22, 1, 0.36, 1);"></span>
               <span data-dc-tpl="84" aria-hidden="true" style="position: absolute; top: 10px; left: 30px; width: 30px; height: 30px; opacity: 0; border-radius: 10px; background: rgba(246, 244, 239, 0.07); backdrop-filter: blur(14px); box-shadow: rgba(0, 0, 0, 0.22) 0px 5px 18px; transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1), left 0.7s cubic-bezier(0.22, 1, 0.36, 1), width 0.7s cubic-bezier(0.22, 1, 0.36, 1), padding 0.7s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.7s, top 0.7s cubic-bezier(0.22, 1, 0.36, 1), bottom 0.7s cubic-bezier(0.22, 1, 0.36, 1), height 0.7s cubic-bezier(0.22, 1, 0.36, 1);"></span>
@@ -787,7 +837,7 @@ html,body{background:#080908}
               </div>
             </div>
           
-            <div data-dc-tpl="81" style="position: relative; flex: 0 1 320px; width: 320px; max-width: 100%; height: 400px;">
+            <div data-dc-tpl="81" style="position: relative; width: 100%; height: 400px;">
               <span data-dc-tpl="82" aria-hidden="true" style="position: absolute; top: 0px; left: 50px; width: 50%; height: 100%; border-radius: 10px; background: linear-gradient(315deg, rgb(183, 154, 106) 0%, rgb(58, 47, 31) 55%, rgb(11, 11, 11) 100%); transform: skewX(15deg); transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1), left 0.7s cubic-bezier(0.22, 1, 0.36, 1), width 0.7s cubic-bezier(0.22, 1, 0.36, 1), padding 0.7s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.7s, top 0.7s cubic-bezier(0.22, 1, 0.36, 1), bottom 0.7s cubic-bezier(0.22, 1, 0.36, 1), height 0.7s cubic-bezier(0.22, 1, 0.36, 1);"></span>
               <span data-dc-tpl="83" aria-hidden="true" style="position: absolute; top: 0px; left: 50px; width: 50%; height: 100%; border-radius: 10px; background: linear-gradient(315deg, rgba(183, 154, 106, 0.55), rgba(11, 11, 11, 0.9)); filter: blur(30px); transform: skewX(15deg); transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1), left 0.7s cubic-bezier(0.22, 1, 0.36, 1), width 0.7s cubic-bezier(0.22, 1, 0.36, 1), padding 0.7s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.7s, top 0.7s cubic-bezier(0.22, 1, 0.36, 1), bottom 0.7s cubic-bezier(0.22, 1, 0.36, 1), height 0.7s cubic-bezier(0.22, 1, 0.36, 1);"></span>
               <span data-dc-tpl="84" aria-hidden="true" style="position: absolute; top: 10px; left: 30px; width: 30px; height: 30px; opacity: 0; border-radius: 10px; background: rgba(246, 244, 239, 0.07); backdrop-filter: blur(14px); box-shadow: rgba(0, 0, 0, 0.22) 0px 5px 18px; transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1), left 0.7s cubic-bezier(0.22, 1, 0.36, 1), width 0.7s cubic-bezier(0.22, 1, 0.36, 1), padding 0.7s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.7s, top 0.7s cubic-bezier(0.22, 1, 0.36, 1), bottom 0.7s cubic-bezier(0.22, 1, 0.36, 1), height 0.7s cubic-bezier(0.22, 1, 0.36, 1);"></span>
@@ -981,12 +1031,12 @@ html,body{background:#080908}
           <h2 data-dc-tpl="200" style="margin: 0px auto; font-size: clamp(34px, 4.6vw, 58px); line-height: 1; font-weight: 700; letter-spacing: -0.03em; color: rgb(11, 11, 11);">Feito na Morenos.</h2>
           <span data-dc-tpl="201" style="font-size: 13px; color: rgb(95, 92, 87); max-width: 34ch; margin-left: auto; margin-right: auto;">Clique em uma foto para ampliar.</span>
         </div>
-        <div data-dc-tpl="202" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); grid-auto-rows: clamp(200px, 22vw, 280px); gap: 16px;">
+        <div data-dc-tpl="202" style="display: grid; grid-template-columns: repeat(1, minmax(0px, 1fr)); grid-auto-rows: 281px; gap: 16px;">
           
             
             
-            <button data-dc-tpl="212" type="button" aria-label="Ampliar: Degradê alto" class="scpa" style="font-family: inherit; position: relative; overflow: hidden; border: 0px; padding: 0px; cursor: pointer; border-radius: 16px; background: rgb(237, 234, 228); grid-column: span 2; box-shadow: rgba(11, 11, 11, 0.6) 0px 20px 40px -32px; transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.6s;">
-              <img data-dc-tpl="213" decoding="async" src="/img/corte-crespo-degrade.webp" alt="Cabelo crespo com degradê alto nas laterais, finalizado na barbearia" width="840" height="1050" loading="lazy" draggable="false" sizes="(max-width:900px) 100vw, 420px" style="position: absolute; inset: 0px; width: 100%; height: 100%; object-fit: cover; object-position: 50% 30%;">
+            <button data-dc-tpl="212" type="button" aria-label="Ampliar: Degradê alto" class="scpa" style="font-family: inherit; position: relative; overflow: hidden; border: 0px; padding: 0px; cursor: pointer; border-radius: 16px; background: rgb(237, 234, 228); grid-column: span 1; box-shadow: rgba(11, 11, 11, 0.6) 0px 20px 40px -32px; transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.6s;">
+              <img data-dc-tpl="213" decoding="async" src="/img/corte-crespo-degrade.webp" alt="Cabelo crespo com degradê alto nas laterais, finalizado na barbearia" width="840" height="1050" loading="lazy" draggable="false" sizes="(max-width:900px) 100vw, 420px" style="position: absolute; inset: 0px; width: 100%; height: 100%; object-fit: cover; object-position: 50% 40%;">
               <span data-dc-tpl="214" class="scp9" style="position: absolute; inset: 0px; display: flex; flex-direction: column; justify-content: flex-end; gap: 4px; padding: 20px; text-align: left; background: linear-gradient(transparent 40%, rgba(11, 11, 11, 0.85) 100%); opacity: 0; transition: opacity 0.5s;">
                 <span data-dc-tpl="215" style="font-size: 16px; font-weight: 700; color: rgb(246, 244, 239);"><span class="sc-interp">Degradê alto</span></span>
                 <span data-dc-tpl="216" style="font-size: 12px; color: rgb(214, 211, 204);"><span class="sc-interp">Volume no topo, laterais rebaixadas.</span></span>
@@ -997,7 +1047,7 @@ html,body{background:#080908}
             
             
             <button data-dc-tpl="212" type="button" aria-label="Ampliar: Degradê baixo" class="scpa" style="font-family: inherit; position: relative; overflow: hidden; border: 0px; padding: 0px; cursor: pointer; border-radius: 16px; background: rgb(237, 234, 228); grid-column: span 1; box-shadow: rgba(11, 11, 11, 0.6) 0px 20px 40px -32px; transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.6s;">
-              <img data-dc-tpl="213" decoding="async" src="/img/corte-degrade-baixo.webp" alt="Corte masculino com degradê baixo e contorno marcado" width="840" height="1050" loading="lazy" draggable="false" sizes="(max-width:900px) 100vw, 420px" style="position: absolute; inset: 0px; width: 100%; height: 100%; object-fit: cover; object-position: 50% 30%;">
+              <img data-dc-tpl="213" decoding="async" src="/img/corte-degrade-baixo.webp" alt="Corte masculino com degradê baixo e contorno marcado" width="840" height="1050" loading="lazy" draggable="false" sizes="(max-width:900px) 100vw, 420px" style="position: absolute; inset: 0px; width: 100%; height: 100%; object-fit: cover; object-position: 50% 40%;">
               <span data-dc-tpl="214" class="scp9" style="position: absolute; inset: 0px; display: flex; flex-direction: column; justify-content: flex-end; gap: 4px; padding: 20px; text-align: left; background: linear-gradient(transparent 40%, rgba(11, 11, 11, 0.85) 100%); opacity: 0; transition: opacity 0.5s;">
                 <span data-dc-tpl="215" style="font-size: 16px; font-weight: 700; color: rgb(246, 244, 239);"><span class="sc-interp">Degradê baixo</span></span>
                 <span data-dc-tpl="216" style="font-size: 12px; color: rgb(214, 211, 204);"><span class="sc-interp">Transição começando perto da orelha.</span></span>
@@ -1008,7 +1058,7 @@ html,body{background:#080908}
             
             
             <button data-dc-tpl="212" type="button" aria-label="Ampliar: Texturizado" class="scpa" style="font-family: inherit; position: relative; overflow: hidden; border: 0px; padding: 0px; cursor: pointer; border-radius: 16px; background: rgb(237, 234, 228); grid-column: span 1; box-shadow: rgba(11, 11, 11, 0.6) 0px 20px 40px -32px; transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.6s;">
-              <img data-dc-tpl="213" decoding="async" src="/img/corte-texturizado.webp" alt="Corte masculino texturizado no topo, com degradê nas laterais" width="840" height="1050" loading="lazy" draggable="false" sizes="(max-width:900px) 100vw, 420px" style="position: absolute; inset: 0px; width: 100%; height: 100%; object-fit: cover; object-position: 50% 30%;">
+              <img data-dc-tpl="213" decoding="async" src="/img/corte-texturizado.webp" alt="Corte masculino texturizado no topo, com degradê nas laterais" width="840" height="1050" loading="lazy" draggable="false" sizes="(max-width:900px) 100vw, 420px" style="position: absolute; inset: 0px; width: 100%; height: 100%; object-fit: cover; object-position: 50% 40%;">
               <span data-dc-tpl="214" class="scp9" style="position: absolute; inset: 0px; display: flex; flex-direction: column; justify-content: flex-end; gap: 4px; padding: 20px; text-align: left; background: linear-gradient(transparent 40%, rgba(11, 11, 11, 0.85) 100%); opacity: 0; transition: opacity 0.5s;">
                 <span data-dc-tpl="215" style="font-size: 16px; font-weight: 700; color: rgb(246, 244, 239);"><span class="sc-interp">Texturizado</span></span>
                 <span data-dc-tpl="216" style="font-size: 12px; color: rgb(214, 211, 204);"><span class="sc-interp">Movimento no topo, lateral limpa.</span></span>
@@ -1019,7 +1069,7 @@ html,body{background:#080908}
             
             
             <button data-dc-tpl="212" type="button" aria-label="Ampliar: Corte infantil" class="scpa" style="font-family: inherit; position: relative; overflow: hidden; border: 0px; padding: 0px; cursor: pointer; border-radius: 16px; background: rgb(237, 234, 228); grid-column: span 1; box-shadow: rgba(11, 11, 11, 0.6) 0px 20px 40px -32px; transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.6s;">
-              <img data-dc-tpl="213" decoding="async" src="/img/corte-infantil-degrade.webp" alt="Corte infantil com degradê e desenho na lateral" width="840" height="1050" loading="lazy" draggable="false" sizes="(max-width:900px) 100vw, 420px" style="position: absolute; inset: 0px; width: 100%; height: 100%; object-fit: cover; object-position: 50% 30%;">
+              <img data-dc-tpl="213" decoding="async" src="/img/corte-infantil-degrade.webp" alt="Corte infantil com degradê e desenho na lateral" width="840" height="1050" loading="lazy" draggable="false" sizes="(max-width:900px) 100vw, 420px" style="position: absolute; inset: 0px; width: 100%; height: 100%; object-fit: cover; object-position: 50% 40%;">
               <span data-dc-tpl="214" class="scp9" style="position: absolute; inset: 0px; display: flex; flex-direction: column; justify-content: flex-end; gap: 4px; padding: 20px; text-align: left; background: linear-gradient(transparent 40%, rgba(11, 11, 11, 0.85) 100%); opacity: 0; transition: opacity 0.5s;">
                 <span data-dc-tpl="215" style="font-size: 16px; font-weight: 700; color: rgb(246, 244, 239);"><span class="sc-interp">Corte infantil</span></span>
                 <span data-dc-tpl="216" style="font-size: 12px; color: rgb(214, 211, 204);"><span class="sc-interp">A criançada também senta na cadeira.</span></span>
@@ -1029,8 +1079,8 @@ html,body{background:#080908}
           
             
               <div data-dc-tpl="205" style="position: relative; overflow: hidden; border-radius: 16px; background: rgb(237, 234, 228); grid-column: span 1; box-shadow: rgba(11, 11, 11, 0.6) 0px 20px 40px -32px;">
-                <img data-dc-tpl="206" decoding="async" src="/img/corte-quiff-loiro-poster.webp" alt="Corte com topo volumoso e mechas claras, visto de perfil" width="720" height="1280" loading="lazy" draggable="false" style="position: absolute; inset: 0px; width: 100%; height: 100%; object-fit: cover; object-position: 50% 30%;">
-                <video data-dc-tpl="207" data-clipe="1" autoplay="" playsinline="" preload="none" disablepictureinpicture="" disableremoteplayback="" controlslist="nodownload noplaybackrate nofullscreen" data-cartaz="/img/corte-quiff-loiro-poster.webp" data-webm="/img/corte-quiff-loiro.webm" data-mp4="/img/corte-quiff-loiro.mp4" aria-label="Corte com topo volumoso e mechas claras, visto de perfil" width="720" height="1280" style="position: absolute; inset: 0px; width: 100%; height: 100%; object-fit: cover; object-position: 50% 30%; pointer-events: none;" muted="" loop="" poster="/img/corte-quiff-loiro-poster.webp">
+                <img data-dc-tpl="206" decoding="async" src="/img/corte-quiff-loiro-poster.webp" alt="Corte com topo volumoso e mechas claras, visto de perfil" width="720" height="1280" loading="lazy" draggable="false" style="position: absolute; inset: 0px; width: 100%; height: 100%; object-fit: cover; object-position: 50% 40%;">
+                <video data-dc-tpl="207" data-clipe="1" autoplay="" playsinline="" preload="none" disablepictureinpicture="" disableremoteplayback="" controlslist="nodownload noplaybackrate nofullscreen" data-cartaz="/img/corte-quiff-loiro-poster.webp" data-webm="/img/corte-quiff-loiro.webm" data-mp4="/img/corte-quiff-loiro.mp4" aria-label="Corte com topo volumoso e mechas claras, visto de perfil" width="720" height="1280" style="position: absolute; inset: 0px; width: 100%; height: 100%; object-fit: cover; object-position: 50% 40%; pointer-events: none;" muted="" loop="" poster="/img/corte-quiff-loiro-poster.webp">
                 </video>
               <span data-dc-tpl="208" class="scp9" style="position: absolute; inset: 0px; display: flex; flex-direction: column; justify-content: flex-end; gap: 4px; padding: 20px; text-align: left; background: linear-gradient(transparent 40%, rgba(11, 11, 11, 0.85) 100%); opacity: 0; transition: opacity 0.5s;">
                 <span data-dc-tpl="209" style="font-size: 16px; font-weight: 700; color: rgb(246, 244, 239);"><span class="sc-interp">Topo com volume</span></span>
@@ -1050,9 +1100,9 @@ html,body{background:#080908}
           <h2 data-dc-tpl="220" style="margin: 0px; font-size: clamp(30px, 3.9vw, 50px); line-height: 1.02; font-weight: 700; letter-spacing: -0.03em; max-width: 16ch;">Quem senta na cadeira, conta.</h2>
           <span data-dc-tpl="221" style="font-size: 13px; line-height: 1.5; color: rgb(95, 92, 87); max-width: 34ch;">Avaliações publicadas por clientes no Google, reproduzidas como recebidas.</span>
         </div>
-        <div data-dc-tpl="222" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: 18px; align-items: start;">
+        <div data-dc-tpl="222" style="display: grid; grid-template-columns: repeat(1, minmax(0px, 1fr)); gap: 18px; align-items: start;">
           
-            <blockquote data-dc-tpl="224" style="margin: 0px; background: rgb(255, 255, 255); border: 1px solid rgba(11, 11, 11, 0.14); border-radius: 20px; box-shadow: rgba(11, 11, 11, 0.35) 0px 18px 40px -28px; padding: 30px; display: flex; flex-direction: column; gap: 20px; height: 100%;">
+            <blockquote data-dc-tpl="224" style="grid-column: span 1; margin: 0px; background: rgb(255, 255, 255); border: 1px solid rgba(11, 11, 11, 0.14); border-radius: 20px; box-shadow: rgba(11, 11, 11, 0.35) 0px 18px 40px -28px; padding: 30px; display: flex; flex-direction: column; gap: 20px; height: 100%;">
               <p data-dc-tpl="225" style="margin: 0px; font-size: 16px; line-height: 1.6; color: rgb(11, 11, 11);"><span class="sc-interp">Já sou cliente a mais de 1 ano e meio na mesma barbearia. Sempre sou muito bem recepcionado, consigo sair satisfeito com meu corte.</span></p>
               <footer data-dc-tpl="226" style="margin-top: auto; display: flex; align-items: center; gap: 12px;">
                 <span data-dc-tpl="227" aria-hidden="true" style="flex-shrink: 0; width: 40px; height: 40px; border-radius: 50%; background: rgb(11, 11, 11); color: rgb(246, 244, 239); display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 700;"><span class="sc-interp">L</span></span>
@@ -1063,7 +1113,7 @@ html,body{background:#080908}
               </footer>
             </blockquote>
           
-            <blockquote data-dc-tpl="224" style="margin: 0px; background: rgb(255, 255, 255); border: 1px solid rgba(11, 11, 11, 0.14); border-radius: 20px; box-shadow: rgba(11, 11, 11, 0.35) 0px 18px 40px -28px; padding: 30px; display: flex; flex-direction: column; gap: 20px; height: 100%;">
+            <blockquote data-dc-tpl="224" style="grid-column: span 1; margin: 0px; background: rgb(255, 255, 255); border: 1px solid rgba(11, 11, 11, 0.14); border-radius: 20px; box-shadow: rgba(11, 11, 11, 0.35) 0px 18px 40px -28px; padding: 30px; display: flex; flex-direction: column; gap: 20px; height: 100%;">
               <p data-dc-tpl="225" style="margin: 0px; font-size: 16px; line-height: 1.6; color: rgb(11, 11, 11);"><span class="sc-interp">Brabeza, só mano mil grau no corte.</span></p>
               <footer data-dc-tpl="226" style="margin-top: auto; display: flex; align-items: center; gap: 12px;">
                 <span data-dc-tpl="227" aria-hidden="true" style="flex-shrink: 0; width: 40px; height: 40px; border-radius: 50%; background: rgb(11, 11, 11); color: rgb(246, 244, 239); display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 700;"><span class="sc-interp">G</span></span>
@@ -1074,7 +1124,7 @@ html,body{background:#080908}
               </footer>
             </blockquote>
           
-            <blockquote data-dc-tpl="224" style="margin: 0px; background: rgb(255, 255, 255); border: 1px solid rgba(11, 11, 11, 0.14); border-radius: 20px; box-shadow: rgba(11, 11, 11, 0.35) 0px 18px 40px -28px; padding: 30px; display: flex; flex-direction: column; gap: 20px; height: 100%;">
+            <blockquote data-dc-tpl="224" style="grid-column: span 1; margin: 0px; background: rgb(255, 255, 255); border: 1px solid rgba(11, 11, 11, 0.14); border-radius: 20px; box-shadow: rgba(11, 11, 11, 0.35) 0px 18px 40px -28px; padding: 30px; display: flex; flex-direction: column; gap: 20px; height: 100%;">
               <p data-dc-tpl="225" style="margin: 0px; font-size: 16px; line-height: 1.6; color: rgb(11, 11, 11);"><span class="sc-interp">Atendimento sensacional pelo barbeiro Herom.</span></p>
               <footer data-dc-tpl="226" style="margin-top: auto; display: flex; align-items: center; gap: 12px;">
                 <span data-dc-tpl="227" aria-hidden="true" style="flex-shrink: 0; width: 40px; height: 40px; border-radius: 50%; background: rgb(11, 11, 11); color: rgb(246, 244, 239); display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 700;"><span class="sc-interp">T</span></span>
@@ -1378,9 +1428,9 @@ html,body{background:#080908}
           <a href="/servicos/" style="font-size:13px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;border-bottom:1px solid #B79A6A;padding-bottom:6px;margin-left:{{ tituloMargem }};margin-right:{{ tituloMargem }};transition:color .3s ease" style-hover="color:#B79A6A">Ver todos os serviços →</a>
         </div>
 
-        <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:clamp(28px,3.4vw,54px);padding-top:10px">
+        <div style="display:grid;grid-template-columns:repeat({{ servicosCols }},minmax(0,320px));justify-content:center;gap:clamp(28px,3.4vw,54px);padding-top:10px">
           <sc-for list="{{ servicos }}" as="s" hint-placeholder-count="4">
-            <div onMouseEnter="{{ s.enter }}" onMouseLeave="{{ s.leave }}" style="position:relative;flex:0 1 320px;width:320px;max-width:100%;height:400px">
+            <div onMouseEnter="{{ s.enter }}" onMouseLeave="{{ s.leave }}" style="position:relative;width:100%;height:400px">
               <span aria-hidden="true" style="position:absolute;top:0;left:{{ s.painelLeft }};width:{{ s.painelW }};height:100%;border-radius:10px;background:linear-gradient(315deg,#B79A6A 0%,#3A2F1F 55%,#0B0B0B 100%);transform:skewX({{ s.skew }});transition:transform .7s cubic-bezier(.22,1,.36,1),left .7s cubic-bezier(.22,1,.36,1),width .7s cubic-bezier(.22,1,.36,1),padding .7s cubic-bezier(.22,1,.36,1),opacity .7s ease,top .7s cubic-bezier(.22,1,.36,1),bottom .7s cubic-bezier(.22,1,.36,1),height .7s cubic-bezier(.22,1,.36,1)"></span>
               <span aria-hidden="true" style="position:absolute;top:0;left:{{ s.painelLeft }};width:{{ s.painelW }};height:100%;border-radius:10px;background:linear-gradient(315deg,rgba(183,154,106,.55),rgba(11,11,11,.9));filter:blur(30px);transform:skewX({{ s.skew }});transition:transform .7s cubic-bezier(.22,1,.36,1),left .7s cubic-bezier(.22,1,.36,1),width .7s cubic-bezier(.22,1,.36,1),padding .7s cubic-bezier(.22,1,.36,1),opacity .7s ease,top .7s cubic-bezier(.22,1,.36,1),bottom .7s cubic-bezier(.22,1,.36,1),height .7s cubic-bezier(.22,1,.36,1)"></span>
               <span aria-hidden="true" style="position:absolute;top:{{ s.blobTop }};left:{{ s.blobLeft }};width:{{ s.blobSize }};height:{{ s.blobSize }};opacity:{{ s.blobOp }};border-radius:10px;background:rgba(246,244,239,.07);backdrop-filter:blur(14px);box-shadow:0 5px 18px rgba(0,0,0,.22);transition:transform .7s cubic-bezier(.22,1,.36,1),left .7s cubic-bezier(.22,1,.36,1),width .7s cubic-bezier(.22,1,.36,1),padding .7s cubic-bezier(.22,1,.36,1),opacity .7s ease,top .7s cubic-bezier(.22,1,.36,1),bottom .7s cubic-bezier(.22,1,.36,1),height .7s cubic-bezier(.22,1,.36,1)"></span>
@@ -1548,7 +1598,7 @@ html,body{background:#080908}
           <h2 style="margin:0;font-size:clamp(34px,4.6vw,58px);line-height:1;font-weight:700;letter-spacing:-.03em;color:#0B0B0B;margin-left:{{ tituloMargem }};margin-right:{{ tituloMargem }}">Feito na Morenos.</h2>
           <span style="font-size:13px;color:#5F5C57;max-width:34ch;margin-left:{{ tituloMargem }};margin-right:{{ tituloMargem }}">Clique em uma foto para ampliar.</span>
         </div>
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));grid-auto-rows:clamp(200px,22vw,280px);gap:16px">
+        <div style="display:grid;grid-template-columns:repeat({{ gradeCols }},minmax(0,1fr));grid-auto-rows:{{ gradeAltura }};gap:16px">
           <sc-for list="{{ grade }}" as="g" hint-placeholder-count="4">
             <sc-if value="{{ g.ehVideo }}">
               <div style="position:relative;overflow:hidden;border-radius:16px;background:#EDEAE4;grid-column:span {{ g.span }};box-shadow:0 20px 40px -32px rgba(11,11,11,.6)">
@@ -1563,7 +1613,7 @@ html,body{background:#080908}
             </sc-if>
             <sc-if value="{{ g.ehFoto }}">
             <button type="button" onClick="{{ g.open }}" aria-label="Ampliar: {{ g.titulo }}" style="font-family:inherit;position:relative;overflow:hidden;border:0;padding:0;cursor:pointer;border-radius:16px;background:#EDEAE4;grid-column:span {{ g.span }};box-shadow:0 20px 40px -32px rgba(11,11,11,.6);transition:transform .6s cubic-bezier(.22,1,.36,1),box-shadow .6s ease" style-hover="transform:translateY(-4px);box-shadow:0 28px 50px -28px rgba(11,11,11,.55)">
-              <img decoding="async" src="{{ g.src }}" alt="{{ g.alt }}" width="840" height="1050" loading="lazy" draggable="false" sizes="(max-width:900px) 100vw, 420px" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 30%" />
+              <img decoding="async" src="{{ g.src }}" alt="{{ g.alt }}" width="840" height="1050" loading="lazy" draggable="false" sizes="(max-width:900px) 100vw, 420px" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:{{ g.foco }}" />
               <span style="position:absolute;inset:0;display:flex;flex-direction:column;justify-content:flex-end;gap:4px;padding:20px;text-align:left;background:linear-gradient(180deg,transparent 40%,rgba(11,11,11,.85) 100%);opacity:0;transition:opacity .5s ease" style-hover="opacity:1">
                 <span style="font-size:16px;font-weight:700;color:#F6F4EF">{{ g.titulo }}</span>
                 <span style="font-size:12px;color:#D6D3CC">{{ g.desc }}</span>
@@ -1581,9 +1631,9 @@ html,body{background:#080908}
           <h2 style="margin:0;font-size:clamp(30px,3.9vw,50px);line-height:1.02;font-weight:700;letter-spacing:-.03em;max-width:16ch">Quem senta na cadeira, conta.</h2>
           <span style="font-size:13px;line-height:1.5;color:#5F5C57;max-width:34ch">Avaliações publicadas por clientes no Google, reproduzidas como recebidas.</span>
         </div>
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));gap:18px;align-items:start">
+        <div style="display:grid;grid-template-columns:repeat({{ reviewsCols }},minmax(0,1fr));gap:18px;align-items:start">
           <sc-for list="{{ reviews }}" as="c" hint-placeholder-count="3">
-            <blockquote style="margin:0;background:#FFFFFF;border:1px solid rgba(11,11,11,.14);border-radius:20px;box-shadow:0 18px 40px -28px rgba(11,11,11,.35);padding:30px;display:flex;flex-direction:column;gap:20px;height:100%">
+            <blockquote style="grid-column:span {{ c.span }};margin:0;background:#FFFFFF;border:1px solid rgba(11,11,11,.14);border-radius:20px;box-shadow:0 18px 40px -28px rgba(11,11,11,.35);padding:30px;display:flex;flex-direction:column;gap:20px;height:100%">
               <p style="margin:0;font-size:16px;line-height:1.6;color:#0B0B0B">{{ c.texto }}</p>
               <footer style="margin-top:auto;display:flex;align-items:center;gap:12px">
                 <span aria-hidden="true" style="flex-shrink:0;width:40px;height:40px;border-radius:50%;background:#0B0B0B;color:#F6F4EF;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700">{{ c.inicial }}</span>
@@ -1983,6 +2033,26 @@ class Component extends DCLogic {
 
   renderVals() {
     const isDesktop = this.state.isDesktop;
+    // Grades sem buraco: M.grade (site-config.js) escolhe quantos cartoes cabem
+    // lado a lado e reparte os itens em linhas que fecham certinho. Antes, com
+    // repeat(auto-fit, ...) e a primeira foto em span 2, a ultima linha sobrava
+    // no desktop e duas fotos caiam numa coluna de 0px no celular.
+    const grade = (total, opcoes) => (window.MORENOS
+      ? window.MORENOS.grade(total, this.state.w, { caixa: 1240, ...opcoes })
+      : { colunas: 1, unidades: 1, spans: new Array(total).fill(1) });
+    // ate 5 colunas: com cinco fotos retrato, uma fileira so no desktop mantem
+    // o recorte parecido com o original.
+    const galeria = grade(this.galeriaUnica().length, { minimo: 230, maximo: 5, gap: 16 });
+    const alturaGaleria = galeria.colunas === 1
+      ? Math.min(380, Math.max(240, this.state.w * 0.72))
+      : Math.min(280, Math.max(200, this.state.w * 0.22));
+    // as fotos sao retrato: numa celula larga, cortar a 30% do topo deixa a
+    // cabeca fora do quadro, entao o recorte desce conforme a celula deita.
+    const recorte = (span) => {
+      const prop = (span * (galeria.util + galeria.gap) / galeria.unidades - galeria.gap) / alturaGaleria;
+      return '50% ' + (prop > 1.9 ? 50 : prop > 1.25 ? 40 : 30) + '%';
+    };
+    const avaliacoes = grade(this.reviewData.length, { minimo: 280, gap: 18 });
     return {
       isDesktop,
       isMobile: !isDesktop,
@@ -2013,6 +2083,17 @@ class Component extends DCLogic {
           leaveMap: () => this.setState(s => (s.fixo === u.id ? null : { mapa: null })),
         };
       }),
+      // Quatro cartoes de servico: ou os quatro na mesma fileira, ou dois e
+      // dois. Tres em cima e um sozinho embaixo deixava meia linha vazia.
+      // Cada coluna vai ate 320px e encolhe antes de passar para duas, para a
+      // fileira nao virar um bloco estreito no meio de uma tela larga.
+      servicosCols: (() => {
+        const w = this.state.w;
+        const util = Math.min(1480, w - 2 * Math.min(36, Math.max(16, w * 0.03)));
+        const gap = Math.min(54, Math.max(28, w * 0.034));
+        const cabe = (n) => (util - (n - 1) * gap) / n >= 260;
+        return cabe(4) ? 4 : cabe(2) ? 2 : 1;
+      })(),
       servicos: this.servicosData.map((sv, i) => {
         const on = this.state.svc === i;
         return {
@@ -2058,10 +2139,12 @@ class Component extends DCLogic {
         { t: 'Recorrência', d: 'Sua rotina de corte e barba organizada no mês.' },
         { t: 'Cuidado frequente', d: 'Manutenção em dia, sem esperar o cabelo crescer demais.' },
       ],
+      gradeCols: galeria.unidades,
+      gradeAltura: Math.round(alturaGaleria) + 'px',
       grade: this.galeriaUnica().map((g, i) => ({
         ...g,
-        span: i === 0 ? '2' : '1',
-        foco: g.foco || '50% 30%',
+        span: galeria.spans[i],
+        foco: g.foco || recorte(galeria.spans[i]),
         ehVideo: !!g.video,
         ehFoto: !g.video,
         webm: g.video ? g.video + '.webm' : '',
@@ -2083,7 +2166,8 @@ class Component extends DCLogic {
       cardRef: this.cardRef,
       sheenRef: this.sheenRef,
       phoneRef: this.phoneRef,
-      reviews: this.reviews(),
+      reviewsCols: avaliacoes.unidades,
+      reviews: this.reviews().map((r, i) => ({ ...r, span: avaliacoes.spans[i] })),
       ano: new Date().getFullYear(),
     };
   }

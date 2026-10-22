@@ -85,6 +85,8 @@ Regras para decidir as linhas "DECIDIR":
    - `node fonte/checar.mjs public` — entre as verificações, uma falha o build
      se sobrar `noindex` em produção.
    - `node fonte/testes/arquitetura.mjs public`
+   - `node fonte/testes/grades.mjs public` — nenhuma galeria ou grade de
+     cartões com célula vazia, em nove larguras de tela.
    - Conferir que `public/robots.txt` libera o rastreio e declara o sitemap do
      domínio final, e que `public/sitemap.xml` só tem URL do domínio final.
 2. **Fazer backup do WordPress** (arquivos + banco) antes de qualquer coisa.

@@ -243,6 +243,56 @@ video[data-clipe]{display:none !important}}</style>
     logo: '/assets/morenos-loader-outline-white.webp', logoW: 720, logoH: 669,
   };
 
+  // Grades que fecham: nenhuma linha termina com célula vazia.
+  //
+  // Com repeat(auto-fit, minmax(...)) a última linha quase sempre sobra —
+  // cinco fotos em quatro colunas deixam um buraco no canto — e um item com
+  // span 2 numa tela estreita cai numa coluna implícita de 0px e some.
+  // C.grade() resolve os dois lados de uma vez:
+  //
+  //   - escolhe quantos cartões cabem lado a lado na largura atual;
+  //   - reparte os itens entre as linhas e divide a linha em frações (o mmc
+  //     da quantidade de itens de cada linha), dizendo quantas frações cada
+  //     item ocupa: toda linha fecha certinho e os itens de uma mesma linha
+  //     ficam do mesmo tamanho.
+  //
+  // Cinco itens em quatro colunas viram duas linhas de 3 e 2, não 4 + 1 + buraco.
+  //
+  //   const g = M.grade(fotos.length, janelaW, { minimo: 240 });
+  //   grid-template-columns: repeat(g.unidades, minmax(0,1fr))
+  //   grid-column: span g.spans[i]
+  //
+  // Devolve também util e gap, para quem precisar da largura em px de uma
+  // célula: span * (util + gap) / unidades - gap.
+  //
+  // opcoes: minimo (largura alvo do cartão), maximo (teto de colunas),
+  //         caixa (max-width do contêiner), gap, recuo (padding interno).
+  function mmc(a, b) {
+    var x = a, y = b, r;
+    while (y) { r = x % y; x = y; y = r; }
+    return (a / x) * b;
+  }
+  C.grade = function (total, largura, opcoes) {
+    var o = opcoes || {};
+    var respiro = Math.min(36, Math.max(16, largura * 0.03));
+    var util = Math.max(240, Math.min(o.caixa || 1480, largura - respiro * 2) - (o.recuo || 0));
+    var gap = o.gap == null ? 16 : o.gap;
+    var colunas = Math.max(1, Math.floor((util + gap) / ((o.minimo || 260) + gap)));
+    colunas = Math.min(colunas, o.maximo || 4, Math.max(1, total));
+    // quantos itens em cada linha, o mais parelho possível
+    var porLinha = [], linhas = Math.ceil(total / colunas);
+    for (var l = 0, base = Math.floor(total / linhas), resto = total % linhas; l < linhas; l++) {
+      porLinha.push(base + (l < resto ? 1 : 0));
+    }
+    // a linha é dividida no mmc desses números, para que uma linha de 3 e uma
+    // de 2 caibam no mesmo trilho e os itens de cada linha fiquem iguais
+    var unidades = porLinha.reduce(mmc, 1), spans = [];
+    porLinha.forEach(function (n) {
+      for (var i = 0; i < n; i++) spans.push(unidades / n);
+    });
+    return { colunas: colunas, unidades: unidades, spans: spans, util: util, gap: gap };
+  };
+
   C.selectedUnitKey = 'morenos_selected_unit';
   C.getUnit = function () { try { return localStorage.getItem(C.selectedUnitKey); } catch (e) { return null; } };
   C.setUnit = function (id) { try { localStorage.setItem(C.selectedUnitKey, id); } catch (e) {} C.track('unit_select', { unit: id }); };
@@ -658,7 +708,7 @@ html,body{background:#080908}
             <p data-dc-tpl="44" style="margin: 0px; max-width: 52ch; font-size: clamp(16px, 1.4vw, 19px); line-height: 1.6; color: rgb(214, 211, 204);"><span class="sc-interp">Um cuidado completo com a barba, com mais tempo e atenção do que o alinhamento do dia a dia.</span></p>
             <div data-dc-tpl="45" style="display: flex; flex-wrap: wrap; gap: 12px; margin-top: 6px;">
               
-                <a data-dc-tpl="48" href="https://cashbarber.com.br/salaomorenos/inicio" target="_self" rel="" class="scp8" style="display: inline-flex; padding: 1.5px; border-radius: 100px; background: linear-gradient(100deg, rgb(138, 131, 120) 0%, rgb(58, 58, 58) 16%, rgb(207, 201, 190) 30%, rgb(255, 255, 255) 42%, rgb(207, 201, 190) 54%, rgb(58, 58, 58) 70%, rgb(138, 131, 120) 100%) 0% 0% / 200% 100%; animation: 7s linear 0s infinite normal none running metal; box-shadow: rgba(0, 0, 0, 0.6) 0px 12px 26px -10px; text-decoration: none; transition: filter 0.45s, transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);"><span data-dc-tpl="49" style="display: flex; align-items: center; justify-content: center; border-radius: 100px; background: linear-gradient(rgb(255, 255, 255) 0%, rgb(232, 229, 223) 100%); color: rgb(11, 11, 11); font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; padding: 16px 26px; min-height: 50px; font-size: 13px;"><span class="sc-interp">Agendar barboterapia</span></span></a>
+                <a data-dc-tpl="48" href="https://cashbarber.com.br/salaomorenos/inicio" target="_blank" rel="noopener noreferrer" class="scp8" style="display: inline-flex; padding: 1.5px; border-radius: 100px; background: linear-gradient(100deg, rgb(138, 131, 120) 0%, rgb(58, 58, 58) 16%, rgb(207, 201, 190) 30%, rgb(255, 255, 255) 42%, rgb(207, 201, 190) 54%, rgb(58, 58, 58) 70%, rgb(138, 131, 120) 100%) 0% 0% / 200% 100%; animation: 7s linear 0s infinite normal none running metal; box-shadow: rgba(0, 0, 0, 0.6) 0px 12px 26px -10px; text-decoration: none; transition: filter 0.45s, transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);"><span data-dc-tpl="49" style="display: flex; align-items: center; justify-content: center; border-radius: 100px; background: linear-gradient(rgb(255, 255, 255) 0%, rgb(232, 229, 223) 100%); color: rgb(11, 11, 11); font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; padding: 16px 26px; min-height: 50px; font-size: 13px;"><span class="sc-interp">Agendar barboterapia</span></span></a>
                 
               
                 
@@ -780,27 +830,27 @@ html,body{background:#080908}
       <div data-dc-tpl="123" style="max-width: 1480px; margin: 0px auto;">
         <span data-dc-tpl="124" style="font-size: 12px; font-weight: 700; letter-spacing: 0.3em; text-transform: uppercase; color: rgb(138, 111, 62);"><span class="sc-interp">Etapas</span></span>
         <h2 data-dc-tpl="125" style="margin: 12px 0px clamp(28px, 4vw, 52px); font-size: clamp(32px, 4.2vw, 54px); line-height: 1.02; font-weight: 700; letter-spacing: -0.03em; max-width: 20ch; text-wrap: balance;"><span class="sc-interp">Como é o atendimento.</span></h2>
-        <ol data-dc-tpl="126" style="list-style: none; margin: 0px; padding: 0px; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: clamp(18px, 2.4vw, 32px);">
+        <ol data-dc-tpl="126" style="list-style: none; margin: 0px; padding: 0px; display: grid; grid-template-columns: repeat(1, minmax(0px, 1fr)); gap: clamp(18px, 2.4vw, 32px);">
           
-            <li data-dc-tpl="128" data-rv="1" style="border-top: 1px solid rgba(11, 11, 11, 0.2); padding-top: 22px; display: flex; flex-direction: column; gap: 12px;">
+            <li data-dc-tpl="128" data-rv="1" style="grid-column: span 1; border-top: 1px solid rgba(11, 11, 11, 0.2); padding-top: 22px; display: flex; flex-direction: column; gap: 12px;">
               <span data-dc-tpl="129" aria-hidden="true" style="font-size: clamp(40px, 4vw, 56px); font-weight: 700; line-height: 1; letter-spacing: -0.04em; color: rgb(183, 154, 106);"><span class="sc-interp">01</span></span>
               <h3 data-dc-tpl="130" style="margin: 0px; font-size: clamp(19px, 1.6vw, 22px); font-weight: 600; line-height: 1.25;"><span class="sc-interp">Preparo</span></h3>
               <p data-dc-tpl="131" style="margin: 0px; font-size: 15px; line-height: 1.65; color: rgb(95, 92, 87);"><span class="sc-interp">Preparo da pele e dos fios antes de começar.</span></p>
             </li>
           
-            <li data-dc-tpl="128" data-rv="1" style="border-top: 1px solid rgba(11, 11, 11, 0.2); padding-top: 22px; display: flex; flex-direction: column; gap: 12px;">
+            <li data-dc-tpl="128" data-rv="1" style="grid-column: span 1; border-top: 1px solid rgba(11, 11, 11, 0.2); padding-top: 22px; display: flex; flex-direction: column; gap: 12px;">
               <span data-dc-tpl="129" aria-hidden="true" style="font-size: clamp(40px, 4vw, 56px); font-weight: 700; line-height: 1; letter-spacing: -0.04em; color: rgb(183, 154, 106);"><span class="sc-interp">02</span></span>
               <h3 data-dc-tpl="130" style="margin: 0px; font-size: clamp(19px, 1.6vw, 22px); font-weight: 600; line-height: 1.25;"><span class="sc-interp">Desenho</span></h3>
               <p data-dc-tpl="131" style="margin: 0px; font-size: 15px; line-height: 1.65; color: rgb(95, 92, 87);"><span class="sc-interp">Definição do formato e dos contornos com você.</span></p>
             </li>
           
-            <li data-dc-tpl="128" data-rv="1" style="border-top: 1px solid rgba(11, 11, 11, 0.2); padding-top: 22px; display: flex; flex-direction: column; gap: 12px;">
+            <li data-dc-tpl="128" data-rv="1" style="grid-column: span 1; border-top: 1px solid rgba(11, 11, 11, 0.2); padding-top: 22px; display: flex; flex-direction: column; gap: 12px;">
               <span data-dc-tpl="129" aria-hidden="true" style="font-size: clamp(40px, 4vw, 56px); font-weight: 700; line-height: 1; letter-spacing: -0.04em; color: rgb(183, 154, 106);"><span class="sc-interp">03</span></span>
               <h3 data-dc-tpl="130" style="margin: 0px; font-size: clamp(19px, 1.6vw, 22px); font-weight: 600; line-height: 1.25;"><span class="sc-interp">Alinhamento</span></h3>
               <p data-dc-tpl="131" style="margin: 0px; font-size: 15px; line-height: 1.65; color: rgb(95, 92, 87);"><span class="sc-interp">Acerto do comprimento e do volume.</span></p>
             </li>
           
-            <li data-dc-tpl="128" data-rv="1" style="border-top: 1px solid rgba(11, 11, 11, 0.2); padding-top: 22px; display: flex; flex-direction: column; gap: 12px;">
+            <li data-dc-tpl="128" data-rv="1" style="grid-column: span 1; border-top: 1px solid rgba(11, 11, 11, 0.2); padding-top: 22px; display: flex; flex-direction: column; gap: 12px;">
               <span data-dc-tpl="129" aria-hidden="true" style="font-size: clamp(40px, 4vw, 56px); font-weight: 700; line-height: 1; letter-spacing: -0.04em; color: rgb(183, 154, 106);"><span class="sc-interp">04</span></span>
               <h3 data-dc-tpl="130" style="margin: 0px; font-size: clamp(19px, 1.6vw, 22px); font-weight: 600; line-height: 1.25;"><span class="sc-interp">Finalização</span></h3>
               <p data-dc-tpl="131" style="margin: 0px; font-size: 15px; line-height: 1.65; color: rgb(95, 92, 87);"><span class="sc-interp">Cuidado com a pele e acabamento.</span></p>
@@ -911,9 +961,9 @@ html,body{background:#080908}
           </div>
           <p data-dc-tpl="77" style="margin: 0px; max-width: 42ch; font-size: 16px; line-height: 1.65; color: rgb(169, 166, 159);"><span class="sc-interp">Confira a disponibilidade da barboterapia na agenda, ao escolher a unidade.</span></p>
         </div>
-        <div data-dc-tpl="78" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); gap: 16px;">
+        <div data-dc-tpl="78" style="display: grid; grid-template-columns: repeat(1, minmax(0px, 1fr)); gap: 16px;">
           
-            <article data-dc-tpl="80" data-rv="1" class="scpc" style="position: relative; min-height: clamp(460px, 48vw, 600px); border-radius: 28px; overflow: hidden; display: flex; flex-direction: column; justify-content: flex-end; background: rgb(23, 23, 23); transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);">
+            <article data-dc-tpl="80" data-rv="1" class="scpc" style="grid-column: span 1; position: relative; min-height: clamp(460px, 48vw, 600px); border-radius: 28px; overflow: hidden; display: flex; flex-direction: column; justify-content: flex-end; background: rgb(23, 23, 23); transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);">
               <img data-dc-tpl="81" src="/img/unidade-cidade-continental.webp" alt="Fachada do Salão Morenos com a placa Cidade Continental" width="750" height="1000" loading="lazy" decoding="async" style="position: absolute; inset: 0px; width: 100%; height: 100%; object-fit: cover;">
               <div data-dc-tpl="82" aria-hidden="true" style="position: absolute; inset: 0px; background: linear-gradient(rgba(8, 8, 8, 0.45) 0%, rgba(8, 8, 8, 0.78) 44%, rgba(8, 8, 8, 0.97) 100%);"></div>
               <div data-dc-tpl="83" style="position: relative; padding: clamp(22px, 2.4vw, 32px); display: flex; flex-direction: column; gap: 12px;">
@@ -928,7 +978,7 @@ html,body{background:#080908}
               </div>
             </article>
           
-            <article data-dc-tpl="80" data-rv="1" class="scpc" style="position: relative; min-height: clamp(460px, 48vw, 600px); border-radius: 28px; overflow: hidden; display: flex; flex-direction: column; justify-content: flex-end; background: rgb(23, 23, 23); transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);">
+            <article data-dc-tpl="80" data-rv="1" class="scpc" style="grid-column: span 1; position: relative; min-height: clamp(460px, 48vw, 600px); border-radius: 28px; overflow: hidden; display: flex; flex-direction: column; justify-content: flex-end; background: rgb(23, 23, 23); transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);">
               <img data-dc-tpl="81" src="/img/foto-atendimento-2.webp" alt="Ambiente do Salão Morenos durante o atendimento" width="750" height="1000" loading="lazy" decoding="async" style="position: absolute; inset: 0px; width: 100%; height: 100%; object-fit: cover;">
               <div data-dc-tpl="82" aria-hidden="true" style="position: absolute; inset: 0px; background: linear-gradient(rgba(8, 8, 8, 0.45) 0%, rgba(8, 8, 8, 0.78) 44%, rgba(8, 8, 8, 0.97) 100%);"></div>
               <div data-dc-tpl="83" style="position: relative; padding: clamp(22px, 2.4vw, 32px); display: flex; flex-direction: column; gap: 12px;">
@@ -943,7 +993,7 @@ html,body{background:#080908}
               </div>
             </article>
           
-            <article data-dc-tpl="80" data-rv="1" class="scpc" style="position: relative; min-height: clamp(460px, 48vw, 600px); border-radius: 28px; overflow: hidden; display: flex; flex-direction: column; justify-content: flex-end; background: rgb(23, 23, 23); transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);">
+            <article data-dc-tpl="80" data-rv="1" class="scpc" style="grid-column: span 1; position: relative; min-height: clamp(460px, 48vw, 600px); border-radius: 28px; overflow: hidden; display: flex; flex-direction: column; justify-content: flex-end; background: rgb(23, 23, 23); transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);">
               <img data-dc-tpl="81" src="/img/foto-atendimento.webp" alt="Ambiente do Salão Morenos durante o atendimento" width="750" height="1000" loading="lazy" decoding="async" style="position: absolute; inset: 0px; width: 100%; height: 100%; object-fit: cover;">
               <div data-dc-tpl="82" aria-hidden="true" style="position: absolute; inset: 0px; background: linear-gradient(rgba(8, 8, 8, 0.45) 0%, rgba(8, 8, 8, 0.78) 44%, rgba(8, 8, 8, 0.97) 100%);"></div>
               <div data-dc-tpl="83" style="position: relative; padding: clamp(22px, 2.4vw, 32px); display: flex; flex-direction: column; gap: 12px;">
@@ -1141,7 +1191,7 @@ html,body{background:#080908}
         <p data-dc-tpl="271" style="margin: 0px; max-width: 52ch; font-size: clamp(16px, 1.4vw, 19px); line-height: 1.6; color: rgb(197, 194, 187);"><span class="sc-interp">Escolha a unidade mais perto do seu caminho e continue para a agenda.</span></p>
         <div data-dc-tpl="272" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin-top: 10px;">
           
-            <a data-dc-tpl="275" href="https://cashbarber.com.br/salaomorenos/inicio" target="_self" rel="" class="scp8" style="display: inline-flex; padding: 1.5px; border-radius: 100px; background: linear-gradient(100deg, rgb(138, 131, 120) 0%, rgb(58, 58, 58) 16%, rgb(207, 201, 190) 30%, rgb(255, 255, 255) 42%, rgb(207, 201, 190) 54%, rgb(58, 58, 58) 70%, rgb(138, 131, 120) 100%) 0% 0% / 200% 100%; animation: 7s linear 0s infinite normal none running metal; box-shadow: rgba(0, 0, 0, 0.6) 0px 12px 26px -10px; text-decoration: none; transition: filter 0.45s, transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);"><span data-dc-tpl="276" style="display: flex; align-items: center; justify-content: center; border-radius: 100px; background: linear-gradient(rgb(255, 255, 255) 0%, rgb(232, 229, 223) 100%); color: rgb(11, 11, 11); font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; padding: 16px 26px; min-height: 50px; font-size: 13px;"><span class="sc-interp">Agendar</span></span></a>
+            <a data-dc-tpl="275" href="https://cashbarber.com.br/salaomorenos/inicio" target="_blank" rel="noopener noreferrer" class="scp8" style="display: inline-flex; padding: 1.5px; border-radius: 100px; background: linear-gradient(100deg, rgb(138, 131, 120) 0%, rgb(58, 58, 58) 16%, rgb(207, 201, 190) 30%, rgb(255, 255, 255) 42%, rgb(207, 201, 190) 54%, rgb(58, 58, 58) 70%, rgb(138, 131, 120) 100%) 0% 0% / 200% 100%; animation: 7s linear 0s infinite normal none running metal; box-shadow: rgba(0, 0, 0, 0.6) 0px 12px 26px -10px; text-decoration: none; transition: filter 0.45s, transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);"><span data-dc-tpl="276" style="display: flex; align-items: center; justify-content: center; border-radius: 100px; background: linear-gradient(rgb(255, 255, 255) 0%, rgb(232, 229, 223) 100%); color: rgb(11, 11, 11); font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; padding: 16px 26px; min-height: 50px; font-size: 13px;"><span class="sc-interp">Agendar</span></span></a>
             
           
             
